@@ -28,7 +28,8 @@ pub fn server_main() -> io::Result<()> {
                         let msgst = (2 + iplen) as usize;
                         let msglen = &reqbuf[msgst..msgst + 2];
                         let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
-                        let msg = &reqbuf[(msgst + 2) as usize..reqlen as usize];
+                        let msg =
+                            &reqbuf[(msgst + 2) as usize..(msglen + 2 + msgst as u16) as usize];
                         println!(
                             "reqlen: {}, msg_type: {}, ip: {:?}, msg: {:?}",
                             reqlen,
@@ -40,9 +41,11 @@ pub fn server_main() -> io::Result<()> {
                         eprintln!("Error at reading msg bytes");
                         break;
                     }
+                } else {
+                    eprintln!("Error parsing req length");
+                    break;
                 }
             }
-
             println!("disconnected from {addr}");
         } else {
             println!("Error");
