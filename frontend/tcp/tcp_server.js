@@ -1,7 +1,5 @@
 const net = require("net");
 const http = require("http");
-const fs = require("fs");
-const path = require("path");
 
 
 // =====================================================
@@ -19,13 +17,44 @@ const HTTP_PORT = 4004;
 // CLIENT SETS
 // =====================================================
 
+// main.py TCP connections
 const tcpClients = new Set();
+
+// Browser SSE connections
 const frontendClients = new Set();
 
 
 // =====================================================
+// PROCESS MESSAGE
+// =====================================================
+
+function processMessage(message) {
+
+    console.log(`[TCP] Received: ${message}`);
+
+    try {
+
+        const event = JSON.parse(message);
+
+        console.log("[TCP] Parsed event:");
+        console.log(event);
+
+        broadcastToFrontend(event);
+
+    } catch (error) {
+
+        console.error(
+            "[TCP] Invalid JSON:",
+            error.message
+        );
+
+    }
+}
+
+
+// =====================================================
 // TCP SERVER
-// main.py -> tcp_server.js
+// main.py -> tcp_server.js :4003
 // =====================================================
 
 const tcpServer = net.createServer((socket) => {
@@ -33,7 +62,9 @@ const tcpServer = net.createServer((socket) => {
     const clientAddress =
         `${socket.remoteAddress}:${socket.remotePort}`;
 
-    console.log(`[TCP] Client connected: ${clientAddress}`);
+    console.log(
+        `[TCP] Client connected: ${clientAddress}`
+    );
 
     tcpClients.add(socket);
 
@@ -44,45 +75,59 @@ const tcpServer = net.createServer((socket) => {
 
     socket.on("data", (data) => {
 
+        console.log(
+            `[TCP] Raw data received: ${JSON.stringify(data)}`
+        );
+
         buffer += data;
 
-        /*
-         * TCP does not preserve message boundaries.
-         * So we use newline-delimited JSON.
-         */
+
+        // -------------------------------------------------
+        // Handle newline-delimited JSON
+        // -------------------------------------------------
 
         while (buffer.includes("\n")) {
 
-            const newlineIndex = buffer.indexOf("\n");
+            const newlineIndex =
+                buffer.indexOf("\n");
 
             const message =
-                buffer.slice(0, newlineIndex).trim();
+                buffer
+                    .slice(0, newlineIndex)
+                    .trim();
 
-            buffer = buffer.slice(newlineIndex + 1);
+            buffer =
+                buffer.slice(newlineIndex + 1);
 
             if (!message) {
                 continue;
             }
 
-            console.log(`[TCP] Received: ${message}`);
+            processMessage(message);
 
+        }
+
+
+        // -------------------------------------------------
+        // Handle JSON without newline
+        // -------------------------------------------------
+
+        const remaining = buffer.trim();
+
+        if (remaining) {
 
             try {
 
-                const event = JSON.parse(message);
+                JSON.parse(remaining);
 
-                console.log("[TCP] Parsed event:");
-                console.log(event);
+                buffer = "";
 
-                // Send event to all connected browsers
-                broadcastToFrontend(event);
+                processMessage(remaining);
 
             } catch (error) {
 
-                console.error(
-                    "[TCP] Invalid JSON:",
-                    error.message
-                );
+                // Probably an incomplete TCP packet.
+                // Keep it in the buffer.
 
             }
 
@@ -107,7 +152,7 @@ const tcpServer = net.createServer((socket) => {
         tcpClients.delete(socket);
 
         console.error(
-            `[TCP] Error: ${error.message}`
+            `[TCP] Socket error: ${error.message}`
         );
 
     });
@@ -115,26 +160,55 @@ const tcpServer = net.createServer((socket) => {
 });
 
 
-tcpServer.listen(TCP_PORT, TCP_HOST, () => {
+// =====================================================
+// TCP SERVER ERROR
+// =====================================================
 
-    console.log("========================================");
-    console.log("       FLAREWATCH TCP SERVER");
-    console.log("========================================");
-    console.log(`TCP listening on ${TCP_HOST}:${TCP_PORT}`);
+tcpServer.on("error", (error) => {
+
+    console.error(
+        `[TCP SERVER ERROR] ${error.message}`
+    );
 
 });
 
 
 // =====================================================
-// HTTP SERVER
-// Browser -> tcp_server.js
+// START TCP SERVER
+// =====================================================
+
+tcpServer.listen(
+    TCP_PORT,
+    TCP_HOST,
+    () => {
+
+        console.log("========================================");
+        console.log("       FLAREWATCH TCP SERVER");
+        console.log("========================================");
+
+        console.log(
+            `TCP listening on ${TCP_HOST}:${TCP_PORT}`
+        );
+
+    }
+);
+
+
+// =====================================================
+// HTTP / SSE SERVER
+// browser -> tcp_server.js :4004
 // =====================================================
 
 const httpServer = http.createServer((req, res) => {
 
-    /*
-     * CORS
-     */
+    console.log(
+        `[HTTP] ${req.method} ${req.url}`
+    );
+
+
+    // -------------------------------------------------
+    // CORS
+    // -------------------------------------------------
 
     res.setHeader(
         "Access-Control-Allow-Origin",
@@ -143,42 +217,86 @@ const httpServer = http.createServer((req, res) => {
 
 
     // =================================================
-    // SERVER-SENT EVENTS
+    // SSE ENDPOINT
     // =================================================
 
     if (req.url === "/events") {
 
-        console.log("[SSE] Frontend connected");
+        console.log(
+            "[SSE] Frontend connected"
+        );
 
 
         res.writeHead(200, {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*"
+
+            "Content-Type":
+                "text/event-stream",
+
+            "Cache-Control":
+                "no-cache, no-transform",
+
+            "Connection":
+                "keep-alive",
+
+            "Access-Control-Allow-Origin":
+                "*"
+
         });
 
 
-        /*
-         * Tell browser connection is alive.
-         */
+        // Send initial connection message
+
+        const connectionMessage = {
+            type: "connection",
+            status: "connected",
+            message: "Connected to FlareWatch SSE"
+        };
+
 
         res.write(
-            `data: ${JSON.stringify({
-                type: "connection",
-                status: "connected"
-            })}\n\n`
+            `data: ${JSON.stringify(connectionMessage)}\n\n`
         );
 
 
         frontendClients.add(res);
 
 
+        console.log(
+            `[SSE] Active frontend clients: ${frontendClients.size}`
+        );
+
+
+        // Keep connection alive
+        const keepAlive = setInterval(() => {
+
+            try {
+
+                res.write(": keep-alive\n\n");
+
+            } catch (error) {
+
+                clearInterval(keepAlive);
+
+                frontendClients.delete(res);
+
+            }
+
+        }, 15000);
+
+
         req.on("close", () => {
+
+            clearInterval(keepAlive);
 
             frontendClients.delete(res);
 
-            console.log("[SSE] Frontend disconnected");
+            console.log(
+                "[SSE] Frontend disconnected"
+            );
+
+            console.log(
+                `[SSE] Active frontend clients: ${frontendClients.size}`
+            );
 
         });
 
@@ -193,85 +311,159 @@ const httpServer = http.createServer((req, res) => {
 
     if (req.url === "/health") {
 
+        const health = {
+
+            status: "online",
+
+            tcpPort: TCP_PORT,
+
+            ssePort: HTTP_PORT,
+
+            tcpClients: tcpClients.size,
+
+            frontendClients: frontendClients.size
+
+        };
+
+
         res.writeHead(200, {
-            "Content-Type": "application/json"
+
+            "Content-Type":
+                "application/json",
+
+            "Access-Control-Allow-Origin":
+                "*"
+
         });
 
+
         res.end(
-            JSON.stringify({
-                status: "online"
-            })
+            JSON.stringify(
+                health,
+                null,
+                2
+            )
         );
+
 
         return;
     }
 
 
     // =================================================
-    // SERVE FRONTEND HTML FILES
+    // SIMPLE TEST ENDPOINT
     // =================================================
 
-    let requestedFile =
-        req.url === "/" ? "/overview.html" : req.url;
+    if (req.url === "/test") {
 
-    /*
-     * Remove query string
-     */
+        const testEvent = {
 
-    requestedFile =
-        requestedFile.split("?")[0];
+            type: "threat",
 
+            ip: "192.168.1.9",
 
-    /*
-     * Prevent path traversal
-     */
+            threat: "SQL_INJECTION",
 
-    const fileName =
-        path.basename(requestedFile);
+            timestamp: Date.now()
 
-    const filePath =
-        path.join(__dirname, "..", fileName);
+        };
 
 
-    fs.readFile(filePath, (error, data) => {
+        console.log(
+            "[TEST] Sending test event:"
+        );
 
-        if (error) {
-
-            res.writeHead(404, {
-                "Content-Type": "text/plain"
-            });
-
-            res.end("404 - File not found");
-
-            return;
-        }
+        console.log(testEvent);
 
 
-        let contentType = "text/html";
-
-        if (fileName.endsWith(".js")) {
-            contentType = "application/javascript";
-        }
-
-        if (fileName.endsWith(".css")) {
-            contentType = "text/css";
-        }
-
-        if (fileName.endsWith(".svg")) {
-            contentType = "image/svg+xml";
-        }
+        broadcastToFrontend(testEvent);
 
 
         res.writeHead(200, {
-            "Content-Type": contentType
+
+            "Content-Type":
+                "application/json",
+
+            "Access-Control-Allow-Origin":
+                "*"
+
         });
 
-        res.end(data);
+
+        res.end(
+            JSON.stringify({
+                status: "sent",
+                event: testEvent
+            })
+        );
+
+
+        return;
+    }
+
+
+    // =================================================
+    // ROOT
+    // =================================================
+
+    if (req.url === "/") {
+
+        res.writeHead(200, {
+
+            "Content-Type":
+                "text/plain",
+
+            "Access-Control-Allow-Origin":
+                "*"
+
+        });
+
+
+        res.end(
+            "FlareWatch TCP/SSE Server is running."
+        );
+
+
+        return;
+    }
+
+
+    // =================================================
+    // NOT FOUND
+    // =================================================
+
+    res.writeHead(404, {
+
+        "Content-Type":
+            "text/plain",
+
+        "Access-Control-Allow-Origin":
+            "*"
 
     });
 
+
+    res.end("Not Found");
+
 });
 
+
+// =====================================================
+// HTTP SERVER ERROR
+// =====================================================
+
+httpServer.on("error", (error) => {
+
+    console.error(
+        `[HTTP SERVER ERROR] ${error.message}`
+    );
+
+});
+
+
+// =====================================================
+// START HTTP SERVER
+// =====================================================
 
 httpServer.listen(
     HTTP_PORT,
@@ -283,7 +475,15 @@ httpServer.listen(
         );
 
         console.log(
-            `Frontend: http://localhost:${HTTP_PORT}`
+            `Frontend SSE: http://localhost:${HTTP_PORT}/events`
+        );
+
+        console.log(
+            `Health check: http://localhost:${HTTP_PORT}/health`
+        );
+
+        console.log(
+            `Test event:   http://localhost:${HTTP_PORT}/test`
         );
 
     }
@@ -301,7 +501,7 @@ function broadcastToFrontend(event) {
 
 
     console.log(
-        `[SSE] Broadcasting to ${frontendClients.size} client(s)`
+        `[SSE] Broadcasting to ${frontendClients.size} frontend client(s)`
     );
 
 
@@ -315,6 +515,11 @@ function broadcastToFrontend(event) {
 
             frontendClients.delete(client);
 
+            console.error(
+                "[SSE] Failed to send event:",
+                error.message
+            );
+
         }
 
     }
@@ -323,28 +528,42 @@ function broadcastToFrontend(event) {
 
 
 // =====================================================
-// SHUTDOWN
+// GRACEFUL SHUTDOWN
 // =====================================================
 
 process.on("SIGINT", () => {
 
-    console.log("\nShutting down FlareWatch...");
+    console.log(
+        "\nShutting down FlareWatch..."
+    );
 
 
     for (const client of tcpClients) {
+
         client.destroy();
+
     }
 
 
     for (const client of frontendClients) {
+
         client.end();
+
     }
 
 
-    tcpServer.close();
-    httpServer.close();
+    tcpServer.close(() => {
 
+        httpServer.close(() => {
 
-    process.exit(0);
+            console.log(
+                "FlareWatch stopped."
+            );
+
+            process.exit(0);
+
+        });
+
+    });
 
 });

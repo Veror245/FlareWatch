@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlareWatch - About</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #050507;
+    color: #e1e1e6;
+    overflow: hidden;
+  }
+
+  /* Canvas Background */
+  #dotCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* App Layout Container */
+  .app-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(12px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Animated Collapsible Sidebar */
+  .sidebar {
+    width: 68px;
+    background: rgba(10, 10, 13, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+  }
+
+  .sidebar:hover {
+    width: 230px;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 24px 18px;
+    height: 32px;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .brand-logo svg {
+    width: 26px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo .red { color: #ff2a2a; }
+  .brand-logo .white { color: #ffffff; }
+
+  .brand-text, .nav-text, .collapse-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .sidebar:hover .brand-text,
+  .sidebar:hover .nav-text,
+  .sidebar:hover .collapse-btn {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.08s;
+  }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .nav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px;
+    color: #888899;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 8px;
+    height: 44px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-item.active a {
+    color: #fff;
+    background: rgba(255, 42, 42, 0.12);
+    border: 1px solid rgba(255, 42, 42, 0.35);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+  }
+
+  .nav-item.active a svg { stroke: #ff2a2a; }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer { padding: 0 12px; }
+
+  /* Main Content Area */
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .content-area {
+    flex: 1;
+    padding: 28px 36px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Page Header */
+  .page-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: #888899;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Cards Grid */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 360px 280px 1fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+  }
+
+  .card {
+    background: rgba(12, 12, 16, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888899;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  /* Hero FlareWatch Card */
+  .hero-card {
+    grid-row: span 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .hero-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+
+  .hero-shield-icon {
+    width: 48px;
+    height: 56px;
+  }
+
+  .hero-brand-name {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+  .hero-brand-name .red { color: #ff2a2a; }
+  .hero-brand-name .white { color: #ffffff; }
+
+  .hero-tagline {
+    font-size: 12px;
+    color: #aaaabb;
+    line-height: 1.4;
+    margin-top: 2px;
+    margin-bottom: 20px;
+  }
+
+  .hero-desc {
+    font-size: 13px;
+    color: #9999aa;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .badge-zero-dep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #e1e1e6;
+  }
+
+  .check-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #22c55e;
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .check-icon svg { width: 10px; height: 10px; stroke: #22c55e; stroke-width: 3; }
+
+  /* System Information Table */
+  .sys-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sys-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 12.5px;
+  }
+
+  .sys-info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .sys-label { color: #888899; }
+  .sys-value { color: #e1e1e6; font-weight: 500; }
+  
+  .status-online {
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .status-online::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #22c55e;
+  }
+
+  /* Architecture Flow Diagram */
+  .arch-diagram {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+    padding-top: 4px;
+  }
+
+  .arch-box {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 11.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 130px;
+  }
+
+  .arch-box.generator {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .arch-box.rust {
+    border: 1px solid #ef4444;
+    background: rgba(239, 68, 68, 0.03);
+    min-width: 140px;
+  }
+
+  .arch-box.python {
+    border: 1px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.03);
+    min-width: 155px;
+  }
+
+  .arch-box.browser {
+    border: 1px solid #22c55e;
+    background: rgba(34, 197, 94, 0.03);
+    width: 200px;
+    margin-top: 18px;
+  }
+
+  .arch-box-title {
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .arch-box.rust .arch-box-title { color: #ef4444; }
+  .arch-box.python .arch-box-title { color: #3b82f6; }
+  .arch-box.browser .arch-box-title { color: #22c55e; }
+
+  .arch-box-sub {
+    color: #777788;
+    font-size: 10.5px;
+  }
+
+  .arch-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #aaaabb;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .arch-list li::before {
+    content: "• ";
+    color: #666;
+  }
+
+  .arch-arrow {
+    color: #555566;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-top: 14px;
+  }
+
+  .arch-col-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .arch-arrow-down {
+    color: #555566;
+    align-self: flex-end;
+    margin-right: 90px;
+  }
+
+  /* Technology Areas Section */
+  .tech-section {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .tech-card {
+    background: rgba(12, 12, 16, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .tech-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tech-icon-wrapper.blue {
+    background: rgba(0, 180, 216, 0.08);
+    color: #00b4d8;
+    border-color: rgba(0, 180, 216, 0.25);
+  }
+
+  .tech-icon-wrapper.purple {
+    background: rgba(168, 85, 247, 0.08);
+    color: #a855f7;
+    border-color: rgba(168, 85, 247, 0.25);
+  }
+
+  .tech-icon-wrapper.red {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.25);
+  }
+
+  .tech-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .tech-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .tech-desc {
+    font-size: 11.5px;
+    color: #888899;
+    line-height: 1.45;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="dotCanvas"></canvas>
+
+<div class="app-container">
+
+  <!-- Sidebar Nav -->
+   <aside class="sidebar">
+    <div>
+      <div class="brand-header">
+        <div class="brand-logo">
+          <svg viewBox="0 0 88 104" fill="none">
+            <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+            <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+          </svg>
+          <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
+        </div>
+        <button class="collapse-btn">&laquo;</button>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item ">
+          <a href="/frontend/overview.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="nav-text">Overview</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/live-events.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span class="nav-text">Live Events</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/search-logs.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="nav-text">Search Logs</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/threatDetails.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="nav-text">Threats</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/rules.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="nav-text">Rules</span>
+          </a>
+        </li>
+        <li class="nav-item active">
+          <a href="/frontend/about.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="nav-text">About</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <div class="main-wrapper">
+    <main class="content-area">
+
+      <!-- Header -->
+      <div class="page-title-group">
+        <h1 class="page-title">About</h1>
+        <div class="breadcrumb">/ About</div>
+      </div>
+
+      <!-- Main Layout Grid -->
+      <div class="about-grid">
+
+        <!-- FlareWatch Hero Info Card -->
+        <div class="card hero-card">
+          <div class="hero-main">
+            <div class="hero-logo-row">
+              <svg class="hero-shield-icon" viewBox="0 0 88 104" fill="none">
+                <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+                <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+              </svg>
+              <div class="hero-brand-name"><span class="red">FLARE</span><span class="white">WATCH</span></div>
+            </div>
+            
+            <div class="hero-tagline">Zero-Dependency High-Throughput SIEM & Threat Detection Engine</div>
+            
+            <p class="hero-desc">
+              FlareWatch is a high-performance, zero-dependency SIEM system that ingests raw network logs, detects threats in real time using a hand-rolled Aho-Corasick engine, indexes logs for fast search, and streams live telemetry to this dashboard.
+            </p>
+          </div>
+
+          <div class="badge-zero-dep">
+            <div class="check-icon">
+              <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span>ZERO THIRD-PARTY RUNTIME DEPENDENCIES</span>
+          </div>
+        </div>
+
+        <!-- System Information Card -->
+        <div class="card">
+          <div class="card-title">System Information</div>
+          <div class="sys-info-list">
+            <div class="sys-info-row">
+              <span class="sys-label">Version</span>
+              <span class="sys-value">1.0.0</span>
+            </div>
+            <div class="sys-info-row">
+              <span class="sys-label">Build Date</span>
+              <span class="sys-value">2026-08-20</span>
+            </div>
+            <div class="sys-info-row">
+              <span class="sys-label">Frontend</span>
+              <span class="sys-value">Vanilla JS + Canvas</span>
+            </div>
+            <div class="sys-info-row">
+              <span class="sys-label">Backend</span>
+              <span class="sys-value">Python + Rust</span>
+            </div>
+            <div class="sys-info-row">
+              <span class="sys-label">Status</span>
+              <span class="sys-value status-online">Online</span>
+            </div>
+            <div class="sys-info-row">
+              <span class="sys-label">Uptime</span>
+              <span class="sys-value" id="uptimeCounter">02:14:32</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Flow Card -->
+        <div class="card">
+          <div class="card-title">Architecture</div>
+          
+          <div class="arch-diagram">
+            <!-- Box 1 -->
+            <div class="arch-box generator">
+              <div class="arch-box-title">Log Generator</div>
+              <div class="arch-box-sub">Python (stdlib)</div>
+            </div>
+
+            <div class="arch-arrow">&rarr;</div>
+
+            <!-- Box 2 -->
+            <div class="arch-box rust">
+              <div class="arch-box-title">Rust Core</div>
+              <ul class="arch-list">
+                <li>Ingestion</li>
+                <li>Aho-Corasick</li>
+                <li>Detection</li>
+                <li>Indexing</li>
+              </ul>
+            </div>
+
+            <div class="arch-arrow">&rarr;</div>
+
+            <!-- Column 3: Python & Browser -->
+            <div class="arch-col-right">
+              <div class="arch-box python">
+                <div class="arch-box-title">Python Backend</div>
+                <ul class="arch-list">
+                  <li>HTTP Server</li>
+                  <li>WebSocket</li>
+                  <li>Auth (TOTP/HMAC)</li>
+                  <li>IPC</li>
+                </ul>
+              </div>
+
+              <div class="arch-arrow-down">&darr;</div>
+
+              <div class="arch-box browser">
+                <div class="arch-box-title">Browser Dashboard</div>
+                <div class="arch-box-sub">HTML / CSS / JS / Canvas</div>
+                <div class="arch-box-sub">WebSocket Client</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Technology Areas Section -->
+        <div class="tech-section">
+          <div class="card-title" style="margin-bottom: 0;">Technology Areas</div>
+          
+          <div class="tech-grid">
+            <!-- Card 1 -->
+            <div class="tech-card">
+              <div class="tech-icon-wrapper blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <div class="tech-info">
+                <div class="tech-title">Web & Network</div>
+                <div class="tech-desc">Raw TCP networking, HTTP server, WebSocket communication</div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="tech-card">
+              <div class="tech-icon-wrapper purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="tech-info">
+                <div class="tech-title">Security & Crypto</div>
+                <div class="tech-desc">Threat detection, Aho-Corasick pattern matching, TOTP 2FA, HMAC authentication</div>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="tech-card">
+              <div class="tech-icon-wrapper red">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              </div>
+              <div class="tech-info">
+                <div class="tech-title">Real-time Visualization</div>
+                <div class="tech-desc">Live telemetry, Canvas visualizations, event streams, interactive dashboards</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Live Uptime Counter Simulation
+  let seconds = 8072;
+  const uptimeEl = document.getElementById('uptimeCounter');
+  setInterval(() => {
+    seconds++;
+    const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const secs = String(seconds % 60).padStart(2, '0');
+    uptimeEl.textContent = `${hrs}:${mins}:${secs}`;
+  }, 1000);
+
+  // Background Particle Grid Engine
+  const canvas = document.getElementById('dotCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let dots = [];
+  const spacing = 22;
+  const baseRadius = 0.7;
+  const hoverRadius = 140;
+  const MAX_DOT_RADIUS = 4.5;
+
+  let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+  function initGrid() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    dots = [];
+    const cols = Math.ceil(width / spacing) + 1;
+    const rows = Math.ceil(height / spacing) + 1;
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const baseX = i * spacing;
+        const baseY = j * spacing;
+        
+        const isThreat = Math.random() < 0.012;
+        const isSuspicious = !isThreat && Math.random() < 0.018;
+
+        const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
+
+        dots.push({
+          baseX,
+          baseY,
+          x: baseX,
+          y: baseY,
+          baseR: initialR,
+          r: initialR,
+          colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
+          opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', initGrid);
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.targetX = -1000;
+    mouse.targetY = -1000;
+  });
+
+  function render(time) {
+    ctx.clearRect(0, 0, width, height);
+
+    mouse.x += (mouse.targetX - mouse.x) * 0.1;
+    mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+    const t = time * 0.0025;
+
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+
+      const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
+      const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
+
+      const dx = mouse.x - d.baseX;
+      const dy = mouse.y - d.baseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let targetX = d.baseX + waveX;
+      let targetY = d.baseY + waveY;
+      let targetR = d.baseR;
+      let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
+
+      if (dist < hoverRadius) {
+        const norm = 1 - dist / hoverRadius;
+        const factor = norm * norm * (3 - 2 * norm);
+
+        const addedRadius = factor * 2.8;
+        targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
+        targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
+
+        const angle = Math.atan2(dy, dx);
+        const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
+        const pushAmount = factor * 12;
+
+        targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
+        targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
+      }
+
+      d.x += (targetX - d.x) * 0.12;
+      d.y += (targetY - d.y) * 0.12;
+      d.r += (targetR - d.r) * 0.12;
+      d.opacity += (targetOpacity - d.opacity) * 0.12;
+
+      let color;
+      if (d.colorType === 'threat') {
+        color = `rgba(255, 42, 42, ${d.opacity})`;
+      } else if (d.colorType === 'suspicious') {
+        color = `rgba(255, 179, 0, ${d.opacity})`;
+      } else {
+        color = `rgba(0, 229, 255, ${d.opacity})`;
+      }
+
+      const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (d.colorType === 'threat' || finalRadius > 3.2) {
+        ctx.shadowBlur = finalRadius * 2;
+        ctx.shadowColor = color;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  initGrid();
+  requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
