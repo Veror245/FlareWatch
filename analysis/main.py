@@ -157,6 +157,33 @@ def analyse_threat(current_event):
 
         return None
 
+
+def worker_loop(dev1_client):
+    while True:
+        current_event = event_queue.get() 
+        incident = analyse_threat(current_event)
+        
+        if incident:
+            print(f"\nTHREAT DETECTED: {incident['incident_type']} from {incident['IP']}")
+            try:
+                outbound_json = json.dumps(incident) + "\n"
+                dev1_client.sendall(outbound_json.encode('utf-8'))
+                print("Successfully forwarded incident to Dev 1 Dashboard!\n")
+            except BrokenPipeError:
+                print("Dev 1 disconnected unexpectedly.")
+                
+        event_queue.task_done()
+
+#reads exactly num_bytes from the socket,
+def recv_exact(sock, num_bytes):
+    data = bytearray()
+    while len(data) < num_bytes:
+        packet = sock.recv(num_bytes - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return bytes(data)
+
 def listen_to_rust():
     dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -176,3 +203,64 @@ def listen_to_rust():
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('127.0.0.1', RUST_PORT))
     server.listen(1)
+    
+    print(f"Threat Engine listening for Rust logs on port {RUST_PORT}...")
+    
+    # Block and wait for Rust to connect
+    conn, addr = server.accept()
+    print(f"Rust Engine connected from {addr}")
+
+    buffer = ""
+
+    # Receive loop
+    while True:
+        # read the 4-byte payload length (Big-endian u32)
+        length_bytes = recv_exact(conn, 4)
+        if not length_bytes:
+            print("Rust connection closed.")
+            break
+        payload_length = struct.unpack('>I', length_bytes)[0]
+        
+        # read the 1-byte message type (u8)
+        type_bytes = recv_exact(conn, 1)
+        msg_type = struct.unpack('>B', type_bytes)[0]
+        
+        # read the exact remaining payload
+        payload = recv_exact(conn, payload_length)
+        
+        # parse based on type
+        if msg_type == 1:  # THREAT[cite: 2]
+            # [Threat type u8][IP len u8][IP][REQ len u16][REQ][cite: 2]
+            threat_id = struct.unpack('>B', payload[0:1])[0]
+            ip_len = struct.unpack('>B', payload[1:2])[0]
+            
+            ip_start = 2
+            ip_end = ip_start + ip_len
+            ip_address = payload[ip_start:ip_end].decode('utf-8')
+            
+            # Map the numeric ID to the string your state machine expects
+            event_type_string = INBOUND_THREATS.get(threat_id, "UNKNOWN_THREAT")
+            
+            # Create your dataclass and queue it
+            current_event = Event(IP=ip_address, event_type=event_type_string, severity=5)
+            event_queue.put(current_event)
+            
+        elif msg_type in (0, 2):  # LOG or NOTHREAT[cite: 2]
+            # [IP len u8][IP][REQ len u16][REQ][cite: 2]
+            ip_len = struct.unpack('>B', payload[0:1])[0]
+            ip_address = payload[1:1+ip_len].decode('utf-8')
+            
+            # We log it, but benign requests might not need full state machine processing
+            current_event = Event(IP=ip_address, event_type="LOG", severity=0)
+            event_queue.put(current_event)
+            
+        elif msg_type == 3:  # STATS[cite: 2]
+            # [Logs processed u64][Threats detected u64][Logs/sec u32][cite: 2]
+            logs, threats, rate = struct.unpack('>QQI', payload)
+            print(f"Rust Stats: {logs} logs, {threats} threats, {rate} req/s")
+
+    conn.close()
+    dev1_client.close()
+
+if __name__ == "__main__":
+    listen_to_rust()
