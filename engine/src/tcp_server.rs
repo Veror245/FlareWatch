@@ -8,6 +8,9 @@ pub fn server_main() -> io::Result<()> {
     println!("Server is listening on {:?}", listener.local_addr()?);
 
     let mut buffer = [0u8; 1024];
+    let mut lenbuf = [0u8; 4];
+    let mut reqlen;
+    let mut tempbuf: Vec<u8> = Vec::new();
 
     for stream in listener.incoming() {
         if let Ok(mut stream) = stream {
@@ -15,15 +18,29 @@ pub fn server_main() -> io::Result<()> {
             println!("Client {addr} connected");
 
             loop {
-                let n = stream.read(&mut buffer)?;
-                println!("size of message: {}", n);
-
-                if n == 0 {
-                    break;
+                if let Ok(()) = stream.read_exact(&mut lenbuf) {
+                    reqlen = u32::from_be_bytes(lenbuf);
+                    let mut reqbuf: Vec<u8> = vec![0u8; reqlen as usize];
+                    if stream.read_exact(&mut reqbuf).is_ok() {
+                        let msg_type = reqbuf[0];
+                        let iplen = reqbuf[1];
+                        let ip = &reqbuf[2..(iplen + 2) as usize];
+                        let msgst = (2 + iplen) as usize;
+                        let msglen = &reqbuf[msgst..msgst + 2];
+                        let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
+                        let msg = &reqbuf[(msgst + 2) as usize..reqlen as usize];
+                        println!(
+                            "reqlen: {}, msg_type: {}, ip: {:?}, msg: {:?}",
+                            reqlen,
+                            msg_type,
+                            std::str::from_utf8(ip),
+                            std::str::from_utf8(msg)
+                        );
+                    } else {
+                        eprintln!("Error at reading msg bytes");
+                        break;
+                    }
                 }
-
-                let msg = String::from_utf8_lossy(&buffer[..n]);
-                println!("{addr}: {msg}");
             }
 
             println!("disconnected from {addr}");

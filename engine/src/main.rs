@@ -21,7 +21,7 @@ fn main() -> io::Result<()> {
 
     println!("{:#?}", cora.search("cbaa".as_bytes()));
 
-    tcp_client::client_main(msg)?;
+    // tcp_client::client_main(msg)?;
     tcp_server::server_main()?;
 
     Ok(())
