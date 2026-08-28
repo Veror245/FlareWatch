@@ -48,7 +48,7 @@ class Event:
     endpoint: str = None    
     timestamp: float = field(default_factory=time.time)
     metadata: dict = field(default_factory=dict)
-    
+
 RUST_PORT = 4001
 DEV1_PORT = 4002
 
@@ -142,7 +142,22 @@ def analyse_threat(current_event):
                 "details": "IP has accumulated a critical history of suspicious behavior."
             }
 
-            def listen_to_rust():
+        # ALERT DEDUPLICATION
+        if incident:
+            alert_key = (ip, incident["incident_type"])
+            time_since_last_alert = event_time - last_alert_time.get(alert_key, 0)
+            
+            # If less than 60 seconds have passed, suppress the alert
+            if time_since_last_alert < 60:
+                return None
+                
+            # Otherwise, update the timer and return the incident to the network loop
+            last_alert_time[alert_key] = event_time
+            return incident
+
+        return None
+
+def listen_to_rust():
     dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         dev1_client.connect(('127.0.0.1', DEV1_PORT))
