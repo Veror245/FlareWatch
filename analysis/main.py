@@ -48,6 +48,9 @@ class Event:
     endpoint: str = None    
     timestamp: float = field(default_factory=time.time)
     metadata: dict = field(default_factory=dict)
+    
+RUST_PORT = 4001
+DEV1_PORT = 4002
 
 failed_logins = defaultdict(deque)  
 attacker_states = {} 
@@ -138,3 +141,23 @@ def analyse_threat(current_event):
                 "total_score": current_score,
                 "details": "IP has accumulated a critical history of suspicious behavior."
             }
+
+            def listen_to_rust():
+    dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        dev1_client.connect(('127.0.0.1', DEV1_PORT))
+        print(f"Connected to Dev 1 Dashboard on port {DEV1_PORT}")
+    except ConnectionRefusedError:
+        print(f"Failed to connect to Dev 1. Please ensure Dev 1's server is running on port {DEV1_PORT}.")
+        return
+
+    NUM_THREADS = 3
+    for _ in range(NUM_THREADS):
+        t = threading.Thread(target=worker_loop, args=(dev1_client,), daemon=True)
+        t.start()
+
+    #server socket to listen to the Rust engine
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('127.0.0.1', RUST_PORT))
+    server.listen(1)
