@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlareWatch - Rules / Signatures</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #050507;
+    color: #e1e1e6;
+    overflow: hidden;
+  }
+
+  /* Full Screen Canvas for Interactive Dots */
+  #dotCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* App Layout Container */
+  .app-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Animated Collapsible Sidebar */
+  .sidebar {
+    width: 68px; /* Collapsed width */
+    background: rgba(10, 10, 13, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+  }
+
+  /* Hover to Expand Sidebar */
+  .sidebar:hover {
+    width: 230px; /* Expanded width */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 24px 18px;
+    height: 32px;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .brand-logo svg {
+    width: 26px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo .red { color: #ff2a2a; }
+  .brand-logo .white { color: #ffffff; }
+
+  /* Animated Text Hiding/Showing */
+  .brand-text,
+  .nav-text,
+  .status-text,
+  .collapse-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .sidebar:hover .brand-text,
+  .sidebar:hover .nav-text,
+  .sidebar:hover .status-text,
+  .sidebar:hover .collapse-btn {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.08s;
+  }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .collapse-btn:hover { color: #aaa; }
+
+  .nav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px;
+    color: #888899;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 8px;
+    height: 44px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-item.active a {
+    color: #fff;
+    background: rgba(255, 42, 42, 0.12);
+    border: 1px solid rgba(255, 42, 42, 0.35);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+  }
+
+  .nav-item.active a svg {
+    stroke: #ff2a2a;
+  }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 0 12px;
+  }
+
+  .info-icon-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .info-icon-btn:hover { color: #fff; }
+
+  /* Main Viewport */
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Content Dashboard Area */
+  .content-area {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Page Header Row */
+  .page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .page-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: #888899;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0 12px;
+    height: 38px;
+    width: 280px;
+    transition: border-color 0.2s;
+  }
+
+  .search-box:focus-within {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .search-box svg {
+    width: 16px;
+    height: 16px;
+    color: #888899;
+    margin-right: 8px;
+  }
+
+  .search-box input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+  }
+
+  .search-box input::placeholder {
+    color: #666677;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #df2020;
+    border: none;
+    color: #ffffff;
+    padding: 0 16px;
+    height: 38px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #ff3b3b;
+  }
+
+  /* Table Card Layout */
+  .table-card {
+    background: rgba(12, 12, 16, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rules-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .rules-table th {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888899;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .rules-table td {
+    padding: 16px 20px;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+  }
+
+  .rules-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .col-id {
+    color: #888899;
+    width: 80px;
+  }
+
+  .col-pattern {
+    font-family: 'Courier New', Courier, monospace;
+    color: #cccccc;
+  }
+
+  .col-category {
+    color: #aaaaaa;
+  }
+
+  .sev-high { color: #ff3b3b; font-weight: 500; }
+  .sev-medium { color: #f59e0b; font-weight: 500; }
+
+  /* Status Toggle */
+  .status-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-text {
+    font-size: 13px;
+    width: 60px;
+  }
+
+  .status-text.enabled { color: #22c55e; }
+  .status-text.disabled { color: #666677; }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+  }
+  
+  .toggle-switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #333344;
+    transition: .3s;
+    border-radius: 20px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #888899;
+    transition: .3s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: #1a5c2d;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(16px);
+    background-color: #22c55e;
+  }
+
+  /* Action Buttons */
+  .actions-cell {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-action {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888899;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-action:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-action.delete {
+    border-color: rgba(255, 42, 42, 0.2);
+    color: #ff3b3b;
+  }
+
+  .btn-action.delete:hover {
+    background: rgba(255, 42, 42, 0.1);
+    border-color: rgba(255, 42, 42, 0.4);
+  }
+
+  .btn-action svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .page-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888899;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .page-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+  }
+
+  .page-btn.active {
+    background: #df2020;
+    border-color: #df2020;
+    color: #fff;
+  }
+
+  .page-dots {
+    color: #888899;
+    padding: 0 4px;
+  }
+
+  /* Page Transition Animation */
+  .app-container {
+    animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(12px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Full Screen Dynamic Interactive Canvas -->
+<canvas id="dotCanvas"></canvas>
+
+<div class="app-container">
+
+  <!-- Hover-Expandable Animated Sidebar -->
+   <aside class="sidebar">
+    <div>
+      <div class="brand-header">
+        <div class="brand-logo">
+          <svg viewBox="0 0 88 104" fill="none">
+            <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+            <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+          </svg>
+          <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
+        </div>
+        <button class="collapse-btn">&laquo;</button>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="/frontend/overview.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="nav-text">Overview</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/live-events.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span class="nav-text">Live Events</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/search-logs.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="nav-text">Search Logs</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/threatDetails.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="nav-text">Threats</span>
+          </a>
+        </li>
+        <li class="nav-item active">
+          <a href="/frontend/rules.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="nav-text">Rules</span>
+          </a>
+        </li>
+        <li class="nav-item ">
+          <a href="/frontend/about.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="nav-text">About</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+  <!-- Main Section -->
+  <div class="main-wrapper">
+    <main class="content-area">
+
+      <!-- Header Row -->
+      <div class="page-header-row">
+        <div class="page-title-group">
+          <h1 class="page-title">Rules / Signatures</h1>
+          <div class="breadcrumb">/ Rules</div>
+        </div>
+        
+        <div class="header-controls">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search rules...">
+          </div>
+          <button class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Rule
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Content -->
+      <div class="table-card">
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th class="col-id">RULE ID</th>
+              <th>PATTERN</th>
+              <th>CATEGORY</th>
+              <th>SEVERITY</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row 1 -->
+            <tr>
+              <td class="col-id">1</td>
+              <td class="col-pattern">union select</td>
+              <td class="col-category">SQL Injection</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+            
+            <!-- Row 2 -->
+            <tr>
+              <td class="col-id">2</td>
+              <td class="col-pattern">'or 1=1</td>
+              <td class="col-category">SQL Injection</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr>
+              <td class="col-id">3</td>
+              <td class="col-pattern">&lt;script&gt;</td>
+              <td class="col-category">XSS</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr>
+              <td class="col-id">4</td>
+              <td class="col-pattern">../</td>
+              <td class="col-category">Path Traversal</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr>
+              <td class="col-id">5</td>
+              <td class="col-pattern">..\..\</td>
+              <td class="col-category">Path Traversal</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 6 -->
+            <tr>
+              <td class="col-id">6</td>
+              <td class="col-pattern">cmd.exe</td>
+              <td class="col-category">Command Injection</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 7 -->
+            <tr>
+              <td class="col-id">7</td>
+              <td class="col-pattern">/etc/passwd</td>
+              <td class="col-category">Path Traversal</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 8 -->
+            <tr>
+              <td class="col-id">8</td>
+              <td class="col-pattern">xp_cmdshell</td>
+              <td class="col-category">Command Injection</td>
+              <td class="sev-high">High</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text disabled">Disabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 9 -->
+            <tr>
+              <td class="col-id">9</td>
+              <td class="col-pattern">sleep(</td>
+              <td class="col-category">SQL Injection</td>
+              <td class="sev-medium">Medium</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 10 -->
+            <tr>
+              <td class="col-id">10</td>
+              <td class="col-pattern">load_file(</td>
+              <td class="col-category">SQL Injection</td>
+              <td class="sev-medium">Medium</td>
+              <td>
+                <div class="status-wrapper">
+                  <span class="status-text enabled">Enabled</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination">
+          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">4</button>
+          <button class="page-btn">5</button>
+          <span class="page-dots">...</span>
+          <button class="page-btn">18</button>
+          <button class="page-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Full Screen Interactive Canvas Grid Engine (Kept smooth & wavy as requested)
+  const canvas = document.getElementById('dotCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let dots = [];
+  const spacing = 22;             
+  const baseRadius = 0.7;        
+  const hoverRadius = 140;        
+  const MAX_DOT_RADIUS = 4.5;     
+
+  let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+  function initGrid() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    dots = [];
+    const cols = Math.ceil(width / spacing) + 1;
+    const rows = Math.ceil(height / spacing) + 1;
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const baseX = i * spacing;
+        const baseY = j * spacing;
+        
+        const isThreat = Math.random() < 0.012;
+        const isSuspicious = !isThreat && Math.random() < 0.018;
+
+        const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
+
+        dots.push({
+          baseX,
+          baseY,
+          x: baseX,
+          y: baseY,
+          baseR: initialR,
+          r: initialR,
+          colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
+          opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', initGrid);
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.targetX = -1000;
+    mouse.targetY = -1000;
+  });
+
+  function render(time) {
+    ctx.clearRect(0, 0, width, height);
+
+    mouse.x += (mouse.targetX - mouse.x) * 0.1;
+    mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+    const t = time * 0.0025;
+
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+
+      const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
+      const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
+
+      const dx = mouse.x - d.baseX;
+      const dy = mouse.y - d.baseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let targetX = d.baseX + waveX;
+      let targetY = d.baseY + waveY;
+      let targetR = d.baseR;
+      let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
+
+      if (dist < hoverRadius) {
+        const norm = 1 - dist / hoverRadius;
+        const factor = norm * norm * (3 - 2 * norm);
+
+        const addedRadius = factor * 2.8;
+        targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
+        targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
+
+        const angle = Math.atan2(dy, dx);
+        const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
+        const pushAmount = factor * 12;
+
+        targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
+        targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
+      }
+
+      d.x += (targetX - d.x) * 0.12;
+      d.y += (targetY - d.y) * 0.12;
+      d.r += (targetR - d.r) * 0.12;
+      d.opacity += (targetOpacity - d.opacity) * 0.12;
+
+      let color;
+      if (d.colorType === 'threat') {
+        color = `rgba(255, 42, 42, ${d.opacity})`;
+      } else if (d.colorType === 'suspicious') {
+        color = `rgba(255, 179, 0, ${d.opacity})`;
+      } else {
+        color = `rgba(0, 229, 255, ${d.opacity})`;
+      }
+
+      const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (d.colorType === 'threat' || finalRadius > 3.2) {
+        ctx.shadowBlur = finalRadius * 2;
+        ctx.shadowColor = color;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  initGrid();
+  requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
