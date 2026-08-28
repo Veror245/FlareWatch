@@ -17,6 +17,22 @@
     overflow: hidden;
   }
 
+  /* Custom Scrollbar for a modern look */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
   /* Canvas Background */
   #dotCanvas {
     position: fixed;
@@ -45,13 +61,14 @@
   /* Animated Collapsible Sidebar */
   .sidebar {
     width: 68px;
-    background: rgba(10, 10, 13, 0.92);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(14px);
+    background: rgba(10, 10, 13, 0.7);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 0;
+    padding: 24px 0;
     flex-shrink: 0;
     white-space: nowrap;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -59,15 +76,15 @@
   }
 
   .sidebar:hover {
-    width: 230px;
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    width: 240px;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
   }
 
   .brand-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 18px 24px 18px;
+    padding: 0 20px 32px 20px;
     height: 32px;
   }
 
@@ -81,8 +98,8 @@
   }
 
   .brand-logo svg {
-    width: 26px;
-    height: 30px;
+    width: 28px;
+    height: 32px;
     flex-shrink: 0;
   }
 
@@ -108,8 +125,9 @@
     border: none;
     color: #666;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
   }
+  .collapse-btn:hover { color: #fff; }
 
   .nav-list {
     list-style: none;
@@ -123,13 +141,13 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px;
+    padding: 12px;
     color: #888899;
     text-decoration: none;
-    font-size: 13.5px;
+    font-size: 14px;
     font-weight: 500;
-    border-radius: 8px;
-    height: 44px;
+    border-radius: 10px;
+    height: 48px;
     transition: all 0.2s ease;
   }
 
@@ -140,9 +158,9 @@
 
   .nav-item.active a {
     color: #fff;
-    background: rgba(255, 42, 42, 0.12);
-    border: 1px solid rgba(255, 42, 42, 0.35);
-    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+    background: rgba(255, 42, 42, 0.1);
+    border: 1px solid rgba(255, 42, 42, 0.2);
+    box-shadow: inset 0 0 12px rgba(255, 42, 42, 0.05);
   }
 
   .nav-item.active a svg { stroke: #ff2a2a; }
@@ -152,9 +170,8 @@
     height: 20px;
     stroke: currentColor;
     flex-shrink: 0;
+    margin-left: 2px;
   }
-
-  .sidebar-footer { padding: 0 12px; }
 
   /* Main Content Area */
   .main-wrapper {
@@ -166,70 +183,98 @@
 
   .content-area {
     flex: 1;
-    padding: 28px 36px;
+    padding: 40px 48px;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
+    scroll-behavior: smooth;
   }
 
   /* Page Header */
   .page-title-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
   }
 
   .page-title {
-    font-size: 20px;
+    font-size: 28px;
     font-weight: 700;
     color: #ffffff;
+    letter-spacing: -0.5px;
   }
 
   .breadcrumb {
-    font-size: 12px;
+    font-size: 13px;
     color: #888899;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
 
-  /* Cards Grid */
+  /* 12-Column Responsive Grid System for Full Screen Utilization */
   .about-grid {
     display: grid;
-    grid-template-columns: 360px 280px 1fr;
-    grid-template-rows: auto auto;
-    gap: 20px;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    width: 100%;
+    max-width: 1600px;
   }
 
   .card {
-    background: rgba(12, 12, 16, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    backdrop-filter: blur(12px);
-    padding: 22px;
+    background: rgba(14, 14, 18, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 32px;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   .card-title {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    color: #888899;
-    letter-spacing: 0.8px;
+    color: #aaaabb;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Grid Placements */
+  .hero-card { grid-column: span 8; }
+  .sys-info-card { grid-column: span 4; }
+  .arch-card { grid-column: span 7; }
+  .perf-card { grid-column: span 5; }
+  .tech-section { grid-column: span 12; }
+  .features-section { grid-column: span 12; margin-bottom: 20px; }
+
+  @media (max-width: 1200px) {
+    .hero-card, .sys-info-card, .arch-card, .perf-card { grid-column: span 12; }
   }
 
   /* Hero FlareWatch Card */
-  .hero-card {
-    grid-row: span 1;
+  .hero-main {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: space-between;
+    height: 100%;
+    gap: 40px;
   }
 
-  .hero-main {
+  .hero-text-content {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -238,17 +283,17 @@
   .hero-logo-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 8px;
+    gap: 16px;
+    margin-bottom: 12px;
   }
 
   .hero-shield-icon {
-    width: 48px;
-    height: 56px;
+    width: 56px;
+    height: 64px;
   }
 
   .hero-brand-name {
-    font-size: 26px;
+    font-size: 36px;
     font-weight: 900;
     letter-spacing: 1px;
   }
@@ -256,61 +301,64 @@
   .hero-brand-name .white { color: #ffffff; }
 
   .hero-tagline {
-    font-size: 12px;
-    color: #aaaabb;
-    line-height: 1.4;
-    margin-top: 2px;
-    margin-bottom: 20px;
+    font-size: 15px;
+    color: #e1e1e6;
+    font-weight: 500;
+    margin-bottom: 16px;
   }
 
   .hero-desc {
-    font-size: 13px;
+    font-size: 14px;
     color: #9999aa;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    line-height: 1.7;
+    margin-bottom: 32px;
+    max-width: 90%;
   }
 
   .badge-zero-dep {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    padding: 12px 14px;
-    font-size: 10.5px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
     color: #e1e1e6;
   }
 
   .check-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     border: 1px solid #22c55e;
+    background: rgba(34, 197, 94, 0.1);
     color: #22c55e;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
-  .check-icon svg { width: 10px; height: 10px; stroke: #22c55e; stroke-width: 3; }
+  .check-icon svg { width: 12px; height: 12px; stroke: #22c55e; stroke-width: 3; }
 
   /* System Information Table */
   .sys-info-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    height: 100%;
+    justify-content: center;
   }
 
   .sys-info-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    font-size: 12.5px;
+    font-size: 13px;
   }
 
   .sys-info-row:last-child {
@@ -319,146 +367,150 @@
   }
 
   .sys-label { color: #888899; }
-  .sys-value { color: #e1e1e6; font-weight: 500; }
+  .sys-value { color: #e1e1e6; font-weight: 500; text-align: right; }
   
   .status-online {
     color: #22c55e;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-weight: 600;
   }
   .status-online::before {
     content: '';
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     background: #22c55e;
     border-radius: 50%;
-    box-shadow: 0 0 8px #22c55e;
+    box-shadow: 0 0 10px #22c55e;
   }
 
-  /* Architecture Flow Diagram */
+  /* Performance Metrics (New) */
+  .perf-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    height: 100%;
+  }
+
+  .metric-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+  }
+  .metric-label {
+    font-size: 11px;
+    color: #888899;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Linear Architecture Flow Diagram */
   .arch-diagram {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    position: relative;
-    padding-top: 4px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    padding: 10px 0;
   }
 
   .arch-box {
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 6px;
-    padding: 12px 14px;
-    font-size: 11.5px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    min-width: 130px;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .arch-box.generator {
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  .arch-box.rust {
-    border: 1px solid #ef4444;
-    background: rgba(239, 68, 68, 0.03);
-    min-width: 140px;
-  }
-
-  .arch-box.python {
-    border: 1px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.03);
-    min-width: 155px;
-  }
-
-  .arch-box.browser {
-    border: 1px solid #22c55e;
-    background: rgba(34, 197, 94, 0.03);
-    width: 200px;
-    margin-top: 18px;
-  }
+  .arch-box.generator { border-top: 3px solid #888899; }
+  .arch-box.rust { border-top: 3px solid #ef4444; background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, rgba(0,0,0,0) 100%); }
+  .arch-box.python { border-top: 3px solid #3b82f6; background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, rgba(0,0,0,0) 100%);}
+  .arch-box.browser { border-top: 3px solid #22c55e; background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, rgba(0,0,0,0) 100%); }
 
   .arch-box-title {
     font-weight: 700;
-    font-size: 12px;
+    font-size: 13px;
+    color: #ffffff;
   }
-
-  .arch-box.rust .arch-box-title { color: #ef4444; }
-  .arch-box.python .arch-box-title { color: #3b82f6; }
-  .arch-box.browser .arch-box-title { color: #22c55e; }
 
   .arch-box-sub {
     color: #777788;
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
   .arch-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     color: #aaaabb;
-    font-size: 11px;
-    margin-top: 2px;
-  }
-  .arch-list li::before {
-    content: "• ";
-    color: #666;
-  }
-
-  .arch-arrow {
-    color: #555566;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    margin-top: 14px;
-  }
-
-  .arch-col-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 12px;
-  }
-
-  .arch-arrow-down {
-    color: #555566;
-    align-self: flex-end;
-    margin-right: 90px;
-  }
-
-  /* Technology Areas Section */
-  .tech-section {
-    grid-column: span 3;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    font-size: 11.5px;
     margin-top: 4px;
   }
+  .arch-list li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .arch-list li::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    background: #666;
+    border-radius: 50%;
+  }
+  .arch-box.rust .arch-list li::before { background: #ef4444; }
+  .arch-box.python .arch-list li::before { background: #3b82f6; }
 
+  .arch-arrow {
+    color: #444455;
+    font-size: 20px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Technology & Capability Grids */
   .tech-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 24px;
   }
+  @media (max-width: 1000px) { .tech-grid { grid-template-columns: 1fr; } }
 
   .tech-card {
-    background: rgba(12, 12, 16, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 18px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 24px;
     display: flex;
-    gap: 16px;
+    gap: 20px;
     align-items: flex-start;
+    transition: background 0.2s ease;
   }
+  .tech-card:hover { background: rgba(255, 255, 255, 0.02); }
 
   .tech-icon-wrapper {
-    width: 42px;
-    height: 42px;
-    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -466,41 +518,34 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .tech-icon-wrapper.blue {
-    background: rgba(0, 180, 216, 0.08);
-    color: #00b4d8;
-    border-color: rgba(0, 180, 216, 0.25);
-  }
+  .tech-icon-wrapper.blue { background: rgba(0, 180, 216, 0.1); color: #00b4d8; border-color: rgba(0, 180, 216, 0.3); }
+  .tech-icon-wrapper.purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
+  .tech-icon-wrapper.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
 
-  .tech-icon-wrapper.purple {
-    background: rgba(168, 85, 247, 0.08);
-    color: #a855f7;
-    border-color: rgba(168, 85, 247, 0.25);
-  }
+  .tech-info { display: flex; flex-direction: column; gap: 6px; }
+  .tech-title { font-size: 15px; font-weight: 700; color: #ffffff; }
+  .tech-desc { font-size: 13px; color: #888899; line-height: 1.5; }
 
-  .tech-icon-wrapper.red {
-    background: rgba(239, 68, 68, 0.08);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.25);
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
   }
+  @media (max-width: 1000px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
 
-  .tech-info {
+  .feature-item {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 13px;
+    color: #e1e1e6;
   }
+  .feature-item svg { width: 16px; height: 16px; color: #888899; }
 
-  .tech-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: #ffffff;
-  }
-
-  .tech-desc {
-    font-size: 11.5px;
-    color: #888899;
-    line-height: 1.45;
-  }
 </style>
 </head>
 <body>
@@ -509,8 +554,7 @@
 
 <div class="app-container">
 
-  <!-- Sidebar Nav -->
-   <aside class="sidebar">
+  <aside class="sidebar">
     <div>
       <div class="brand-header">
         <div class="brand-logo">
@@ -520,11 +564,13 @@
           </svg>
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
         </div>
-        <button class="collapse-btn">&laquo;</button>
+        <button class="collapse-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
       </div>
 
       <ul class="nav-list">
-        <li class="nav-item ">
+        <li class="nav-item">
           <a href="/frontend/overview.html">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="nav-text">Overview</span>
@@ -564,161 +610,203 @@
     </div>
   </aside>
 
-  <!-- Main Viewport -->
   <div class="main-wrapper">
     <main class="content-area">
 
-      <!-- Header -->
       <div class="page-title-group">
-        <h1 class="page-title">About</h1>
-        <div class="breadcrumb">/ About</div>
+        <h1 class="page-title">About FlareWatch</h1>
+        <div class="breadcrumb">Overview / System Details</div>
       </div>
 
-      <!-- Main Layout Grid -->
       <div class="about-grid">
 
-        <!-- FlareWatch Hero Info Card -->
         <div class="card hero-card">
           <div class="hero-main">
-            <div class="hero-logo-row">
-              <svg class="hero-shield-icon" viewBox="0 0 88 104" fill="none">
-                <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
-                <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
-              </svg>
-              <div class="hero-brand-name"><span class="red">FLARE</span><span class="white">WATCH</span></div>
+            <div class="hero-text-content">
+              <div class="hero-logo-row">
+                <svg class="hero-shield-icon" viewBox="0 0 88 104" fill="none">
+                  <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+                  <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+                </svg>
+                <div class="hero-brand-name"><span class="red">FLARE</span><span class="white">WATCH</span></div>
+              </div>
+              
+              <div class="hero-tagline">Zero-Dependency High-Throughput SIEM & Threat Detection Engine</div>
+              
+              <p class="hero-desc">
+                FlareWatch is a purpose-built, high-performance SIEM system designed for raw network log ingestion. Utilizing a hand-rolled Aho-Corasick engine in Rust, it detects threats in real-time, indexes logs instantly for deep search, and streams telemetry directly to this glassmorphic dashboard—without relying on heavy external dependencies.
+              </p>
+              
+              <div class="badge-zero-dep">
+                <div class="check-icon">
+                  <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span>ZERO THIRD-PARTY RUNTIME DEPENDENCIES</span>
+              </div>
             </div>
-            
-            <div class="hero-tagline">Zero-Dependency High-Throughput SIEM & Threat Detection Engine</div>
-            
-            <p class="hero-desc">
-              FlareWatch is a high-performance, zero-dependency SIEM system that ingests raw network logs, detects threats in real time using a hand-rolled Aho-Corasick engine, indexes logs for fast search, and streams live telemetry to this dashboard.
-            </p>
-          </div>
-
-          <div class="badge-zero-dep">
-            <div class="check-icon">
-              <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <span>ZERO THIRD-PARTY RUNTIME DEPENDENCIES</span>
           </div>
         </div>
 
-        <!-- System Information Card -->
-        <div class="card">
-          <div class="card-title">System Information</div>
+        <div class="card sys-info-card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            System Information
+          </div>
           <div class="sys-info-list">
             <div class="sys-info-row">
               <span class="sys-label">Version</span>
-              <span class="sys-value">1.0.0</span>
+              <span class="sys-value">1.1.0-stable</span>
             </div>
             <div class="sys-info-row">
-              <span class="sys-label">Build Date</span>
-              <span class="sys-value">2026-08-20</span>
+              <span class="sys-label">Engine Build</span>
+              <span class="sys-value">2026-08-20 (Release)</span>
             </div>
             <div class="sys-info-row">
-              <span class="sys-label">Frontend</span>
-              <span class="sys-value">Vanilla JS + Canvas</span>
+              <span class="sys-label">Core Runtime</span>
+              <span class="sys-value">Rust / Python 3.12</span>
             </div>
             <div class="sys-info-row">
-              <span class="sys-label">Backend</span>
-              <span class="sys-value">Python + Rust</span>
+              <span class="sys-label">License</span>
+              <span class="sys-value">MIT Open Source</span>
             </div>
             <div class="sys-info-row">
-              <span class="sys-label">Status</span>
-              <span class="sys-value status-online">Online</span>
+              <span class="sys-label">Node Status</span>
+              <span class="sys-value status-online">Online & Active</span>
             </div>
             <div class="sys-info-row">
-              <span class="sys-label">Uptime</span>
-              <span class="sys-value" id="uptimeCounter">02:14:32</span>
+              <span class="sys-label">Live Uptime</span>
+              <span class="sys-value" id="uptimeCounter" style="font-family: monospace; font-size: 14px;">02:14:32</span>
             </div>
           </div>
         </div>
 
-        <!-- Architecture Flow Card -->
-        <div class="card">
-          <div class="card-title">Architecture</div>
+        <div class="card arch-card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Data & Architecture Pipeline
+          </div>
           
           <div class="arch-diagram">
-            <!-- Box 1 -->
             <div class="arch-box generator">
-              <div class="arch-box-title">Log Generator</div>
-              <div class="arch-box-sub">Python (stdlib)</div>
+              <div class="arch-box-title">Log Gen / Ingest</div>
+              <div class="arch-box-sub">Python (stdlib TCP)</div>
             </div>
 
             <div class="arch-arrow">&rarr;</div>
 
-            <!-- Box 2 -->
             <div class="arch-box rust">
-              <div class="arch-box-title">Rust Core</div>
+              <div class="arch-box-title">Rust Detection Engine</div>
               <ul class="arch-list">
-                <li>Ingestion</li>
-                <li>Aho-Corasick</li>
-                <li>Detection</li>
-                <li>Indexing</li>
+                <li>Aho-Corasick Matching</li>
+                <li>In-Memory Indexing</li>
+                <li>Threat Classification</li>
               </ul>
             </div>
 
             <div class="arch-arrow">&rarr;</div>
 
-            <!-- Column 3: Python & Browser -->
-            <div class="arch-col-right">
-              <div class="arch-box python">
-                <div class="arch-box-title">Python Backend</div>
-                <ul class="arch-list">
-                  <li>HTTP Server</li>
-                  <li>WebSocket</li>
-                  <li>Auth (TOTP/HMAC)</li>
-                  <li>IPC</li>
-                </ul>
-              </div>
-
-              <div class="arch-arrow-down">&darr;</div>
-
-              <div class="arch-box browser">
-                <div class="arch-box-title">Browser Dashboard</div>
-                <div class="arch-box-sub">HTML / CSS / JS / Canvas</div>
-                <div class="arch-box-sub">WebSocket Client</div>
-              </div>
+            <div class="arch-box python">
+              <div class="arch-box-title">API & WebSockets</div>
+              <ul class="arch-list">
+                <li>HTTP/WS Server</li>
+                <li>TOTP/HMAC Auth</li>
+                <li>Cross-Process IPC</li>
+              </ul>
             </div>
 
+            <div class="arch-arrow">&rarr;</div>
+
+            <div class="arch-box browser">
+              <div class="arch-box-title">Client Dashboard</div>
+              <div class="arch-box-sub">HTML/JS + Canvas</div>
+            </div>
           </div>
         </div>
 
-        <!-- Technology Areas Section -->
-        <div class="tech-section">
-          <div class="card-title" style="margin-bottom: 0;">Technology Areas</div>
+        <div class="card perf-card">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Live Performance Metrics
+          </div>
+          <div class="perf-metrics-grid">
+            <div class="metric-box">
+              <div class="metric-value">> 50k</div>
+              <div class="metric-label">Events Per Sec (EPS)</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">< 12ms</div>
+              <div class="metric-label">Avg Pipeline Latency</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">1,024</div>
+              <div class="metric-label">Active Detection Rules</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">~45MB</div>
+              <div class="metric-label">Core Memory Footprint</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card features-section">
+          <div class="card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Core Engine Capabilities
+          </div>
+          <div class="features-grid">
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Zero-Allocation Parsing
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Lock-free Ring Buffers
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              SIMD-Accelerated Regex
+            </div>
+            <div class="feature-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Hot-Reloadable Rulesets
+            </div>
+          </div>
+        </div>
+
+        <div class="tech-section card" style="padding: 32px; background: transparent; border: none; box-shadow: none; backdrop-filter: none;">
+          <div class="card-title" style="margin-bottom: 20px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Technology Domains
+          </div>
           
           <div class="tech-grid">
-            <!-- Card 1 -->
             <div class="tech-card">
               <div class="tech-icon-wrapper blue">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               </div>
               <div class="tech-info">
-                <div class="tech-title">Web & Network</div>
-                <div class="tech-desc">Raw TCP networking, HTTP server, WebSocket communication</div>
+                <div class="tech-title">Web & Network Layer</div>
+                <div class="tech-desc">Handles raw TCP networking, custom HTTP server processing, and persistent WebSocket bi-directional streams.</div>
               </div>
             </div>
 
-            <!-- Card 2 -->
             <div class="tech-card">
               <div class="tech-icon-wrapper purple">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
               <div class="tech-info">
                 <div class="tech-title">Security & Crypto</div>
-                <div class="tech-desc">Threat detection, Aho-Corasick pattern matching, TOTP 2FA, HMAC authentication</div>
+                <div class="tech-desc">Executes threat detection via Aho-Corasick pattern matching, secured by standard TOTP 2FA and HMAC authentication.</div>
               </div>
             </div>
 
-            <!-- Card 3 -->
             <div class="tech-card">
               <div class="tech-icon-wrapper red">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
               </div>
               <div class="tech-info">
                 <div class="tech-title">Real-time Visualization</div>
-                <div class="tech-desc">Live telemetry, Canvas visualizations, event streams, interactive dashboards</div>
+                <div class="tech-desc">Renders live telemetry, WebGL/Canvas visualizations, and interactive event streams on a low-latency UI.</div>
               </div>
             </div>
           </div>

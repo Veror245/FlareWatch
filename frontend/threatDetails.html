@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlareWatch - Threat Details</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #050507;
+    color: #e1e1e6;
+    overflow: hidden;
+  }
+
+  /* Full Screen Canvas for Interactive Dots */
+  #dotCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* App Layout Container */
+  .app-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Animated Collapsible Sidebar */
+  .sidebar {
+    width: 68px; /* Collapsed width */
+    background: rgba(10, 10, 13, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+  }
+
+  /* Hover to Expand Sidebar */
+  .sidebar:hover {
+    width: 230px; /* Expanded width */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 24px 18px;
+    height: 32px;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .brand-logo svg {
+    width: 26px;
+    height: 30px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo .red { color: #ff2a2a; }
+  .brand-logo .white { color: #ffffff; }
+
+  /* Animated Text Hiding/Showing */
+  .brand-text,
+  .nav-text,
+  .status-text,
+  .collapse-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .sidebar:hover .brand-text,
+  .sidebar:hover .nav-text,
+  .sidebar:hover .status-text,
+  .sidebar:hover .collapse-btn {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.08s;
+  }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .collapse-btn:hover { color: #aaa; }
+
+  .nav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px;
+    color: #888899;
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: 8px;
+    height: 44px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-item.active a {
+    color: #fff;
+    background: rgba(255, 42, 42, 0.12);
+    border: 1px solid rgba(255, 42, 42, 0.35);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+  }
+
+  .nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 0 12px;
+  }
+
+  .info-icon-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .info-icon-btn:hover { color: #fff; }
+
+  /* Main Viewport */
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Content Dashboard Area */
+  .content-area {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Page Header Row */
+  .page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: #888899;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e1e1e6;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Threat Hero Section */
+  .threat-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .threat-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .shield-icon {
+    width: 48px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 42, 42, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 42, 42, 0.3);
+  }
+  
+  .shield-icon svg {
+    width: 32px;
+    height: 38px;
+  }
+
+  .threat-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .severity-badge {
+    background: rgba(255, 42, 42, 0.1);
+    color: #ff3b3b;
+    border: 1px solid #ff3b3b;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
+    border-radius: 12px;
+  }
+
+  .threat-titles h2 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+
+  .threat-time {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .time-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #888899;
+  }
+
+  .time-val {
+    font-family: monospace;
+    font-size: 14px;
+    color: #e1e1e6;
+  }
+
+  /* Metrics Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+
+  .stat-box {
+    background: rgba(12, 12, 16, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+  }
+
+  .stat-lbl {
+    font-size: 11px;
+    color: #888899;
+    font-weight: 600;
+  }
+
+  .stat-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  /* Details Grid */
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .card {
+    background: rgba(12, 12, 16, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #e1e1e6;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  /* Request Details Styles */
+  .req-field {
+    margin-bottom: 18px;
+  }
+  
+  .req-field:last-child { margin-bottom: 0; }
+
+  .req-label {
+    display: block;
+    font-size: 12px;
+    color: #888899;
+    margin-bottom: 6px;
+  }
+
+  .req-value {
+    font-size: 13.5px;
+    color: #cccccc;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  .inline-fields {
+    display: flex;
+    gap: 40px;
+    margin-top: 24px;
+  }
+
+  /* Right Column Stack */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .raw-log-pre {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 16px;
+    color: #ff3b3b;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid rgba(255, 42, 42, 0.15);
+  }
+
+  .detection-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: y 20px;
+    row-gap: 20px;
+  }
+  
+  .det-field { display: flex; flex-direction: column; gap: 6px; }
+  .det-label { font-size: 11px; color: #888899; }
+  .det-value { font-size: 13px; color: #cccccc; }
+
+  @media (max-width: 1100px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .details-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Page Transition Animation */
+  .app-container {
+    animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(12px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Full Screen Dynamic Interactive Canvas -->
+<canvas id="dotCanvas"></canvas>
+
+<div class="app-container">
+
+  <!-- Hover-Expandable Animated Sidebar -->
+ <aside class="sidebar">
+    <div>
+      <div class="brand-header">
+        <div class="brand-logo">
+          <svg viewBox="0 0 88 104" fill="none">
+            <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+            <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+          </svg>
+          <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
+        </div>
+        <button class="collapse-btn">&laquo;</button>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="/frontend/overview.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="nav-text">Overview</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/live-events.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span class="nav-text">Live Events</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/search-logs.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="nav-text">Search Logs</span>
+          </a>
+        </li>
+        <li class="nav-item active">
+          <a href="/frontend/threatDetails.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="nav-text">Threats</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/frontend/rules.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="nav-text">Rules</span>
+          </a>
+        </li>
+        <li class="nav-item ">
+          <a href="/frontend/about.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="nav-text">About</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Main Section -->
+  <div class="main-wrapper">
+    <main class="content-area">
+
+      <!-- Breadcrumb & Back Row -->
+      <div class="page-header-row">
+        <div>
+          <h1 class="page-title">Threat Details</h1>
+          <div class="breadcrumb">/ Live Events / Threat Details</div>
+        </div>
+        <button class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back to Events
+        </button>
+      </div>
+
+      <!-- Threat Hero Header -->
+      <div class="threat-hero">
+        <div class="threat-hero-left">
+          <div class="shield-icon">
+            <svg viewBox="0 0 88 104" fill="none">
+              <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+              <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+            </svg>
+          </div>
+          <div class="threat-titles">
+            <span class="severity-badge">HIGH SEVERITY</span>
+            <h2>SQL Injection Detected</h2>
+          </div>
+        </div>
+        <div class="threat-time">
+          <div class="time-label">DETECTED AT</div>
+          <div class="time-val">2026-08-20 02:41:10</div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Row -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-lbl">Source IP</span>
+          <span class="stat-val" style="font-family: monospace;">192.168.1.10</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Category</span>
+          <span class="stat-val">SQL Injection</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Pattern Matched</span>
+          <span class="stat-val">union select</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Method</span>
+          <span class="stat-val">GET</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Endpoint</span>
+          <span class="stat-val" style="font-family: monospace;">/search</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">User</span>
+          <span class="stat-val">admin</span>
+        </div>
+      </div>
+
+      <!-- Details Layout -->
+      <div class="details-grid">
+        
+        <!-- Left Col: Request Details -->
+        <div class="card">
+          <div class="card-title">REQUEST DETAILS</div>
+          
+          <div class="req-field">
+            <span class="req-label">Request URL</span>
+            <span class="req-value">GET /search?id=1 union select username,password from users</span>
+          </div>
+
+          <div class="req-field">
+            <span class="req-label">User Agent</span>
+            <span class="req-value">Mozilla/5.0 (Windows NT 10.0; Win64; x64)</span>
+          </div>
+
+          <div class="req-field">
+            <span class="req-label">Referer</span>
+            <span class="req-value">http://192.168.1.10/search</span>
+          </div>
+
+          <div class="req-field">
+            <span class="req-label">Content Type</span>
+            <span class="req-value">application/x-www-form-urlencoded</span>
+          </div>
+
+          <div class="inline-fields">
+            <div class="req-field">
+              <span class="req-label">Response Code</span>
+              <span class="req-value" style="font-size: 15px; font-weight: 700;">200</span>
+            </div>
+            <div class="req-field">
+              <span class="req-label">Response Size</span>
+              <span class="req-value" style="font-size: 15px; font-weight: 700;">1.25 KB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Col: Raw Log & Detection Info -->
+        <div class="right-col">
+          
+          <div class="card">
+            <div class="card-title">RAW LOG</div>
+            <div class="raw-log-pre">2026-08-20T02:41:10Z [192.168.1.10] GET /search?id=1 union select 
+username,password from users HTTP/1.1
+Host: example.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+Accept: */*
+Connection: keep-alive</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">DETECTION INFO</div>
+            <div class="detection-info-grid">
+              <div class="det-field">
+                <span class="det-label">Engine</span>
+                <span class="det-value">Aho-Corasick</span>
+              </div>
+              <div class="det-field">
+                <span class="det-label">Rule ID</span>
+                <span class="det-value">1</span>
+              </div>
+              <div class="det-field">
+                <span class="det-label">Rule Name</span>
+                <span class="det-value">union select</span>
+              </div>
+              <div class="det-field">
+                <span class="det-label">Matched</span>
+                <span class="det-value" style="font-family: monospace;">Regex (?i)union\s+select</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Full Screen Interactive Canvas Grid Engine (Kept smooth & wavy as requested)
+  const canvas = document.getElementById('dotCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let dots = [];
+  const spacing = 22;             
+  const baseRadius = 0.7;        
+  const hoverRadius = 140;        
+  const MAX_DOT_RADIUS = 4.5;     
+
+  let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+  function initGrid() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    dots = [];
+    const cols = Math.ceil(width / spacing) + 1;
+    const rows = Math.ceil(height / spacing) + 1;
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const baseX = i * spacing;
+        const baseY = j * spacing;
+        
+        const isThreat = Math.random() < 0.012;
+        const isSuspicious = !isThreat && Math.random() < 0.018;
+
+        const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
+
+        dots.push({
+          baseX,
+          baseY,
+          x: baseX,
+          y: baseY,
+          baseR: initialR,
+          r: initialR,
+          colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
+          opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', initGrid);
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.targetX = -1000;
+    mouse.targetY = -1000;
+  });
+
+  function render(time) {
+    ctx.clearRect(0, 0, width, height);
+
+    mouse.x += (mouse.targetX - mouse.x) * 0.1;
+    mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+    const t = time * 0.0025;
+
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+
+      const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
+      const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
+
+      const dx = mouse.x - d.baseX;
+      const dy = mouse.y - d.baseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let targetX = d.baseX + waveX;
+      let targetY = d.baseY + waveY;
+      let targetR = d.baseR;
+      let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
+
+      if (dist < hoverRadius) {
+        const norm = 1 - dist / hoverRadius;
+        const factor = norm * norm * (3 - 2 * norm);
+
+        const addedRadius = factor * 2.8;
+        targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
+        targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
+
+        const angle = Math.atan2(dy, dx);
+        const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
+        const pushAmount = factor * 12;
+
+        targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
+        targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
+      }
+
+      d.x += (targetX - d.x) * 0.12;
+      d.y += (targetY - d.y) * 0.12;
+      d.r += (targetR - d.r) * 0.12;
+      d.opacity += (targetOpacity - d.opacity) * 0.12;
+
+      let color;
+      if (d.colorType === 'threat') {
+        color = `rgba(255, 42, 42, ${d.opacity})`;
+      } else if (d.colorType === 'suspicious') {
+        color = `rgba(255, 179, 0, ${d.opacity})`;
+      } else {
+        color = `rgba(0, 229, 255, ${d.opacity})`;
+      }
+
+      const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (d.colorType === 'threat' || finalRadius > 3.2) {
+        ctx.shadowBlur = finalRadius * 2;
+        ctx.shadowColor = color;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  initGrid();
+  requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
