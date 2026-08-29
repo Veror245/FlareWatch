@@ -7,6 +7,8 @@ use std::{
 use crate::aho::AhoCorasick;
 use std::collections::HashSet;
 
+use std::time;
+
 #[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
 enum ThreatType {
     SQLI,
@@ -67,7 +69,10 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
             let addr = stream.peer_addr()?;
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
-            handle_client(&mut stream, ac, threat_table)?;
+            let t1 = time::Instant::now();
+            let processed = handle_client(&mut stream, ac, threat_table);
+            let elapsed = t1.elapsed().as_secs_f64();
+            println!("logs/sec: {:?}", processed as f64 / elapsed);
 
             println!("disconnected from {addr}");
         } else {
@@ -82,15 +87,17 @@ fn handle_client(
     stream: &mut TcpStream,
     ac: Arc<AhoCorasick>,
     threat_table: [ThreatType; 208],
-) -> io::Result<()> {
+) -> u32 {
     let mut lenbuf = [0u8; 4];
     let mut reqlen;
+    let mut processed: u32 = 0;
 
     loop {
         if let Ok(()) = stream.read_exact(&mut lenbuf) {
             reqlen = u32::from_be_bytes(lenbuf);
             let mut reqbuf: Vec<u8> = vec![0u8; reqlen as usize];
             if stream.read_exact(&mut reqbuf).is_ok() {
+                processed += 1;
                 let msg_type = reqbuf[0];
                 let iplen = reqbuf[1];
                 let ip = &reqbuf[2..(iplen + 2) as usize];
@@ -109,17 +116,17 @@ fn handle_client(
                         .map(|&id| threat_table[id])
                         .filter(|&t| t != ThreatType::Unknown)
                         .collect();
-                    println!(
-                        "Threats Found in req: {} are {:?}",
-                        String::from_utf8_lossy(msg),
-                        threats
-                    );
+                    // println!(
+                    //     "Threats Found in req: {} are {:?}",
+                    //     String::from_utf8_lossy(msg),
+                    //     threats
+                    // );
                 } else {
-                    println!(
-                        "No Threats Found in req: {} are {:?}",
-                        String::from_utf8_lossy(msg),
-                        matches
-                    );
+                    // println!(
+                    //     "No Threats Found in req: {} are {:?}",
+                    //     String::from_utf8_lossy(msg),
+                    //     matches
+                    // );
                 }
             } else {
                 eprintln!("Error at reading msg bytes");
@@ -131,5 +138,5 @@ fn handle_client(
         }
     }
 
-    Ok(())
+    processed
 }
