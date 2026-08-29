@@ -95,7 +95,20 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
             );
             let elapsed = t1.elapsed().as_secs_f64();
             println!("logs/sec: {:?}", processed as f64 / elapsed);
+            let logsec = (processed as f64 / elapsed) as u32;
             println!("Total Threats: {}", threats);
+            let mut payload = Vec::new();
+
+            payload.extend_from_slice(&(processed.to_be_bytes()));
+            payload.extend_from_slice(&(threats.to_be_bytes()));
+            payload.extend_from_slice(&(logsec.to_be_bytes()));
+
+            let totalen = payload.len() + 1;
+            let mut frame = Vec::with_capacity(totalen);
+
+            frame.extend_from_slice(&((totalen as u32).to_be_bytes()));
+            frame.push(3);
+            frame.extend_from_slice(&payload);
 
             println!("disconnected from {addr}");
         } else {
@@ -112,11 +125,13 @@ fn handle_client(
     threat_table: [ThreatType; 212],
     downstream_backend: &mut TcpStream,
     downstream_analysis: &mut TcpStream,
-) -> (u32, u32) {
+) -> (u64, u64) {
     let mut lenbuf = [0u8; 4];
     let mut reqlen;
-    let mut processed: u32 = 0;
-    let mut threats_count: u32 = 0;
+    let mut processed: u64 = 0;
+    let mut threats_count: u64 = 0;
+    let mut t1 = time::Instant::now();
+    let tottime = time::Instant::now();
 
     loop {
         if let Ok(()) = stream.read_exact(&mut lenbuf) {
@@ -202,6 +217,31 @@ fn handle_client(
                     let mut frame = Vec::with_capacity(total_len);
                     frame.extend_from_slice(&(total_len as u32).to_be_bytes());
                     frame.push(2);
+                    frame.extend_from_slice(&payload);
+
+                    if let Err(e) = downstream_backend.write_all(&frame) {
+                        eprintln!("Client Error: {e}");
+                        break;
+                    }
+                }
+                let elapsed = t1.elapsed().as_secs_f64();
+                let totelapsed = tottime.elapsed().as_secs_f64();
+                if elapsed >= 2.00 {
+                    t1 = time::Instant::now();
+                    let logsec = (processed as f64 / totelapsed) as u32;
+                    println!("logs/sec: {:?}", logsec);
+                    println!("Total Threats: {}", threats_count);
+                    let mut payload = Vec::new();
+
+                    payload.extend_from_slice(&(processed.to_be_bytes()));
+                    payload.extend_from_slice(&(threats_count.to_be_bytes()));
+                    payload.extend_from_slice(&(logsec.to_be_bytes()));
+
+                    let totalen = payload.len() + 1;
+                    let mut frame = Vec::with_capacity(totalen);
+
+                    frame.extend_from_slice(&((totalen as u32).to_be_bytes()));
+                    frame.push(3);
                     frame.extend_from_slice(&payload);
 
                     if let Err(e) = downstream_backend.write_all(&frame) {
