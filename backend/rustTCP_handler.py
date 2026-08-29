@@ -655,9 +655,7 @@ def parse_message(message):
 
     elif message_type == TYPE_STATS:
 
-        p= parse_stats(payload)
-        print(p)
-        return p
+        return parse_stats(payload)
     
     else:
 
@@ -720,10 +718,10 @@ def handle_tcp_client(client_socket, client_address):
                 length_bytes
             )[0]
 
-            # print(
-            #     f"[TCP] Message length: "
-            #     f"{message_length}"
-            # )
+            print(
+                 f"[TCP] Message length: "
+                 f"{message_length}"
+             )
 
             # ------------------------------------------------
             # Validate length.
@@ -770,7 +768,7 @@ def handle_tcp_client(client_socket, client_address):
             # EVENT PROCESSING IS NOT IMPLEMENTED YET.
             # ------------------------------------------------
 
-            #print(f"[TCP] Parsed event: {event}")
+            print(f"[TCP] Parsed event: {event}")
 
     except ProtocolError as error:
 
