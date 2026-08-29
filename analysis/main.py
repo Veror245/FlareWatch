@@ -143,8 +143,30 @@ def worker_loop(dev1_client):
         if incident:
             print(f"\nTHREAT DETECTED: {incident['incident_type']} from {incident['IP']}")
             try:
-                outbound_json = json.dumps(incident) + "\n"
-                dev1_client.sendall(outbound_json.encode('utf-8'))
+                # 1. Prepare the payload fields
+                threat_id = incident["threat_id"] # u8[cite: 2]
+                
+                ip_bytes = incident["IP"].encode('utf-8')
+                ip_len = len(ip_bytes) # u8[cite: 2]
+                
+                # Use the 'details' string as the Request payload so Dev 1 can read it
+                req_bytes = incident["details"].encode('utf-8')
+                req_len = len(req_bytes) # u16[cite: 2]
+                
+                # 2. Pack the THREAT payload: [Threat type u8][IP len u8][IP][REQ len u16][REQ][cite: 2]
+                # Format: > (big-endian), B (u8), B (u8), {ip_len}s (string bytes), H (u16), {req_len}s (string bytes)[cite: 2]
+                payload_format = f'>BB{ip_len}sH{req_len}s'
+                payload = struct.pack(payload_format, threat_id, ip_len, ip_bytes, req_len, req_bytes)
+                
+                # 3. Pack the Header: [4-byte length][1-byte type][cite: 2]
+                # Format: > (big-endian), I (u32), B (u8)[cite: 2]
+                msg_type = 1 # THREAT[cite: 2]
+                total_length = len(payload)
+                header = struct.pack('>IB', total_length, msg_type)
+                
+                # 4. Fire the raw bytes down the pipeline
+                dev1_client.sendall(header + payload)
+                
             except BrokenPipeError:
                 print("Dev 1 disconnected unexpectedly.")
                 
