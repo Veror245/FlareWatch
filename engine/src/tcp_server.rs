@@ -1,5 +1,5 @@
 use std::{
-    io::{self, Read},
+    io::{self, Read, Write},
     net::{TcpListener, TcpStream},
     sync::Arc,
 };
@@ -20,11 +20,12 @@ enum ThreatType {
     LDAPInjection,
     XXE,
     HTTPAnomaly,
+    HTTPEvent,
     Unknown,
 }
 
-fn build_id_to_threat_table() -> [ThreatType; 208] {
-    let mut table = [ThreatType::Unknown; 208];
+fn build_id_to_threat_table() -> [ThreatType; 212] {
+    let mut table = [ThreatType::Unknown; 212];
 
     // Fill ranges
     for id in 0..=36 {
@@ -54,6 +55,9 @@ fn build_id_to_threat_table() -> [ThreatType; 208] {
     for id in 198..=207 {
         table[id] = ThreatType::HTTPAnomaly;
     }
+    for id in 208..=211 {
+        table[id] = ThreatType::HTTPEvent;
+    }
 
     table
 }
@@ -61,6 +65,9 @@ fn build_id_to_threat_table() -> [ThreatType; 208] {
 pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
+
+    let mut downstream = TcpStream::connect("127.0.0.1:4002")?;
+    println!("Server is writing to {:?}", downstream.local_addr()?);
 
     let threat_table = build_id_to_threat_table();
 
@@ -70,9 +77,11 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
             let t1 = time::Instant::now();
-            let processed = handle_client(&mut stream, ac, threat_table);
+            let (processed, threats) =
+                handle_client(&mut stream, ac, threat_table, &mut downstream);
             let elapsed = t1.elapsed().as_secs_f64();
             println!("logs/sec: {:?}", processed as f64 / elapsed);
+            println!("Total Threats: {}", threats);
 
             println!("disconnected from {addr}");
         } else {
@@ -86,11 +95,15 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
 fn handle_client(
     stream: &mut TcpStream,
     ac: Arc<AhoCorasick>,
-    threat_table: [ThreatType; 208],
-) -> u32 {
+    threat_table: [ThreatType; 212],
+    downstream: &mut TcpStream,
+) -> (u32, u32) {
     let mut lenbuf = [0u8; 4];
     let mut reqlen;
     let mut processed: u32 = 0;
+    let mut threats_count: u32 = 0;
+
+    let mut payload: Vec<u8> = vec![0u8];
 
     loop {
         if let Ok(()) = stream.read_exact(&mut lenbuf) {
@@ -111,22 +124,34 @@ fn handle_client(
                     .iter()
                     .any(|&id| threat_table[id] != ThreatType::Unknown)
                 {
+                    threats_count += 1;
                     let threats: HashSet<ThreatType> = matches
                         .iter()
                         .map(|&id| threat_table[id])
                         .filter(|&t| t != ThreatType::Unknown)
                         .collect();
-                    // println!(
-                    //     "Threats Found in req: {} are {:?}",
-                    //     String::from_utf8_lossy(msg),
-                    //     threats
-                    // );
+                    if let Some(th) = threats.iter().next() {
+                        let threat_code: u8 = match *th {
+                            ThreatType::SQLI => 0,
+                            ThreatType::XSS => 1,
+                            ThreatType::PathTraversal => 2,
+                            ThreatType::CommandInjection => 3,
+                            ThreatType::SensitiveAccess => 4,
+                            ThreatType::SSRF => 5,
+                            ThreatType::LDAPInjection => 6,
+                            ThreatType::XXE => 7,
+                            ThreatType::HTTPAnomaly => 8,
+                            _ => 255,
+                        };
+                        payload.push(threat_code);
+                    }
+                    payload.push(iplen);
+                    payload.extend_from_slice(ip);
+                    payload.extend_from_slice(&(msglen.to_be_bytes()));
+                    payload.extend_from_slice(msg);
+
+                    let total_len = payload.len();
                 } else {
-                    // println!(
-                    //     "No Threats Found in req: {} are {:?}",
-                    //     String::from_utf8_lossy(msg),
-                    //     matches
-                    // );
                 }
             } else {
                 eprintln!("Error at reading msg bytes");
@@ -138,5 +163,5 @@ fn handle_client(
         }
     }
 
-    processed
+    (processed, threats_count)
 }
