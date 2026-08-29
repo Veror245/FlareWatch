@@ -3,6 +3,8 @@ use std::{
     net::TcpListener,
 };
 
+use super::aho;
+
 pub fn server_main() -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
@@ -37,6 +39,7 @@ pub fn server_main() -> io::Result<()> {
                             std::str::from_utf8(ip),
                             std::str::from_utf8(msg)
                         );
+                        let patterns = aho::AhoCorasick::search(&self, msg);
                     } else {
                         eprintln!("Error at reading msg bytes");
                         break;
