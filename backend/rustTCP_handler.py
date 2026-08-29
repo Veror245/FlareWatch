@@ -124,12 +124,16 @@ TYPE_STATS = 3
 # ============================================================
 
 THREAT_TYPES = {
-    0: "SQL_INJECTION",
+    0: "SQLI",
     1: "XSS",
-    2: "BRUTE_FORCE",
-    3: "PATH_TRAVERSAL",
+    2: "PATH_TRAVERSAL",
+    3: "COMMAND_INJECTION",
+    4: "SENSITIVE_ACCESS",
+    5: "SSRF",
+    6: "LDAP_INJECTION",
+    7: "XXE",
+    8: "HTTP_ANOMALY",
 }
-
 
 # ============================================================
 # PROTOCOL EXCEPTION
