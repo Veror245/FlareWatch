@@ -1,826 +1,1455 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>FlareWatch - Threat Intelligence Dashboard</title>
+
 <link rel="icon" type="image/x-icon" href="./icon/icon.png">
+
 <style>
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
+
     width: 100%;
+
     height: 100%;
+
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
     background: #050507;
+
     color: #e1e1e6;
+
     overflow: hidden;
+
   }
 
   /* Full Screen Canvas for Interactive Dots */
+
   #dotCanvas {
+
     position: fixed;
+
     inset: 0;
+
     width: 100vw;
+
     height: 100vh;
+
     pointer-events: none;
+
     z-index: 0;
+
   }
 
   /* App Layout Container */
+
   .app-container {
+
     position: relative;
+
     z-index: 1;
+
     display: flex;
+
     width: 100vw;
+
     height: 100vh;
+
   }
 
   /* Animated Collapsible Sidebar */
+
   .sidebar {
+
     width: 68px; /* Collapsed width */
+
     background: rgba(10, 10, 13, 0.9);
+
     border-right: 1px solid rgba(255, 255, 255, 0.08);
+
     backdrop-filter: blur(14px);
+
     display: flex;
+
     flex-direction: column;
+
     justify-content: space-between;
+
     padding: 20px 0;
+
     flex-shrink: 0;
+
     overflow: hidden;
+
     white-space: nowrap;
+
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     z-index: 10;
+
   }
 
   /* Hover to Expand Sidebar */
+
   .sidebar:hover {
+
     width: 230px; /* Expanded width */
+
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+
   }
 
   .brand-header {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     padding: 0 18px 24px 18px;
+
     height: 32px;
+
   }
 
   .brand-logo {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
+
     font-weight: 800;
+
     font-size: 18px;
+
     letter-spacing: 1px;
+
   }
 
   .brand-logo svg {
+
     width: 26px;
+
     height: 30px;
+
     flex-shrink: 0;
+
   }
 
   .brand-logo .red { color: #ff2a2a; }
+
   .brand-logo .white { color: #ffffff; }
 
   /* Animated Text Hiding/Showing */
+
   .brand-text,
+
   .nav-text,
+
   .status-text,
+
   .collapse-btn {
+
     opacity: 0;
+
     visibility: hidden;
+
     transition: opacity 0.2s ease, visibility 0.2s ease;
+
   }
 
   .sidebar:hover .brand-text,
+
   .sidebar:hover .nav-text,
+
   .sidebar:hover .status-text,
+
   .sidebar:hover .collapse-btn {
+
     opacity: 1;
+
     visibility: visible;
+
     transition-delay: 0.08s;
+
   }
 
   .collapse-btn {
+
     background: transparent;
+
     border: none;
+
     color: #666;
+
     cursor: pointer;
+
     font-size: 12px;
+
   }
+
   .collapse-btn:hover { color: #aaa; }
 
   .nav-list {
+
     list-style: none;
+
     display: flex;
+
     flex-direction: column;
+
     gap: 8px;
+
     padding: 0 12px;
+
   }
 
   .nav-item a {
+
     display: flex;
+
     align-items: center;
+
     gap: 16px;
+
     padding: 10px;
+
     color: #888899;
+
     text-decoration: none;
+
     font-size: 13.5px;
+
     font-weight: 500;
+
     border-radius: 8px;
+
     height: 44px;
+
     transition: all 0.2s ease;
+
   }
 
   .nav-item a:hover {
+
     color: #fff;
+
     background: rgba(255, 255, 255, 0.05);
+
   }
 
   .nav-item.active a {
+
     color: #fff;
+
     background: rgba(255, 42, 42, 0.12);
+
     border: 1px solid rgba(255, 42, 42, 0.35);
+
     box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+
   }
 
   .nav-item svg {
+
     width: 20px;
+
     height: 20px;
+
     stroke: currentColor;
+
     flex-shrink: 0;
+
   }
 
   .sidebar-footer {
+
     padding: 0 12px;
+
   }
 
   .status-badge {
+
     display: flex;
+
     align-items: center;
+
     gap: 12px;
+
     padding: 10px 12px;
+
     background: rgba(0, 230, 118, 0.06);
+
     border: 1px solid rgba(0, 230, 118, 0.2);
+
     border-radius: 6px;
+
     font-size: 12px;
+
     font-weight: 700;
+
     color: #00e676;
+
     letter-spacing: 0.5px;
+
     height: 40px;
+
   }
 
   .status-dot {
+
     width: 8px;
+
     height: 8px;
+
     border-radius: 50%;
+
     background: #00e676;
+
     box-shadow: 0 0 8px #00e676;
+
     flex-shrink: 0;
+
   }
 
   /* Main Viewport */
+
   .main-wrapper {
+
     flex: 1;
+
     display: flex;
+
     flex-direction: column;
+
     overflow: hidden;
+
   }
 
   /* Top Bar */
+
   .topbar {
+
     height: 60px;
+
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
     background: rgba(10, 10, 14, 0.7);
+
     backdrop-filter: blur(10px);
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     padding: 0 28px;
+
   }
 
   .topbar-info {
+
     display: flex;
+
     align-items: center;
+
     gap: 36px;
+
   }
 
   .info-item {
+
     display: flex;
+
     flex-direction: column;
+
     gap: 2px;
+
   }
 
   .info-label {
+
     font-size: 10px;
+
     color: #666677;
+
     font-weight: 700;
+
     letter-spacing: 0.8px;
+
     text-transform: uppercase;
+
   }
 
   .info-value {
+
     font-size: 13px;
+
     font-weight: 700;
+
     letter-spacing: 0.5px;
+
   }
 
   .info-value.online {
+
     color: #00e676;
+
     display: flex;
+
     align-items: center;
+
     gap: 6px;
+
   }
 
   .topbar-actions {
+
     display: flex;
+
     align-items: center;
+
     gap: 18px;
+
   }
 
   .icon-btn {
+
     background: transparent;
+
     border: none;
+
     color: #888899;
+
     cursor: pointer;
+
     position: relative;
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
   }
 
   .icon-btn:hover { color: #fff; }
 
   .badge {
+
     position: absolute;
+
     top: -4px;
+
     right: -6px;
+
     background: #ff2a2a;
+
     color: #fff;
+
     font-size: 9px;
+
     font-weight: 800;
+
     padding: 1px 4px;
+
     border-radius: 8px;
+
   }
 
   .avatar {
+
     width: 30px;
+
     height: 30px;
+
     border-radius: 50%;
+
     border: 1px solid rgba(255, 255, 255, 0.2);
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     color: #aaa;
+
     cursor: pointer;
+
   }
 
   /* Content Dashboard Area */
+
   .content-area {
+
     flex: 1;
+
     padding: 22px 28px;
+
     overflow-y: auto;
+
     display: flex;
+
     flex-direction: column;
+
     gap: 20px;
+
   }
 
   /* Top Metric Cards Grid */
+
   .metrics-grid {
+
     display: grid;
+
     grid-template-columns: repeat(4, 1fr);
+
     gap: 18px;
+
   }
 
   .metric-card {
+
     background: rgba(14, 14, 18, 0.75);
+
     border: 1px solid rgba(255, 255, 255, 0.08);
+
     border-radius: 8px;
+
     padding: 18px;
+
     backdrop-filter: blur(8px);
+
     display: flex;
+
     flex-direction: column;
+
     justify-content: space-between;
+
     height: 120px;
+
   }
 
   .metric-header {
+
     font-size: 11px;
+
     font-weight: 700;
+
     letter-spacing: 0.8px;
+
     color: #888899;
+
     text-transform: uppercase;
+
   }
 
   .metric-card.red .metric-header { color: #ff3b3b; }
+
   .metric-card.purple .metric-header { color: #b388ff; }
 
   .metric-body {
+
     display: flex;
+
     align-items: baseline;
+
     justify-content: space-between;
+
   }
 
   .metric-value {
+
     font-size: 26px;
+
     font-weight: 800;
+
     color: #fff;
+
     letter-spacing: -0.5px;
+
   }
 
   .metric-value.red { color: #ff3b3b; }
 
   .metric-footer {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
   }
 
   .sparkline {
+
     width: 100px;
+
     height: 22px;
+
   }
 
   .trend {
+
     font-size: 11px;
+
     font-weight: 700;
+
     display: flex;
+
     align-items: center;
+
     gap: 2px;
+
   }
 
   .trend.up-green { color: #00e676; }
+
   .trend.up-red { color: #ff3b3b; }
+
   .trend.up-cyan { color: #00e5ff; }
+
   .trend.up-purple { color: #b388ff; }
 
   /* Main Lower Grid Layout */
+
   .dashboard-bottom {
+
     display: flex;
+
     flex: 1;
+
     min-height: 450px;
+
     position: relative;
+
   }
 
   .panel-card {
+
     width: 100%;
+
     background: transparent;
+
     border: 1px solid rgba(255, 255, 255, 0.08);
+
     border-radius: 8px;
+
     display: flex;
+
     flex-direction: column;
+
     overflow: hidden;
+
     position: relative;
+
   }
 
   .panel-header {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     padding: 16px 20px;
+
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
     background: rgba(14, 14, 18, 0.6);
+
     backdrop-filter: blur(8px);
+
     z-index: 10;
+
   }
 
   .panel-title {
+
     font-size: 12px;
+
     font-weight: 800;
+
     letter-spacing: 0.9px;
+
     text-transform: uppercase;
+
     color: #eee;
+
   }
 
   /* Live Visualizer Stage */
+
   .flow-visualizer-body {
+
     flex: 1;
+
     position: relative;
+
     width: 100%;
+
     height: 100%;
+
     overflow: hidden;
+
     background: transparent;
+
   }
 
   #trafficCanvas {
+
     position: absolute;
+
     inset: 0;
+
     width: 100%;
+
     height: 100%;
+
     z-index: 1;
+
   }
 
   /* Central Server Element */
+
   .server-node {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     background: rgba(8, 10, 16, 0.95);
+
     border: 2px solid #805ad5;
+
     box-shadow: 0 0 30px rgba(128, 90, 213, 0.45), inset 0 0 20px rgba(128, 90, 213, 0.25);
+
     border-radius: 10px;
+
     padding: 18px 45px;
+
     text-align: center;
+
     z-index: 5;
+
     pointer-events: none;
+
     animation: serverGlow 3s infinite alternate ease-in-out;
+
   }
 
   @keyframes serverGlow {
+
     0% { box-shadow: 0 0 20px rgba(128, 90, 213, 0.3), inset 0 0 15px rgba(128, 90, 213, 0.15); border-color: #805ad5; }
+
     100% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.6), inset 0 0 25px rgba(0, 229, 255, 0.3); border-color: #00e5ff; }
+
   }
 
   .server-title {
+
     font-weight: 900;
+
     letter-spacing: 4px;
+
     font-size: 18px;
+
     color: #ffffff;
+
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+
   }
 
   .server-sub {
+
     font-size: 10px;
+
     color: #00e676;
+
     font-weight: 700;
+
     letter-spacing: 1.5px;
+
     margin-top: 4px;
+
   }
 
   /* Floating Threat Overlay Cards */
+
   .threat-cards-overlay {
+
     position: absolute;
+
     inset: 0;
+
     padding: 24px;
+
     display: flex;
+
     justify-content: space-between;
+
     pointer-events: none;
+
     z-index: 6;
+
   }
 
   .threat-column {
+
     display: flex;
+
     flex-direction: column;
+
     justify-content: space-around;
+
     width: 280px;
+
     gap: 16px;
+
   }
 
   .floating-card {
+
     background: rgba(10, 10, 16, 0.85);
+
     border: 1px solid rgba(255, 255, 255, 0.1);
+
     border-left: 4px solid #ff3b3b;
+
     border-radius: 8px;
+
     padding: 12px 14px;
+
     backdrop-filter: blur(10px);
+
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+
     pointer-events: auto;
+
     transition: transform 0.2s ease;
+
   }
 
   .floating-card:hover {
+
     transform: translateY(-2px);
+
   }
 
   .floating-card.yellow { border-left-color: #ffb300; }
+
   .floating-card.green { border-left-color: #00e676; }
 
   .card-top {
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     margin-bottom: 6px;
+
     gap: 12px;
+
   }
 
   .card-ip {
+
     font-family: monospace;
+
     font-size: 11px;
+
     color: #888899;
+
   }
 
   .card-priority {
+
     font-size: 9px;
+
     font-weight: 800;
+
     padding: 2px 6px;
+
     border-radius: 4px;
+
     text-transform: uppercase;
+
     letter-spacing: 0.5px;
+
   }
 
   .card-priority.red { background: rgba(255, 59, 59, 0.2); color: #ff3b3b; }
+
   .card-priority.yellow { background: rgba(255, 179, 0, 0.2); color: #ffb300; }
+
   .card-priority.green { background: rgba(0, 230, 118, 0.2); color: #00e676; }
 
   .card-threat {
+
     font-size: 13px;
+
     font-weight: 700;
+
     color: #fff;
+
     margin-bottom: 4px;
+
   }
 
   .card-req {
+
     font-family: monospace;
+
     font-size: 11px;
+
     color: #aaa;
+
   }
 
   @keyframes smoothRandomWiggle {
+
     0% { transform: translate(0, 0) rotate(0deg); }
+
     33% { transform: translate(3px, -4px) rotate(1.2deg); }
+
     66% { transform: translate(-3px, 4px) rotate(-0.8deg); }
+
     100% { transform: translate(0, 0) rotate(0deg); }
+
   }
 
   .random-box {
+
     position: absolute !important;
+
     width: max-content !important;
+
     animation: smoothRandomWiggle 4s ease-in-out infinite alternate;
+
     z-index: 5;
+
   }
-  
+
   .random-box:hover {
+
     animation-play-state: paused;
+
     transform: scale(1.02);
+
   }
 
   @media (max-width: 1024px) {
+
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+
     .threat-column { width: 220px; }
+
   }
 
   .app-container {
+
     animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+
     transform-origin: center top;
+
   }
 
   .app-container.page-leaving {
+
     animation: page-leave 0.28s cubic-bezier(0.4, 0, 1, 1) both;
+
     pointer-events: none;
+
   }
 
   @keyframes page-enter {
+
     from { opacity: 0; transform: translateY(12px) scale(0.99); }
+
     to { opacity: 1; transform: translateY(0) scale(1); }
+
   }
 
   @keyframes page-leave {
+
     from { opacity: 1; transform: translateY(0) scale(1); }
+
     to { opacity: 0; transform: translateY(-8px) scale(0.995); }
+
   }
 
   @media (prefers-reduced-motion: reduce) {
+
     .app-container,
+
     .app-container.page-leaving { animation: none; }
+
   }
+
 </style>
+
 </head>
+
 <body>
 
 <!-- Full Screen Interactive Canvas Grid -->
+
 <canvas id="dotCanvas"></canvas>
 
 <div class="app-container">
 
   <!-- Hover-Expandable Animated Sidebar -->
+
   <aside class="sidebar">
+
     <div>
+
       <div class="brand-header">
+
         <div class="brand-logo">
+
           <svg viewBox="0 0 88 104" fill="none">
+
             <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+
             <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+
           </svg>
+
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
+
         </div>
+
         <button class="collapse-btn">&laquo;</button>
+
       </div>
 
       <ul class="nav-list">
+
         <li class="nav-item active">
+
           <a href="/frontend/overview.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+
             <span class="nav-text">Overview</span>
+
           </a>
+
         </li>
+
         <li class="nav-item">
+
           <a href="/frontend/live-events.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+
             <span class="nav-text">Live Events</span>
+
           </a>
+
         </li>
+
         <li class="nav-item">
+
           <a href="/frontend/search-logs.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+
             <span class="nav-text">Search Logs</span>
+
           </a>
+
         </li>
+
         <li class="nav-item">
+
           <a href="/frontend/threatDetails.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+
             <span class="nav-text">Threats</span>
+
           </a>
+
         </li>
+
         <li class="nav-item">
+
           <a href="/frontend/rules.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+
             <span class="nav-text">Rules</span>
+
           </a>
+
         </li>
+
         <li class="nav-item">
+
           <a href="/frontend/about.html">
+
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+
             <span class="nav-text">About</span>
+
           </a>
+
         </li>
+
       </ul>
+
     </div>
+
   </aside>
 
   <!-- Main Section -->
+
   <div class="main-wrapper">
 
     <!-- Header / Topbar -->
+
     <header class="topbar">
+
       <div class="topbar-info">
+
         <div class="info-item">
+
           <span class="info-label">System Status</span>
-          <span class="info-value online"><span class="status-dot"></span> ONLINE</span>
+
+          <span class="info-value online" id="backend-status"><span class="status-dot"></span> ONLINE</span>
+
         </div>
+
         <div class="info-item">
+
           <span class="info-label">Uptime</span>
+
           <span class="info-value">02:14:32</span>
+
         </div>
+
         <div class="info-item">
+
           <span class="info-label">Last Updated</span>
+
           <span class="info-value">10:24:15 AM</span>
+
         </div>
+
       </div>
 
       <div class="topbar-actions">
+
         <button class="icon-btn">
+
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+
           <span class="badge">12</span>
+
         </button>
+
         <button class="icon-btn">
+
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+
         </button>
+
         <div class="avatar">
+
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+
         </div>
+
       </div>
+
     </header>
 
     <!-- Main Dashboard Content -->
+
     <main class="content-area">
 
       <!-- 4 Top Metric Cards -->
+
       <div class="metrics-grid">
 
         <!-- Logs / Sec -->
+
         <div class="metric-card">
+
           <div class="metric-header">LOGS / SEC</div>
+
           <div class="metric-body">
-            <div class="metric-value">50,000</div>
+
+            <div class="metric-value" id="logs-per-sec">50,000</div>
+
           </div>
+
           <div class="metric-footer">
+
             <svg class="sparkline" viewBox="0 0 100 25">
+
               <path id="spark-1" fill="none" stroke="#00e676" stroke-width="2"/>
+
             </svg>
+
             <div class="trend up-green">&uarr; 12.5%</div>
+
           </div>
+
         </div>
 
         <!-- Threats Detected -->
+
         <div class="metric-card red">
+
           <div class="metric-header">THREATS DETECTED</div>
+
           <div class="metric-body">
-            <div class="metric-value red">127</div>
+
+            <div class="metric-value red" id="threats-detected">127</div>
+
           </div>
+
           <div class="metric-footer">
+
             <svg class="sparkline" viewBox="0 0 100 25">
+
               <path id="spark-2" fill="none" stroke="#ff3b3b" stroke-width="2"/>
+
             </svg>
+
             <div class="trend up-red">&uarr; 8.3%</div>
+
           </div>
+
         </div>
 
         <!-- Total Logs -->
+
         <div class="metric-card">
+
           <div class="metric-header">TOTAL LOGS</div>
+
           <div class="metric-body">
-            <div class="metric-value">2,481,203</div>
+
+            <div class="metric-value" id="total-logs">2,481,203</div>
+
           </div>
+
           <div class="metric-footer">
+
             <svg class="sparkline" viewBox="0 0 100 25">
+
               <path id="spark-3" fill="none" stroke="#00e5ff" stroke-width="2"/>
+
             </svg>
+
             <div class="trend up-cyan">&uarr; 18.7%</div>
+
           </div>
+
         </div>
 
         <!-- Bytes Processed -->
+
         <div class="metric-card purple">
+
           <div class="metric-header">BYTES PROCESSED</div>
+
           <div class="metric-body">
-            <div class="metric-value">482.93 MB</div>
+
+            <div class="metric-value" id="bytes-processed">482.93 MB</div>
+
           </div>
+
           <div class="metric-footer">
+
             <svg class="sparkline" viewBox="0 0 100 25">
+
               <path id="spark-4" fill="none" stroke="#b388ff" stroke-width="2"/>
+
             </svg>
+
             <div class="trend up-purple">&uarr; 22.1%</div>
+
           </div>
+
         </div>
 
       </div>
 
       <!-- Main Lower Full Width Section -->
+
       <div class="dashboard-bottom">
+
         <div class="panel-card">
+
           <div class="panel-header">
+
             <span class="panel-title">LIVE SERVER TRAFFIC & THREAT FILTERING</span>
+
             <span style="color:#555; cursor:pointer;">&times;</span>
+
           </div>
 
           <div class="flow-visualizer-body">
+
             <!-- Canvas for Traffic Animations -->
+
             <canvas id="trafficCanvas"></canvas>
 
             <!-- Center Server Box -->
+
             <div class="server-node">
+
               <div class="server-title">SERVER</div>
+
               <div class="server-sub">&#9679; FIREWALL ACTIVE</div>
+
             </div>
 
             <!-- Side Threat Cards Overlay -->
+
             <div class="threat-cards-overlay">
+
               <!-- Left Side Threats -->
+
               <div class="threat-column">
+
                 <div class="floating-card">
+
                   <div class="card-top">
+
                     <span class="card-ip">192.168.1.104</span>
+
                     <span class="card-priority red">CRITICAL</span>
+
                   </div>
+
                   <div class="card-threat">SQL Injection</div>
+
                   <div class="card-req">POST /api/login ' UNION SELECT</div>
+
                 </div>
 
                 <div class="floating-card yellow">
+
                   <div class="card-top">
+
                     <span class="card-ip">10.0.4.88</span>
+
                     <span class="card-priority yellow">SUSPICIOUS</span>
+
                   </div>
+
                   <div class="card-threat">Login Failed</div>
+
                   <div class="card-req">POST /auth (Attempt #5)</div>
+
                 </div>
 
                 <div class="floating-card">
+
                   <div class="card-top">
+
                     <span class="card-ip">172.16.0.42</span>
+
                     <span class="card-priority red">CRITICAL</span>
+
                   </div>
+
                   <div class="card-threat">Path Traversal</div>
+
                   <div class="card-req">GET /files/../../etc/passwd</div>
+
                 </div>
+
               </div>
 
               <!-- Right Side Threats -->
+
               <div class="threat-column">
+
                 <div class="floating-card">
+
                   <div class="card-top">
+
                     <span class="card-ip">45.33.21.90</span>
+
                     <span class="card-priority red">CRITICAL</span>
+
                   </div>
+
                   <div class="card-threat">Command Injection</div>
+
                   <div class="card-req">GET /ping?host=127.0.0.1;cmd.exe</div>
+
                 </div>
 
                 <div class="floating-card green">
+
                   <div class="card-top">
+
                     <span class="card-ip">192.168.1.12</span>
+
                     <span class="card-priority green">CLEARED</span>
+
                   </div>
+
                   <div class="card-threat">Safe Web Traffic</div>
+
                   <div class="card-req">GET /index.html [200 OK]</div>
+
                 </div>
 
                 <div class="floating-card">
+
                   <div class="card-top">
+
                     <span class="card-ip">185.220.101.5</span>
+
                     <span class="card-priority red">CRITICAL</span>
+
                   </div>
+
                   <div class="card-threat">XSS Attempt</div>
+
                   <div class="card-req">POST /comment &lt;script&gt;</div>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
     </main>
@@ -830,114 +1459,181 @@
 </div>
 
 <script>
+
   const pageContainer = document.querySelector('.app-container');
 
   document.querySelectorAll('a[href]').forEach((link) => {
+
     link.addEventListener('click', (event) => {
+
       const destination = new URL(link.href, window.location.href);
+
       const isPageNavigation = destination.origin === window.location.origin &&
+
         destination.pathname !== window.location.pathname &&
+
         destination.protocol !== 'mailto:';
 
       if (!isPageNavigation || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+
         return;
+
       }
 
       event.preventDefault();
+
       pageContainer.classList.add('page-leaving');
+
       window.setTimeout(() => { window.location.href = destination.href; }, 280);
+
     });
+
   });
 
   // Full Screen Interactive Canvas Grid Engine
+
   const canvas = document.getElementById('dotCanvas');
+
   const ctx = canvas.getContext('2d');
 
   let width, height;
+
   let dots = [];
+
   const spacing = 22;              
+
   const baseRadius = 0.7;        
+
   const hoverRadius = 140;        
+
   const MAX_DOT_RADIUS = 4.5;      
 
   let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
 
   function initGrid() {
+
     width = canvas.width = window.innerWidth;
+
     height = canvas.height = window.innerHeight;
 
     dots = [];
+
     const cols = Math.ceil(width / spacing) + 1;
+
     const rows = Math.ceil(height / spacing) + 1;
 
     for (let i = 0; i < cols; i++) {
+
       for (let j = 0; j < rows; j++) {
+
         const baseX = i * spacing;
+
         const baseY = j * spacing;
-        
+
         const isThreat = Math.random() < 0.012;
+
         const isSuspicious = !isThreat && Math.random() < 0.018;
 
         const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
 
         dots.push({
+
           baseX,
+
           baseY,
+
           x: baseX,
+
           y: baseY,
+
           baseR: initialR,
+
           r: initialR,
+
           colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
+
           opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
+
         });
+
       }
+
     }
+
   }
 
   window.addEventListener('resize', initGrid);
 
   window.addEventListener('mousemove', (e) => {
+
     mouse.targetX = e.clientX;
+
     mouse.targetY = e.clientY;
+
   });
 
   window.addEventListener('mouseleave', () => {
+
     mouse.targetX = -1000;
+
     mouse.targetY = -1000;
+
   });
 
   // Sparkline wave animation loop
+
   const sparkPath1 = document.getElementById('spark-1');
+
   const sparkPath2 = document.getElementById('spark-2');
+
   const sparkPath3 = document.getElementById('spark-3');
+
   const sparkPath4 = document.getElementById('spark-4');
 
   function updateSparklines(time) {
+
     const t = time * 0.003;
 
     // Generate smooth continuous sine-wave paths across 4 cards with different frequency/phase offsets
+
     function getWavePath(freq, amp, phase) {
+
       let d = "";
+
       const steps = 20;
+
       for (let i = 0; i <= steps; i++) {
+
         const x = (i / steps) * 100;
+
         const y = 12.5 + Math.sin((i * freq) + t + phase) * amp + Math.cos((i * freq * 0.5) - t * 0.7) * (amp * 0.4);
+
         if (i === 0) d += `M${x},${y}`;
+
         else d += ` L${x},${y}`;
+
       }
+
       return d;
+
     }
 
     if (sparkPath1) sparkPath1.setAttribute('d', getWavePath(0.45, 6, 0));
+
     if (sparkPath2) sparkPath2.setAttribute('d', getWavePath(0.35, 7, 1.5));
+
     if (sparkPath3) sparkPath3.setAttribute('d', getWavePath(0.5, 5, 3.0));
+
     if (sparkPath4) sparkPath4.setAttribute('d', getWavePath(0.4, 6, 4.5));
+
   }
 
   function render(time) {
+
     ctx.clearRect(0, 0, width, height);
 
     mouse.x += (mouse.targetX - mouse.x) * 0.1;
+
     mouse.y += (mouse.targetY - mouse.y) * 0.1;
 
     const t = time * 0.0025;
@@ -945,254 +1641,535 @@
     updateSparklines(time);
 
     for (let i = 0; i < dots.length; i++) {
+
       const d = dots[i];
 
       const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
+
       const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
 
       const dx = mouse.x - d.baseX;
+
       const dy = mouse.y - d.baseY;
+
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       let targetX = d.baseX + waveX;
+
       let targetY = d.baseY + waveY;
+
       let targetR = d.baseR;
+
       let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
 
       if (dist < hoverRadius) {
+
         const norm = 1 - dist / hoverRadius;
+
         const factor = norm * norm * (3 - 2 * norm);
 
         const addedRadius = factor * 2.8;
+
         targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
+
         targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
 
         const angle = Math.atan2(dy, dx);
+
         const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
+
         const pushAmount = factor * 12;
 
         targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
+
         targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
+
       }
 
       d.x += (targetX - d.x) * 0.12;
+
       d.y += (targetY - d.y) * 0.12;
+
       d.r += (targetR - d.r) * 0.12;
+
       d.opacity += (targetOpacity - d.opacity) * 0.12;
 
       let color;
+
       if (d.colorType === 'threat') {
+
         color = `rgba(255, 42, 42, ${d.opacity})`;
+
       } else if (d.colorType === 'suspicious') {
+
         color = `rgba(255, 179, 0, ${d.opacity})`;
+
       } else {
+
         color = `rgba(0, 229, 255, ${d.opacity})`;
+
       }
 
       const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
 
       ctx.beginPath();
+
       ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
+
       ctx.fillStyle = color;
+
       ctx.fill();
 
       if (d.colorType === 'threat' || finalRadius > 3.2) {
+
         ctx.shadowBlur = finalRadius * 2;
+
         ctx.shadowColor = color;
+
       } else {
+
         ctx.shadowBlur = 0;
+
       }
+
     }
 
     requestAnimationFrame(render);
+
   }
 
   initGrid();
+
   requestAnimationFrame(render);
 
   /* Traffic Flow Animation Engine (Server Center Stream) */
+
   const tfCanvas = document.getElementById('trafficCanvas');
+
   const tfCtx = tfCanvas.getContext('2d');
 
   let tfWidth, tfHeight;
+
   let particles = [];
+
   let streams = [];
+
   const numStreams = 16;
 
   function resizeTrafficCanvas() {
+
     tfWidth = tfCanvas.width = tfCanvas.parentElement.clientWidth;
+
     tfHeight = tfCanvas.height = tfCanvas.parentElement.clientHeight;
+
     initStreams();
+
   }
 
   function initStreams() {
+
     streams = [];
+
     const centerX = tfWidth / 2;
+
     const centerY = tfHeight / 2;
 
     for (let i = 0; i < numStreams; i++) {
+
       const offsetX = (i - (numStreams - 1) / 2) * 22;
-      
+
       const randVal = Math.random();
+
       let color = '#00e676';
+
       if (randVal < 0.45) color = '#ff3b3b'; 
+
       else if (randVal < 0.75) color = '#ffb300'; 
 
       streams.push({
+
         id: i,
+
         bottomX: centerX + offsetX * 1.6,
+
         topX: centerX + offsetX * 1.4,
+
         color: color
+
       });
+
     }
+
   }
 
   window.addEventListener('resize', resizeTrafficCanvas);
 
   function createParticle() {
+
     const stream = streams[Math.floor(Math.random() * streams.length)];
+
     const isIncoming = Math.random() < 0.65; 
 
     let pColor, pName;
+
     if (isIncoming) {
+
       pColor = stream.color;
+
       if (pColor === '#ff3b3b') pName = "Malware";
+
       else if (pColor === '#ffb300') pName = "Scan";
+
       else pName = "Safe";
+
     } else {
+
       pColor = '#00e676';
+
       pName = "Clean";
+
     }
 
     particles.push({
+
       stream: stream,
+
       isIncoming: isIncoming,
+
       progress: 0,
+
       speed: 0.005 + Math.random() * 0.008,
+
       size: 2.5 + Math.random() * 2,
+
       color: pColor,
+
       name: pName
+
     });
+
   }
 
   setInterval(createParticle, 120);
 
   function animateTraffic() {
+
     tfCtx.clearRect(0, 0, tfWidth, tfHeight);
 
     const centerX = tfWidth / 2;
+
     const centerY = tfHeight / 2;
+
     const serverTopY = centerY - 35;
+
     const serverBottomY = centerY + 35;
 
     streams.forEach((s) => {
+
       tfCtx.beginPath();
+
       tfCtx.moveTo(s.bottomX, tfHeight);
+
       tfCtx.bezierCurveTo(s.bottomX, tfHeight - 50, centerX + (s.bottomX - centerX) * 0.5, serverBottomY + 30, centerX, serverBottomY);
+
       tfCtx.strokeStyle = s.color === '#ff3b3b' ? 'rgba(255, 59, 59, 0.12)' : (s.color === '#ffb300' ? 'rgba(255, 179, 0, 0.12)' : 'rgba(0, 230, 118, 0.12)');
+
       tfCtx.lineWidth = 2;
+
       tfCtx.stroke();
 
       tfCtx.beginPath();
+
       tfCtx.moveTo(centerX, serverTopY);
+
       tfCtx.bezierCurveTo(centerX, serverTopY - 30, s.topX, 50, s.topX, 0);
+
       tfCtx.strokeStyle = 'rgba(0, 230, 118, 0.25)';
+
       tfCtx.lineWidth = 2;
+
       tfCtx.stroke();
+
     });
 
     for (let i = particles.length - 1; i >= 0; i--) {
+
       const p = particles[i];
+
       p.progress += p.speed;
 
       if (p.progress >= 1) {
+
         particles.splice(i, 1);
+
         continue;
+
       }
 
       let currX, currY;
 
       if (p.isIncoming) {
+
         const startX = p.stream.bottomX;
+
         const startY = tfHeight;
+
         const endX = centerX;
+
         const endY = serverBottomY;
 
         const t = p.progress;
+
         currX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * (centerX + (startX - centerX) * 0.5) + t * t * endX;
+
         currY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * (serverBottomY + 30) + t * t * endY;
+
       } else {
+
         const startX = centerX;
+
         const startY = serverTopY;
+
         const endX = p.stream.topX;
+
         const endY = 0;
 
         const t = p.progress;
+
         currX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * (centerX) + t * t * endX;
+
         currY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * (serverTopY - 30) + t * t * endY;
+
       }
 
       tfCtx.beginPath();
+
       tfCtx.arc(currX, currY, p.size, 0, Math.PI * 2);
+
       tfCtx.fillStyle = p.color;
+
       tfCtx.shadowBlur = 10;
+
       tfCtx.shadowColor = p.color;
+
       tfCtx.fill();
+
       tfCtx.shadowBlur = 0;
 
       if (Math.abs(currY - centerY) > 42) {
+
         tfCtx.font = "bold 9px -apple-system, sans-serif";
+
         tfCtx.fillStyle = "rgba(255, 255, 255, 0.75)";
+
         tfCtx.fillText(p.name, currX + 12, currY + 3);
 
         tfCtx.beginPath();
+
         tfCtx.moveTo(currX + p.size + 2, currY);
+
         tfCtx.lineTo(currX + 10, currY);
+
         tfCtx.strokeStyle = p.color;
+
         tfCtx.lineWidth = 1;
+
         tfCtx.stroke();
+
       }
+
     }
 
     requestAnimationFrame(animateTraffic);
+
   }
 
   setTimeout(() => {
+
     resizeTrafficCanvas();
+
     animateTraffic();
+
   }, 100);
 
-  // Inject Random Wiggle Boxes Dynamically
-  const visualizerStage = document.querySelector('.flow-visualizer-body');
-  
-  const randomThreats = [
-    { ip: '10.0.0.5', prio: 'SUSPICIOUS', threat: 'Port Scan', req: 'SYN: 80,443', color: 'yellow', left: '26%', top: '22%', delay: '1.2s', dur: '5s' },
-    { ip: '172.16.5.9', prio: 'CLEARED', threat: 'API Request', req: 'GET /api/v1', color: 'green', left: '22%', top: '48%', delay: '2.5s', dur: '4.5s' },
-    { ip: '45.1.2.3', prio: 'CRITICAL', threat: 'Malware Payload', req: 'POST /upload.php', color: 'red', left: '25%', top: '78%', delay: '0.8s', dur: '3.8s' },
-    { ip: '8.8.4.4', prio: 'SUSPICIOUS', threat: 'DNS Tunneling', req: 'UDP 53 query', color: 'yellow', left: '62%', top: '15%', delay: '1.7s', dur: '4.2s' },
-    { ip: '192.168.2.1', prio: 'CRITICAL', threat: 'DDoS Attempt', req: 'GET /flood', color: 'red', left: '60%', top: '45%', delay: '0s', dur: '4s' },
-    { ip: '192.168.1.15', prio: 'CRITICAL', threat: 'Privilege Esc.', req: 'POST /admin/su', color: 'red', left: '66%', top: '75%', delay: '0.5s', dur: '4.7s' }
-  ];
+  // ============================================================
+  // FLAREWATCH LIVE EVENT CONNECTION
+  // ============================================================
+  // Node bridge: main.py -> TCP :4003 -> SSE :4004/events
+  const SSE_URL = 'http://localhost:4004/events';
 
-  randomThreats.forEach(data => {
+  const liveState = {
+    totalLogs: 0,
+    threatsDetected: 0,
+    logsPerSecond: 0,
+    recentThreats: []
+  };
+
+  const metricEls = {
+    totalLogs: document.getElementById('total-logs'),
+    threatsDetected: document.getElementById('threats-detected'),
+    logsPerSecond: document.getElementById('logs-per-sec'),
+    bytesProcessed: document.getElementById('bytes-processed'),
+    backendStatus: document.getElementById('backend-status')
+  };
+
+  const leftThreatColumn = document.querySelector('.threat-cards-overlay .threat-column');
+  const rightThreatColumn = document.querySelectorAll('.threat-cards-overlay .threat-column')[1];
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('en-US');
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function threatClass(name) {
+    const normalized = String(name || '').toUpperCase();
+    if (normalized.includes('XSS') || normalized.includes('SQL') ||
+        normalized.includes('BRUTE') || normalized.includes('TRAVERSAL') ||
+        normalized.includes('INJECTION') || normalized.includes('MALWARE') ||
+        normalized.includes('DDOS')) return 'red';
+    return 'yellow';
+  }
+
+  function priorityLabel(name) {
+    const normalized = String(name || '').toUpperCase();
+    if (normalized.includes('THREAT') || normalized === 'SQL_INJECTION' ||
+        normalized === 'XSS' || normalized === 'BRUTE_FORCE' ||
+        normalized === 'PATH_TRAVERSAL') return 'CRITICAL';
+    return 'SUSPICIOUS';
+  }
+
+  function addLiveThreatCard(event) {
+    if (!leftThreatColumn || !rightThreatColumn) return;
+
+    const threatName = event.threat_name || event.threat || 'Threat Detected';
+    const ip = event.ip || 'Unknown IP';
+    const request = event.request || event.req || 'No request data';
+    const color = threatClass(threatName);
+    const priority = priorityLabel(threatName);
+
     const el = document.createElement('div');
-    el.className = `floating-card random-box ${data.color}`;
-    el.style.left = data.left;
-    el.style.top = data.top;
-    el.style.animationDelay = data.delay;
-    el.style.animationDuration = data.dur;
-    
+    el.className = `floating-card ${color}`;
     el.innerHTML = `
       <div class="card-top">
-        <span class="card-ip">${data.ip}</span>
-        <span class="card-priority ${data.color}">${data.prio}</span>
+        <span class="card-ip">${escapeHtml(ip)}</span>
+        <span class="card-priority ${color}">${escapeHtml(priority)}</span>
       </div>
-      <div class="card-threat">${data.threat}</div>
-      <div class="card-req">${data.req}</div>
+      <div class="card-threat">${escapeHtml(String(threatName).replaceAll('_', ' '))}</div>
+      <div class="card-req">${escapeHtml(request)}</div>
     `;
-    visualizerStage.appendChild(el);
-  });
+
+    const target = liveState.recentThreats.length % 2 === 0 ? leftThreatColumn : rightThreatColumn;
+    target.prepend(el);
+
+    while (target.children.length > 3) {
+      target.removeChild(target.lastElementChild);
+    }
+
+    liveState.recentThreats.push(event);
+    if (liveState.recentThreats.length > 12) liveState.recentThreats.shift();
+  }
+
+  function updateMetrics() {
+    if (metricEls.totalLogs) {
+      metricEls.totalLogs.textContent = formatNumber(liveState.totalLogs);
+    }
+    if (metricEls.threatsDetected) {
+      metricEls.threatsDetected.textContent = formatNumber(liveState.threatsDetected);
+    }
+    if (metricEls.logsPerSecond) {
+      metricEls.logsPerSecond.textContent = formatNumber(liveState.logsPerSecond);
+    }
+  }
+
+  function handleLiveEvent(event) {
+    if (!event || typeof event !== 'object') return;
+
+    if (event.type === 'connection') {
+      if (metricEls.backendStatus) {
+        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>ONLINE';
+      }
+      return;
+    }
+
+    if (event.type === 'stats') {
+      liveState.totalLogs = Number(event.logs_processed ?? liveState.totalLogs);
+      liveState.threatsDetected = Number(event.threats_detected ?? liveState.threatsDetected);
+      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
+      updateMetrics();
+      return;
+    }
+
+    if (event.type === 'log') {
+      liveState.totalLogs += 1;
+      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
+      updateMetrics();
+      return;
+    }
+
+    if (event.type === 'threat') {
+      liveState.totalLogs += 1;
+      liveState.threatsDetected += 1;
+      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
+      updateMetrics();
+      addLiveThreatCard(event);
+      return;
+    }
+
+    if (event.type === 'nothreat') {
+      liveState.totalLogs += 1;
+      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
+      updateMetrics();
+    }
+  }
+
+  function connectLiveEvents() {
+    if (!window.EventSource) {
+      console.error('[SSE] EventSource is not supported by this browser.');
+      if (metricEls.backendStatus) {
+        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>OFFLINE';
+      }
+      return;
+    }
+
+    const source = new EventSource(SSE_URL);
+
+    source.onopen = () => {
+      console.log(`[SSE] Connected to ${SSE_URL}`);
+      if (metricEls.backendStatus) {
+        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>ONLINE';
+      }
+    };
+
+    source.onmessage = (message) => {
+      try {
+        const event = JSON.parse(message.data);
+        console.log('[SSE] Event:', event);
+        handleLiveEvent(event);
+      } catch (error) {
+        console.error('[SSE] Invalid event payload:', error);
+      }
+    };
+
+    source.onerror = () => {
+      console.warn('[SSE] Connection lost. Browser will retry automatically.');
+      if (metricEls.backendStatus) {
+        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>RECONNECTING';
+      }
+    };
+  }
+
+  // Start live connection after the dashboard is ready.
+  connectLiveEvents();
 </script>
 
 </body>
+
 </html>
