@@ -1996,178 +1996,376 @@
   // FLAREWATCH LIVE EVENT CONNECTION
   // ============================================================
   // Node bridge: main.py -> TCP :4003 -> SSE :4004/events
-  const SSE_URL = 'http://localhost:4004/events';
+  const SSE_URL = "http://localhost:4004/events";
 
-  const liveState = {
+const liveState = {
     totalLogs: 0,
     threatsDetected: 0,
     logsPerSecond: 0,
     recentThreats: []
-  };
+};
 
-  const metricEls = {
-    totalLogs: document.getElementById('total-logs'),
-    threatsDetected: document.getElementById('threats-detected'),
-    logsPerSecond: document.getElementById('logs-per-sec'),
-    bytesProcessed: document.getElementById('bytes-processed'),
-    backendStatus: document.getElementById('backend-status')
-  };
+const metricEls = {
+    totalLogs: document.getElementById("total-logs"),
+    threatsDetected: document.getElementById("threats-detected"),
+    logsPerSecond: document.getElementById("logs-per-sec"),
+    bytesProcessed: document.getElementById("bytes-processed"),
+    backendStatus: document.getElementById("backend-status")
+};
 
-  const leftThreatColumn = document.querySelector('.threat-cards-overlay .threat-column');
-  const rightThreatColumn = document.querySelectorAll('.threat-cards-overlay .threat-column')[1];
+const leftThreatColumn =
+    document.querySelector(".threat-cards-overlay .threat-column");
 
-  function formatNumber(value) {
-    return Number(value || 0).toLocaleString('en-US');
-  }
+const rightThreatColumn =
+    document.querySelectorAll(
+        ".threat-cards-overlay .threat-column"
+    )[1];
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
 
-  function threatClass(name) {
-    const normalized = String(name || '').toUpperCase();
-    if (normalized.includes('XSS') || normalized.includes('SQL') ||
-        normalized.includes('BRUTE') || normalized.includes('TRAVERSAL') ||
-        normalized.includes('INJECTION') || normalized.includes('MALWARE') ||
-        normalized.includes('DDOS')) return 'red';
-    return 'yellow';
-  }
+/* ============================================================
+   HELPERS
+   ============================================================ */
 
-  function priorityLabel(name) {
-    const normalized = String(name || '').toUpperCase();
-    if (normalized.includes('THREAT') || normalized === 'SQL_INJECTION' ||
-        normalized === 'XSS' || normalized === 'BRUTE_FORCE' ||
-        normalized === 'PATH_TRAVERSAL') return 'CRITICAL';
-    return 'SUSPICIOUS';
-  }
+function formatNumber(value) {
+    return Number(value || 0).toLocaleString("en-US");
+}
 
-  function addLiveThreatCard(event) {
-    if (!leftThreatColumn || !rightThreatColumn) return;
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-    const threatName = event.threat_name || event.threat || 'Threat Detected';
-    const ip = event.ip || 'Unknown IP';
-    const request = event.request || event.req || 'No request data';
+function threatClass(name) {
+
+    const normalized = String(name || "").toUpperCase();
+
+    if (
+        normalized.includes("XSS") ||
+        normalized.includes("SQL") ||
+        normalized.includes("BRUTE") ||
+        normalized.includes("TRAVERSAL") ||
+        normalized.includes("INJECTION") ||
+        normalized.includes("MALWARE") ||
+        normalized.includes("DDOS")
+    ) {
+        return "red";
+    }
+
+    return "yellow";
+}
+
+function priorityLabel(name) {
+
+    const normalized = String(name || "").toUpperCase();
+
+    if (
+        normalized.includes("THREAT") ||
+        normalized === "SQL_INJECTION" ||
+        normalized === "XSS" ||
+        normalized === "BRUTE_FORCE" ||
+        normalized === "PATH_TRAVERSAL"
+    ) {
+        return "CRITICAL";
+    }
+
+    return "SUSPICIOUS";
+}
+
+
+/* ============================================================
+   DASHBOARD METRICS
+   ============================================================ */
+
+function updateMetrics() {
+
+    if (metricEls.totalLogs) {
+        metricEls.totalLogs.textContent =
+            formatNumber(liveState.totalLogs);
+    }
+
+    if (metricEls.threatsDetected) {
+        metricEls.threatsDetected.textContent =
+            formatNumber(liveState.threatsDetected);
+    }
+
+    if (metricEls.logsPerSecond) {
+        metricEls.logsPerSecond.textContent =
+            formatNumber(liveState.logsPerSecond);
+    }
+}
+
+
+/* ============================================================
+   LIVE THREAT CARD
+   ============================================================ */
+
+function addLiveThreatCard(event) {
+
+    if (!leftThreatColumn || !rightThreatColumn) {
+        return;
+    }
+
+    const threatName =
+        event.threat_name ||
+        event.threat ||
+        "Threat Detected";
+
+    const ip =
+        event.ip ||
+        "Unknown IP";
+
+    const request =
+        event.request ||
+        event.req ||
+        "No request data";
+
     const color = threatClass(threatName);
     const priority = priorityLabel(threatName);
 
-    const el = document.createElement('div');
-    el.className = `floating-card ${color}`;
-    el.innerHTML = `
-      <div class="card-top">
-        <span class="card-ip">${escapeHtml(ip)}</span>
-        <span class="card-priority ${color}">${escapeHtml(priority)}</span>
-      </div>
-      <div class="card-threat">${escapeHtml(String(threatName).replaceAll('_', ' '))}</div>
-      <div class="card-req">${escapeHtml(request)}</div>
+    const element = document.createElement("div");
+
+    element.className = `floating-card ${color}`;
+
+    element.innerHTML = `
+        <div class="card-top">
+            <span class="card-ip">
+                ${escapeHtml(ip)}
+            </span>
+
+            <span class="card-priority ${color}">
+                ${escapeHtml(priority)}
+            </span>
+        </div>
+
+        <div class="card-threat">
+            ${escapeHtml(
+                String(threatName).replaceAll("_", " ")
+            )}
+        </div>
+
+        <div class="card-req">
+            ${escapeHtml(request)}
+        </div>
     `;
 
-    const target = liveState.recentThreats.length % 2 === 0 ? leftThreatColumn : rightThreatColumn;
-    target.prepend(el);
+    const target =
+        liveState.recentThreats.length % 2 === 0
+            ? leftThreatColumn
+            : rightThreatColumn;
+
+    target.prepend(element);
 
     while (target.children.length > 3) {
-      target.removeChild(target.lastElementChild);
+        target.removeChild(target.lastElementChild);
     }
 
     liveState.recentThreats.push(event);
-    if (liveState.recentThreats.length > 12) liveState.recentThreats.shift();
-  }
 
-  function updateMetrics() {
-    if (metricEls.totalLogs) {
-      metricEls.totalLogs.textContent = formatNumber(liveState.totalLogs);
+    if (liveState.recentThreats.length > 12) {
+        liveState.recentThreats.shift();
     }
-    if (metricEls.threatsDetected) {
-      metricEls.threatsDetected.textContent = formatNumber(liveState.threatsDetected);
-    }
-    if (metricEls.logsPerSecond) {
-      metricEls.logsPerSecond.textContent = formatNumber(liveState.logsPerSecond);
-    }
-  }
+}
 
-  function handleLiveEvent(event) {
-    if (!event || typeof event !== 'object') return;
 
-    if (event.type === 'connection') {
-      if (metricEls.backendStatus) {
-        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>ONLINE';
-      }
-      return;
+/* ============================================================
+   EVENT HANDLER
+   ============================================================ */
+
+function handleLiveEvent(event) {
+
+    if (!event || typeof event !== "object") {
+        return;
     }
 
-    if (event.type === 'stats') {
-      liveState.totalLogs = Number(event.logs_processed ?? liveState.totalLogs);
-      liveState.threatsDetected = Number(event.threats_detected ?? liveState.threatsDetected);
-      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
-      updateMetrics();
-      return;
+    console.log("[SSE] Event:", event);
+
+    /* -----------------------------
+       Connection
+       ----------------------------- */
+
+    if (event.type === "connection") {
+
+        if (metricEls.backendStatus) {
+            metricEls.backendStatus.innerHTML =
+                '<span class="status-dot"></span>ONLINE';
+        }
+
+        return;
     }
 
-    if (event.type === 'log') {
-      liveState.totalLogs += 1;
-      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
-      updateMetrics();
-      return;
+
+    /* -----------------------------
+       Statistics
+       ----------------------------- */
+
+    if (event.type === "stats") {
+
+        liveState.totalLogs =
+            Number(
+                event.logs_processed ??
+                liveState.totalLogs
+            );
+
+        liveState.threatsDetected =
+            Number(
+                event.threats_detected ??
+                liveState.threatsDetected
+            );
+
+        liveState.logsPerSecond =
+            Number(
+                event.logs_per_second ??
+                liveState.logsPerSecond
+            );
+
+        updateMetrics();
+
+        return;
     }
 
-    if (event.type === 'threat') {
-      liveState.totalLogs += 1;
-      liveState.threatsDetected += 1;
-      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
-      updateMetrics();
-      addLiveThreatCard(event);
-      return;
+
+    /* -----------------------------
+       Normal log
+       ----------------------------- */
+
+    if (event.type === "log") {
+
+        liveState.totalLogs += 1;
+
+        if (event.logs_per_second !== undefined) {
+            liveState.logsPerSecond =
+                Number(event.logs_per_second);
+        }
+
+        updateMetrics();
+
+        return;
     }
 
-    if (event.type === 'nothreat') {
-      liveState.totalLogs += 1;
-      liveState.logsPerSecond = Number(event.logs_per_second ?? liveState.logsPerSecond);
-      updateMetrics();
-    }
-  }
 
-  function connectLiveEvents() {
+    /* -----------------------------
+       Threat
+       ----------------------------- */
+
+    if (event.type === "threat") {
+
+        liveState.totalLogs += 1;
+        liveState.threatsDetected += 1;
+
+        if (event.logs_per_second !== undefined) {
+            liveState.logsPerSecond =
+                Number(event.logs_per_second);
+        }
+
+        updateMetrics();
+        addLiveThreatCard(event);
+
+        return;
+    }
+
+
+    /* -----------------------------
+       Not a threat
+       ----------------------------- */
+
+    if (event.type === "nothreat") {
+
+        liveState.totalLogs += 1;
+
+        if (event.logs_per_second !== undefined) {
+            liveState.logsPerSecond =
+                Number(event.logs_per_second);
+        }
+
+        updateMetrics();
+
+        return;
+    }
+}
+
+
+/* ============================================================
+   SSE CONNECTION
+   ============================================================ */
+
+function connectLiveEvents() {
+
     if (!window.EventSource) {
-      console.error('[SSE] EventSource is not supported by this browser.');
-      if (metricEls.backendStatus) {
-        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>OFFLINE';
-      }
-      return;
+
+        console.error(
+            "[SSE] EventSource is not supported."
+        );
+
+        if (metricEls.backendStatus) {
+            metricEls.backendStatus.innerHTML =
+                '<span class="status-dot"></span>OFFLINE';
+        }
+
+        return;
     }
+
+    console.log(
+        `[SSE] Connecting to ${SSE_URL}`
+    );
 
     const source = new EventSource(SSE_URL);
 
-    source.onopen = () => {
-      console.log(`[SSE] Connected to ${SSE_URL}`);
-      if (metricEls.backendStatus) {
-        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>ONLINE';
-      }
+
+    source.onopen = function () {
+
+        console.log(
+            `[SSE] Connected to ${SSE_URL}`
+        );
+
+        if (metricEls.backendStatus) {
+            metricEls.backendStatus.innerHTML =
+                '<span class="status-dot"></span>ONLINE';
+        }
     };
 
-    source.onmessage = (message) => {
-      try {
-        const event = JSON.parse(message.data);
-        console.log('[SSE] Event:', event);
-        handleLiveEvent(event);
-      } catch (error) {
-        console.error('[SSE] Invalid event payload:', error);
-      }
+
+    source.onmessage = function (message) {
+
+        try {
+
+            const event =
+                JSON.parse(message.data);
+
+            handleLiveEvent(event);
+
+        } catch (error) {
+
+            console.error(
+                "[SSE] Invalid event payload:",
+                error
+            );
+        }
     };
 
-    source.onerror = () => {
-      console.warn('[SSE] Connection lost. Browser will retry automatically.');
-      if (metricEls.backendStatus) {
-        metricEls.backendStatus.innerHTML = '<span class="status-dot"></span>RECONNECTING';
-      }
-    };
-  }
 
-  // Start live connection after the dashboard is ready.
-  connectLiveEvents();
+    source.onerror = function () {
+
+        console.warn(
+            "[SSE] Connection lost. Browser will retry automatically."
+        );
+
+        if (metricEls.backendStatus) {
+            metricEls.backendStatus.innerHTML =
+                '<span class="status-dot"></span>RECONNECTING';
+        }
+    };
+}
+
+
+/* ============================================================
+   START
+   ============================================================ */
+
+connectLiveEvents();
 </script>
 
 </body>
