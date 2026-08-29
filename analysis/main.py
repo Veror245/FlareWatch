@@ -3,11 +3,11 @@ import time
 import json
 import threading
 import queue
+import struct
 from dataclasses import dataclass, field
 from collections import defaultdict, deque
-import struct
 
-# threat mappings (protocol)
+# threat and event mappings
 INBOUND_THREATS = {
     0: "SQLI", 
     1: "XSS", 
@@ -46,19 +46,31 @@ class Event:
     severity: int
     user: str = None
     endpoint: str = None    
-    timestamp: float = field(default_factory=time.time)
+    timestamp: float = field(default_factory=time.time) # Automatically provides timestamp if missing
     metadata: dict = field(default_factory=dict)
 
 RUST_PORT = 4001
 DEV1_PORT = 4002
 
-failed_logins = defaultdict(deque)  
-attacker_states = {} 
-ip_threat_scores = defaultdict(int) 
-last_alert_time = {} 
+# Reconnect/backoff tuning for the Dev 1 connection
+RECONNECT_INITIAL_DELAY = 1.0
+RECONNECT_MAX_DELAY = 30.0
+
+# Threat score decays over time so a noisy-but-benign IP doesn't stay pinned at CRITICAL forever
+SCORE_DECAY_PER_SECOND = 1.0 / 30.0  # 1 point per 30s of inactivity
+
+failed_logins = defaultdict(deque)  # Holds failed login timestamps per IP
+attacker_states = {} # holds current attacker state 
+#( NORMAL, BRUTE_FORCE, COMPROMISED_ACCESS, COMPROMISED_ADMIN, COMPROMISED_SQLI, CRITICAL_COMPROMISE )
+ip_threat_scores = defaultdict(int) # hold overall threat score per IP
+ip_last_score_time = {}  # last time each IP's score was touched, used for decay
+last_alert_time = {} # Tracks exact timestamp of the last generated alert for deduplication
 
 event_queue = queue.Queue()       
-state_lock = threading.Lock()     
+state_lock = threading.Lock()
+
+# Guards writes to the Dev1 socket since multiple worker threads share one connection
+dev1_send_lock = threading.Lock()
 
 def get_threat_tier(score):
     if score >= 15: return "CRITICAL"
@@ -66,201 +78,305 @@ def get_threat_tier(score):
     elif score >= 5: return "MEDIUM"
     return "LOW"
 
-#Evaluates a single event for Brute Force patterns.
-#Returns an Incident dictionary if an attack is detected, or None.
-# NORMAL(default) → AUTH_ATTACK(5 failed logins) → ACCESS( AUTH_ATTACK logs in) → COMPROMISED( ACCESS starts probing system files)
+def _decay_score(ip, now):
+    # Reduce the IP's score based on elapsed time since it was last touched. Caller must hold state_lock.
+    last_time = ip_last_score_time.get(ip, now)
+    elapsed = max(0.0, now - last_time)
+    if elapsed > 0 and ip in ip_threat_scores:
+        decayed = ip_threat_scores[ip] - elapsed * SCORE_DECAY_PER_SECOND
+        ip_threat_scores[ip] = max(0, int(decayed))
+    ip_last_score_time[ip] = now
+
+# threat pattern/behaviour analysis pipeline
+
 def analyse_threat(current_event):
     ip = current_event.IP
-    
-    # lowercase to avoid case-sensitive bugs from  JSON
-    event_type = current_event.event_type.lower() 
+    event_type = current_event.event_type 
     event_time = current_event.timestamp
 
     with state_lock:
-        # update threat score based on severity
+        _decay_score(ip, event_time)  # apply decay before adding this event's severity
+
         ip_threat_scores[ip] += current_event.severity
-        
-        # calculate threat tier based on current score
         current_score = ip_threat_scores[ip]
         threat_tier = get_threat_tier(current_score)
-        
-        # read current state (default: normal)
         current_state = attacker_states.get(ip, "NORMAL")
+        incident = None
 
-        incident = None #incident dictionary to be returned if an attack is detected
+        # MULTI_STAGE_ATTACK Kill-chain
+        if current_state == "COMPROMISED_SQLI" and event_type == "PATH_TRAVERSAL":
+            attacker_states[ip] = "CRITICAL_COMPROMISE"
+            incident = {"incident_type": "MULTI_STAGE_ATTACK", "details": "Full kill-chain to Path Traversal."}
 
-        # Auth attack -> Acess
-        if current_state == "AUTH_ATTACK" and event_type == "successful_login":
-            attacker_states[ip] = "ACCESS"
-            incident = {
-                "IP": ip,
-                "incident_type": "ACCOUNT_TAKEOVER",
-                "threat_tier": threat_tier,
-                "total_score": current_score,
-                "details": "Attacker successfully logged in after a brute force attack."
-            }
+        elif current_state == "COMPROMISED_ADMIN" and event_type == "SQLI":
+            attacker_states[ip] = "COMPROMISED_SQLI"
 
-        #Acess -> Compromised
-        elif current_state == "ACCESS" and event_type == "path_traversal":
-            attacker_states[ip] = "COMPROMISED"
-            incident = {
-                "IP": ip,
-                "incident_type": "SYSTEM_COMPROMISE",
-                "threat_tier": threat_tier,
-                "total_score": current_score,
-                "details": "Attacker attempting directory traversal after gaining access."
-            }
+        # ACCOUNT_COMPROMISE Kill-chain
+        elif current_state == "COMPROMISED_ADMIN" and event_type == "SENSITIVE_ACCESS":
+            attacker_states[ip] = "CRITICAL_COMPROMISE"
+            incident = {"incident_type": "ACCOUNT_COMPROMISE", "details": "Sensitive access after admin login."}
 
-        # detecting Auth attack from normal on >=5 failed logins in 10seconds
-        elif event_type == "failed_login":
+        elif current_state == "COMPROMISED_ACCESS" and event_type == "ADMIN_ACCESS":
+            attacker_states[ip] = "COMPROMISED_ADMIN"
+
+        elif current_state == "BRUTE_FORCE" and event_type == "LOGIN_SUCCESS":
+            attacker_states[ip] = "COMPROMISED_ACCESS"
+            
+        # Base BRUTE_FORCE detection
+        elif event_type == "LOGIN_FAILED":
             failed_logins[ip].append(event_time)
             
             while failed_logins[ip] and failed_logins[ip][0] < event_time - 10:
                 failed_logins[ip].popleft()
-
+                
             if len(failed_logins[ip]) >= 5:
                 failed_logins[ip].clear()
-                
-                # Upgrade their state!
-                attacker_states[ip] = "AUTH_ATTACK" 
-                
-                incident = {
-                    "IP": ip,
-                    "incident_type": "Brute Force Attack",
-                    "threat_tier": threat_tier,
-                    "total_score": current_score,
-                    "details": "Detected 5 failed login attempts within 10 seconds."
-                }
-            
-        elif current_score >= 15 and current_state != "COMPROMISED":
-            attacker_states[ip] = "COMPROMISED" # Prevent duplicate alerts
-            incident = {
-                "IP": ip,
-                "incident_type": "CRITICAL_THREAT_SCORE",
-                "threat_tier": threat_tier,
-                "total_score": current_score,
-                "details": "IP has accumulated a critical history of suspicious behavior."
-            }
+                attacker_states[ip] = "BRUTE_FORCE" 
+                incident = {"incident_type": "BRUTE_FORCE", "details": "5 failed logins in 10s."}
 
-        # ALERT DEDUPLICATION
+        # Catch-All Anomaly Score
+        elif current_score >= 15 and current_state != "CRITICAL_COMPROMISE":
+            attacker_states[ip] = "CRITICAL_COMPROMISE" 
+            incident = {"incident_type": "CRITICAL_THREAT_SCORE", "details": "Critical suspicious behavior."}
+
+        # Deduplication & Formatting
         if incident:
             alert_key = (ip, incident["incident_type"])
-            time_since_last_alert = event_time - last_alert_time.get(alert_key, 0)
-            
-            # If less than 60 seconds have passed, suppress the alert
-            if time_since_last_alert < 60:
+            if event_time - last_alert_time.get(alert_key, 0) < 60:
                 return None
-                
-            # Otherwise, update the timer and return the incident to the network loop
+            
             last_alert_time[alert_key] = event_time
+            
+            # Attach full context before sending to Dev 1
+            incident["IP"] = ip
+            incident["threat_id"] = OUTBOUND_THREAT_IDS.get(incident["incident_type"], 16)
+            incident["threat_tier"] = threat_tier
+            incident["total_score"] = current_score
             return incident
 
-        return None
+    return None
 
+def send_incident(dev1_client, incident):
+    # Extracted from worker_loop so the send can be wrapped in dev1_send_lock (see worker_loop)
+    # 1. Prepare the payload fields
+    threat_id = incident["threat_id"] # u8[cite: 2]
 
-def worker_loop(dev1_client):
+    ip_bytes = incident["IP"].encode('utf-8')
+    ip_len = len(ip_bytes) # u8[cite: 2]
+    if ip_len > 255:
+        # u8 length field can't represent longer values, truncate defensively
+        ip_bytes = ip_bytes[:255]
+        ip_len = 255
+
+    # Use the 'details' string as the Request payload so Dev 1 can read it
+    req_bytes = incident["details"].encode('utf-8')
+    if len(req_bytes) > 65535:
+        # u16 length field can't represent longer values, truncate defensively
+        req_bytes = req_bytes[:65535]
+    req_len = len(req_bytes) # u16[cite: 2]
+
+    # 2. Pack the THREAT payload: [Threat type u8][IP len u8][IP][REQ len u16][REQ][cite: 2]
+    # Format: > (big-endian), B (u8), B (u8), {ip_len}s (string bytes), H (u16), {req_len}s (string bytes)[cite: 2]
+    payload_format = f'>BB{ip_len}sH{req_len}s'
+    payload = struct.pack(payload_format, threat_id, ip_len, ip_bytes, req_len, req_bytes)
+
+    # 3. Pack the Header: [4-byte length][1-byte type][cite: 2]
+    # Format: > (big-endian), I (u32), B (u8)[cite: 2]
+    msg_type = 1 # THREAT[cite: 2]
+    total_length = len(payload)
+    header = struct.pack('>IB', total_length, msg_type)
+
+    # 4. Fire the raw bytes down the pipeline
+    with dev1_send_lock:  # prevent interleaved writes from concurrent worker threads
+        dev1_client.sendall(header + payload)
+
+# THREAD WORKERS
+def worker_loop(dev1_client, dev1_ok_event):
     while True:
         current_event = event_queue.get() 
         incident = analyse_threat(current_event)
         
         if incident:
             print(f"\nTHREAT DETECTED: {incident['incident_type']} from {incident['IP']}")
-            try:
-                outbound_json = json.dumps(incident) + "\n"
-                dev1_client.sendall(outbound_json.encode('utf-8'))
-                print("Successfully forwarded incident to Dev 1 Dashboard!\n")
-            except BrokenPipeError:
-                print("Dev 1 disconnected unexpectedly.")
-                
+            if not dev1_ok_event.is_set():
+                # Dev1 connection is known-down, drop the alert instead of raising repeatedly
+                print("Dev 1 unavailable, dropping alert.")
+            else:
+                try:
+                    send_incident(dev1_client, incident)
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    print("Dev 1 disconnected unexpectedly.")
+                    dev1_ok_event.clear()  # signal the reconnect supervisor to take over
+
         event_queue.task_done()
 
-#reads exactly num_bytes from the socket,
 def recv_exact(sock, num_bytes):
+    # receive exact number of bytes from RUST engine
     data = bytearray()
     while len(data) < num_bytes:
-        packet = sock.recv(num_bytes - len(data))
+        try:
+            packet = sock.recv(num_bytes - len(data))
+        except (ConnectionResetError, OSError):
+            return None  # treat a reset mid-read the same as a clean disconnect
         if not packet:
             return None
         data.extend(packet)
     return bytes(data)
 
-def listen_to_rust():
-    dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        dev1_client.connect(('127.0.0.1', DEV1_PORT))
-        print(f"Connected to Dev 1 Dashboard on port {DEV1_PORT}")
-    except ConnectionRefusedError:
-        print(f"Failed to connect to Dev 1. Please ensure Dev 1's server is running on port {DEV1_PORT}.")
-        return
+def _parse_ip_and_optional_fields(payload, offset):
+    # Parses [ip_len u8][ip], then opportunistically [endpoint_len u8][endpoint] and
+    # [user_len u8][user] if the Rust engine included them in the remaining bytes.
+    # Today's wire format doesn't send these, so they'll come back as None until
+    # the Rust side is extended to include them.
+    ip_len = struct.unpack('>B', payload[offset:offset + 1])[0]
+    offset += 1
+    ip_address = payload[offset:offset + ip_len].decode('utf-8', errors='replace')
+    offset += ip_len
 
-    NUM_THREADS = 3
-    for _ in range(NUM_THREADS):
-        t = threading.Thread(target=worker_loop, args=(dev1_client,), daemon=True)
+    endpoint = None
+    user = None
+
+    if offset < len(payload):
+        try:
+            endpoint_len = struct.unpack('>B', payload[offset:offset + 1])[0]
+            offset += 1
+            endpoint = payload[offset:offset + endpoint_len].decode('utf-8', errors='replace')
+            offset += endpoint_len
+        except (struct.error, IndexError):
+            pass
+
+    if offset < len(payload):
+        try:
+            user_len = struct.unpack('>B', payload[offset:offset + 1])[0]
+            offset += 1
+            user = payload[offset:offset + user_len].decode('utf-8', errors='replace')
+            offset += user_len
+        except (struct.error, IndexError):
+            pass
+
+    return ip_address, endpoint, user, offset
+
+def connect_to_dev1(dev1_ok_event):
+    # Connects (or reconnects) to Dev 1, retrying with backoff. Blocks until connected.
+    delay = RECONNECT_INITIAL_DELAY
+    while True:
+        dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            dev1_client.connect(('127.0.0.1', DEV1_PORT))
+            print(f"Connected to Dev 1 Dashboard on port {DEV1_PORT}")
+            dev1_ok_event.set()
+            return dev1_client
+        except (ConnectionRefusedError, OSError):
+            print(f"Failed to connect to Dev 1 on port {DEV1_PORT}. Retrying in {delay:.1f}s...")
+            time.sleep(delay)
+            delay = min(delay * 2, RECONNECT_MAX_DELAY)
+
+def dev1_reconnect_supervisor(dev1_holder, dev1_ok_event):
+    # Background thread: whenever the Dev1 connection is marked down, reconnect it
+    # without taking down the Rust-facing listener.
+    while True:
+        dev1_ok_event.wait()  # block while connection is healthy
+        dev1_ok_event.clear()
+        try:
+            dev1_holder[0].close()
+        except OSError:
+            pass
+        dev1_holder[0] = connect_to_dev1(dev1_ok_event)
+
+# receiving/sending data to/from Rust engine and Dev 1 dashboard
+def listen_to_rust():
+    dev1_ok_event = threading.Event()
+    dev1_client = connect_to_dev1(dev1_ok_event)
+    dev1_holder = [dev1_client]  # boxed so the supervisor can swap in a reconnected socket
+
+    supervisor = threading.Thread(
+        target=dev1_reconnect_supervisor, args=(dev1_holder, dev1_ok_event), daemon=True
+    )
+    supervisor.start()
+
+    # Small proxy so worker threads always use the current dev1 socket, even after a reconnect
+    class Dev1Proxy:
+        def sendall(self, data):
+            dev1_holder[0].sendall(data)
+
+    dev1_proxy = Dev1Proxy()
+
+    # Spawn background workers
+    for _ in range(3):
+        t = threading.Thread(target=worker_loop, args=(dev1_proxy, dev1_ok_event), daemon=True)
         t.start()
 
-    #server socket to listen to the Rust engine
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('127.0.0.1', RUST_PORT))
     server.listen(1)
     
-    print(f"Threat Engine listening for Rust logs on port {RUST_PORT}...")
-    
-    # Block and wait for Rust to connect
-    conn, addr = server.accept()
-    print(f"Rust Engine connected from {addr}")
+    print(f"Threat Engine listening for Rust binary stream on port {RUST_PORT}...")
 
-    buffer = ""
-
-    # Receive loop
+    # Loop over Rust connections so a drop doesn't take the whole process down
     while True:
-        # read the 4-byte payload length (Big-endian u32)
-        length_bytes = recv_exact(conn, 4)
-        if not length_bytes:
-            print("Rust connection closed.")
-            break
-        payload_length = struct.unpack('>I', length_bytes)[0]
-        
-        # read the 1-byte message type (u8)
-        type_bytes = recv_exact(conn, 1)
-        msg_type = struct.unpack('>B', type_bytes)[0]
-        
-        # read the exact remaining payload
-        payload = recv_exact(conn, payload_length)
-        
-        # parse based on type
-        if msg_type == 1:  # THREAT[cite: 2]
-            # [Threat type u8][IP len u8][IP][REQ len u16][REQ][cite: 2]
-            threat_id = struct.unpack('>B', payload[0:1])[0]
-            ip_len = struct.unpack('>B', payload[1:2])[0]
-            
-            ip_start = 2
-            ip_end = ip_start + ip_len
-            ip_address = payload[ip_start:ip_end].decode('utf-8')
-            
-            # Map the numeric ID to the string your state machine expects
-            event_type_string = INBOUND_THREATS.get(threat_id, "UNKNOWN_THREAT")
-            
-            # Create your dataclass and queue it
-            current_event = Event(IP=ip_address, event_type=event_type_string, severity=5)
-            event_queue.put(current_event)
-            
-        elif msg_type in (0, 2):  # LOG or NOTHREAT[cite: 2]
-            # [IP len u8][IP][REQ len u16][REQ][cite: 2]
-            ip_len = struct.unpack('>B', payload[0:1])[0]
-            ip_address = payload[1:1+ip_len].decode('utf-8')
-            
-            # We log it, but benign requests might not need full state machine processing
-            current_event = Event(IP=ip_address, event_type="LOG", severity=0)
-            event_queue.put(current_event)
-            
-        elif msg_type == 3:  # STATS[cite: 2]
-            # [Logs processed u64][Threats detected u64][Logs/sec u32][cite: 2]
-            logs, threats, rate = struct.unpack('>QQI', payload)
-            print(f"Rust Stats: {logs} logs, {threats} threats, {rate} req/s")
+        conn, addr = server.accept()
+        print(f"Rust Engine connected from {addr}")
+        handle_rust_connection(conn)
+        print("Rust Engine disconnected. Waiting for reconnect...")
 
-    conn.close()
-    dev1_client.close()
+def handle_rust_connection(conn):
+    # Runs the original per-connection receive loop; returns when the Rust engine disconnects or errors
+    try:
+        while True:
+            # Read 4-byte payload length
+            length_bytes = recv_exact(conn, 4)
+            if not length_bytes: break
+            payload_length = struct.unpack('>I', length_bytes)[0]
+            
+            # Read 1-byte message type
+            type_bytes = recv_exact(conn, 1)
+            if not type_bytes: break  # handle disconnect between length and type bytes
+            msg_type = struct.unpack('>B', type_bytes)[0]
+            
+            # Read remaining payload
+            payload = recv_exact(conn, payload_length)
+            if payload is None: break  # handle disconnect mid-payload
+            
+            # Type 1: THREAT
+            if msg_type == 1:  
+                threat_id = struct.unpack('>B', payload[0:1])[0]
+                ip_address, endpoint, user, _ = _parse_ip_and_optional_fields(payload, 1)
+                
+                event_str = INBOUND_THREATS.get(threat_id, "UNKNOWN_THREAT")
+                event_queue.put(Event(
+                    IP=ip_address, event_type=event_str, severity=5,
+                    user=user, endpoint=endpoint, metadata={"threat_id": threat_id}
+                ))
+                
+            # Type 4: EVENT
+            elif msg_type == 4:  
+                event_id = struct.unpack('>B', payload[0:1])[0]
+                ip_address, endpoint, user, _ = _parse_ip_and_optional_fields(payload, 1)
+                
+                event_str = INBOUND_EVENTS.get(event_id, "UNKNOWN_EVENT")
+                event_queue.put(Event(
+                    IP=ip_address, event_type=event_str, severity=0,
+                    user=user, endpoint=endpoint, metadata={"event_id": event_id}
+                ))
+                
+            # Type 0 (LOG) or 2 (NOTHREAT)
+            elif msg_type in (0, 2):  
+                ip_address, endpoint, user, _ = _parse_ip_and_optional_fields(payload, 0)
+                event_queue.put(Event(
+                    IP=ip_address, event_type="LOG", severity=0,
+                    user=user, endpoint=endpoint
+                ))
+                
+            # Type 3: STATS
+            elif msg_type == 3:  
+                logs, threats, rate = struct.unpack('>QQI', payload)
+                print(f"Rust Stats: {logs} logs, {threats} threats, {rate} req/s")
+
+    except (ConnectionResetError, OSError, struct.error):
+        print("Error on Rust connection.")
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     listen_to_rust()
