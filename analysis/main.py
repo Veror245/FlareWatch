@@ -50,7 +50,7 @@ class Event:
     metadata: dict = field(default_factory=dict)
 
 RUST_PORT = 4001
-DEV1_PORT = 4002
+DEV1_PORT = 4004
 
 # Reconnect/backoff tuning for the Dev 1 connection
 RECONNECT_INITIAL_DELAY = 1.0
