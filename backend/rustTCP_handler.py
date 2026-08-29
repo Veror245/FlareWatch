@@ -613,6 +613,7 @@ def parse_stats(payload):
         "threats_detected": threats_detected,
         "logs_per_second": logs_per_second
     }
+    
 
 
 # ============================================================
@@ -654,8 +655,10 @@ def parse_message(message):
 
     elif message_type == TYPE_STATS:
 
-        return parse_stats(payload)
-
+        p= parse_stats(payload)
+        print(p)
+        return p
+    
     else:
 
         raise ProtocolError(
@@ -667,7 +670,7 @@ def parse_message(message):
 # TCP CLIENT HANDLER
 # ============================================================
 
-def handle_tcp_client(client_socket, client_address,message):
+def handle_tcp_client(client_socket, client_address):
     """
     Handle one Rust TCP connection.
 
@@ -676,8 +679,6 @@ def handle_tcp_client(client_socket, client_address,message):
 
     Event processing is intentionally NOT implemented yet.
     """
-
-    message_type = message[0]
 
     print(
         f"[TCP] Rust connected: {client_address}"
@@ -769,8 +770,7 @@ def handle_tcp_client(client_socket, client_address,message):
             # EVENT PROCESSING IS NOT IMPLEMENTED YET.
             # ------------------------------------------------
 
-            if message_type == TYPE_STATS:
-               print(f"[TCP] Stats: {event}")
+            print(f"[TCP] Parsed event: {event}")
 
     except ProtocolError as error:
 
@@ -862,7 +862,7 @@ def start_tcp_server():
                 target=handle_tcp_client,
                 args=(
                     client_socket,
-                    client_address
+                    client_address,
                 ),
                 daemon=True
             )
