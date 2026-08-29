@@ -247,49 +247,6 @@
     gap: 6px;
   }
 
-  .topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-
-  .icon-btn {
-    background: transparent;
-    border: none;
-    color: #888899;
-    cursor: pointer;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .icon-btn:hover { color: #fff; }
-
-  .badge {
-    position: absolute;
-    top: -4px;
-    right: -6px;
-    background: #ff2a2a;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 800;
-    padding: 1px 4px;
-    border-radius: 8px;
-  }
-
-  .avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #aaa;
-    cursor: pointer;
-  }
-
   /* Content Dashboard Area */
   .content-area {
     flex: 1;
@@ -455,47 +412,46 @@
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   }
 
-  .server-sub {
-    font-size: 10px;
-    color: #00e676;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    margin-top: 4px;
-  }
-
-  /* Floating Threat Overlay Cards */
+  /* Unified Grid Matrix */
   .threat-cards-overlay {
     position: absolute;
     inset: 0;
-    padding: 24px;
-    display: flex;
-    justify-content: space-between;
+    padding: 18px 20px;
+    display: grid;
+    /* 6 columns and 5 rows covers all corners/space cleanly */
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(5, 75px);
+    align-content: space-between;
+    gap: 12px;
     pointer-events: none;
     z-index: 6;
   }
 
-  .threat-column {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    width: 280px;
-    gap: 16px;
-  }
-
   .floating-card {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 100% !important;
     border-left: 4px solid #ff3b3b;
     border-radius: 10px;
-    padding: 12px 14px;
+    padding: 10px 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     pointer-events: auto;
-    transition: transform 0.2s ease;
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
-    
+    overflow: hidden;
+    animation: cardEnter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  /* Custom Leave Animation Class */
+  .floating-card.leaving {
+    animation: cardLeave 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
   }
 
   .floating-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px) !important;
+    animation-play-state: paused !important;
   }
 
   .floating-card.yellow { border-left-color: #ffb300; }
@@ -505,14 +461,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
-    gap: 12px;
+    margin-bottom: 4px;
+    gap: 10px;
+    min-width: 0;
   }
 
   .card-ip {
     font-family: monospace;
-    font-size: 11px;
+    font-size: 10px;
     color: #888899;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .card-priority {
@@ -529,40 +490,54 @@
   .card-priority.green { background: rgba(0, 230, 118, 0.2); color: #00e676; }
 
   .card-threat {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .card-req {
     font-family: monospace;
-    font-size: 11px;
+    font-size: 10px;
     color: #aaa;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Smooth Enter/Leave Animations */
+  @keyframes cardEnter {
+    0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes cardLeave {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.85); }
   }
 
   @keyframes smoothRandomWiggle {
     0% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(3px, -4px) rotate(1.2deg); }
-    66% { transform: translate(-3px, 4px) rotate(-0.8deg); }
+    33% { transform: translate(2px, -3px) rotate(0.8deg); }
+    66% { transform: translate(-2px, 3px) rotate(-0.5deg); }
     100% { transform: translate(0, 0) rotate(0deg); }
   }
 
+  /* Assigned dynamically after entrance to prevent conflict */
   .random-box {
-    position: absolute !important;
-    width: max-content !important;
     animation: smoothRandomWiggle 4s ease-in-out infinite alternate;
-    z-index: 5;
-  }
-  
-  .random-box:hover {
-    animation-play-state: paused;
-    transform: scale(1.02);
   }
 
   @media (max-width: 1024px) {
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-    .threat-column { width: 220px; }
+    /* Compact grid overlay on mobile */
+    .threat-cards-overlay {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(6, 75px);
+    }
   }
 
   .app-container {
@@ -570,25 +545,6 @@
     transform-origin: center top;
   }
 
-  .app-container.page-leaving {
-    animation: page-leave 0.28s cubic-bezier(0.4, 0, 1, 1) both;
-    pointer-events: none;
-  }
-
-  @keyframes page-enter {
-    from { opacity: 0; transform: translateY(12px) scale(0.99); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  @keyframes page-leave {
-    from { opacity: 1; transform: translateY(0) scale(1); }
-    to { opacity: 0; transform: translateY(-8px) scale(0.995); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .app-container,
-    .app-container.page-leaving { animation: none; }
-  }
 </style>
 </head>
 <body>
@@ -757,11 +713,8 @@
               <div class="server-title">SERVER</div>
             </div>
 
-            <!-- Side Threat Cards Overlay (Dynamic Injection Base) -->
-            <div class="threat-cards-overlay">
-              <div class="threat-column" id="left-threats"></div>
-              <div class="threat-column" id="right-threats"></div>
-            </div>
+            <!-- Unified Matrix Threat Overlay -->
+            <div class="threat-cards-overlay" id="threat-grid"></div>
           </div>
         </div>
       </div>
@@ -837,8 +790,6 @@
     }
   }
 
-  window.addEventListener('resize', initGrid);
-
   window.addEventListener('mousemove', (e) => {
     mouse.targetX = e.clientX;
     mouse.targetY = e.clientY;
@@ -849,7 +800,6 @@
     mouse.targetY = -1000;
   });
 
-  // Sparkline wave animation loop
   const sparkPath1 = document.getElementById('spark-1');
   const sparkPath2 = document.getElementById('spark-2');
   const sparkPath3 = document.getElementById('spark-3');
@@ -967,20 +917,18 @@
     }
   }
 
-  window.addEventListener('resize', resizeTrafficCanvas);
-
-  function createParticle() {
+  function triggerTrafficParticle(isThreat, label) {
     const stream = streams[Math.floor(Math.random() * streams.length)];
-    const isIncoming = Math.random() < 0.65; 
-    let pColor, pName;
-    if (isIncoming) {
-      pColor = stream.color;
-      if (pColor === '#ff3b3b') pName = "Malware";
-      else if (pColor === '#ffb300') pName = "Scan";
-      else pName = "Safe";
+    const isIncoming = isThreat; 
+    
+    let pColor;
+    if (isThreat) {
+      const isCritical = label.toUpperCase().includes("SQL") || 
+                         label.toUpperCase().includes("COMMAND") || 
+                         label.toUpperCase().includes("INJECTION");
+      pColor = isCritical ? '#ff3b3b' : '#ffb300';
     } else {
       pColor = '#00e676';
-      pName = "Clean";
     }
 
     particles.push({
@@ -990,11 +938,9 @@
       speed: 0.005 + Math.random() * 0.008,
       size: 2.5 + Math.random() * 2,
       color: pColor,
-      name: pName
+      name: label || (isThreat ? "Threat" : "Clean")
     });
   }
-
-  setInterval(createParticle, 120);
 
   function animateTraffic() {
     tfCtx.clearRect(0, 0, tfWidth, tfHeight);
@@ -1069,36 +1015,90 @@
     animateTraffic();
   }, 100);
 
+  // Clear out grid on Resize to avoid mismatched cell placement bugs
+  window.addEventListener('resize', () => {
+      initGrid();
+      resizeTrafficCanvas();
+      document.querySelectorAll('.floating-card').forEach(el => {
+          el.style.display = 'none';
+          el.remove();
+      });
+      if (typeof occupiedCells !== 'undefined') occupiedCells.clear();
+  });
+
   // ==========================================================
   // LIVE BACKEND DATA INTEGRATION
   // ==========================================================
 
-  const visualizerStage = document.querySelector('.flow-visualizer-body');
+  const threatGrid = document.getElementById('threat-grid');
+  const occupiedCells = new Set();
   
-  function handleBackendEvent(data) {
-      if (!data || typeof data !== "object") return;
+  let localTotalLogs = 0;
+  let localThreats = 0;
+  let localBytes = 0;
+  let localEventTimes = [];
+  let receivedStats = false;
+
+  function handleBackendEvent(data, rawMessage = '') {
+      if (!data || typeof data !== 'object') return;
+
+      const now = Date.now();
+      localEventTimes.push(now);
+      localEventTimes = localEventTimes.filter(t => now - t <= 5000);
+
+      if (rawMessage) {
+          localBytes += new TextEncoder().encode(rawMessage).length;
+      }
 
       if (data.type === "connection") return;
 
       if (data.type === "stats") {
+          receivedStats = true;
+
           if (data.logs_per_second !== undefined) {
               document.getElementById("metric-logs-sec").innerText =
                   Number(data.logs_per_second).toLocaleString();
           }
           if (data.threats_detected !== undefined) {
+              localThreats = Number(data.threats_detected) || 0;
               document.getElementById("metric-threats").innerText =
-                  Number(data.threats_detected).toLocaleString();
+                  localThreats.toLocaleString();
           }
           if (data.logs_processed !== undefined) {
+              localTotalLogs = Number(data.logs_processed) || 0;
               document.getElementById("metric-total-logs").innerText =
-                  Number(data.logs_processed).toLocaleString();
+                  localTotalLogs.toLocaleString();
           }
           if (data.bytes_processed !== undefined) {
+              localBytes = Number(data.bytes_processed) || 0;
               document.getElementById("metric-bytes").innerText =
-                  `${(Number(data.bytes_processed) / (1024 * 1024)).toFixed(2)} MB`;
+                  `${(localBytes / (1024 * 1024)).toFixed(2)} MB`;
           }
-      } else if (data.type === "threat") {
-          spawnLiveThreatCard(data);
+          return;
+      }
+
+      if (data.type === "log" || data.type === "threat" || data.type === "nothreat") {
+          localTotalLogs += 1;
+          if (data.type === "threat") localThreats += 1;
+
+          if (!receivedStats) {
+              document.getElementById("metric-total-logs").innerText =
+                  localTotalLogs.toLocaleString();
+              document.getElementById("metric-threats").innerText =
+                  localThreats.toLocaleString();
+              document.getElementById("metric-logs-sec").innerText =
+                  Math.round(localEventTimes.length / 5).toLocaleString();
+              document.getElementById("metric-bytes").innerText =
+                  `${(localBytes / (1024 * 1024)).toFixed(2)} MB`;
+          }
+
+          if (data.type === "threat") {
+              const threatTitle = data.threat_name || data.threat || "Unknown Threat";
+              triggerTrafficParticle(true, threatTitle);
+              spawnLiveThreatCard(data);
+          } else {
+              triggerTrafficParticle(false, "Clean"); 
+          }
       }
   }
 
@@ -1110,25 +1110,36 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
   }
+  
+  function removeCard(el) {
+      if (el.classList.contains('leaving')) return;
+      el.classList.add('leaving');
+      el.classList.remove('random-box'); 
+      
+      // Instantly free the logical cell so a new card can utilize this space
+      if (el.dataset.cell) {
+          occupiedCells.delete(el.dataset.cell);
+      }
+      
+      setTimeout(() => {
+          if (el.parentNode) el.parentNode.removeChild(el);
+      }, 300);
+  }
 
   function spawnLiveThreatCard(data) {
       const el = document.createElement('div');
-      
+
       const threatName = data.threat_name || data.threat || "Unknown Threat";
       const ip = data.ip || "Unknown IP";
       const req = data.request || "-";
-      
-      const isCritical = threatName.toUpperCase().includes("SQL") || 
-                         threatName.toUpperCase().includes("COMMAND") || 
+
+      const isCritical = threatName.toUpperCase().includes("SQL") ||
+                         threatName.toUpperCase().includes("COMMAND") ||
                          threatName.toUpperCase().includes("INJECTION");
       const color = isCritical ? 'red' : 'yellow';
       const prio = isCritical ? 'CRITICAL' : 'SUSPICIOUS';
-      
-      el.className = `floating-card random-box ${color}`;
-      el.style.left = Math.floor(Math.random() * 70 + 5) + '%';
-      el.style.top = Math.floor(Math.random() * 60 + 10) + '%';
-      el.style.animationDuration = '4.5s';
-      
+
+      el.className = `floating-card ${color}`;
       el.innerHTML = `
         <div class="card-top">
           <span class="card-ip">${escapeHtml(ip)}</span>
@@ -1137,53 +1148,109 @@
         <div class="card-threat">${escapeHtml(threatName)}</div>
         <div class="card-req">${escapeHtml(req)}</div>
       `;
-      visualizerStage.appendChild(el);
-      
-      // Auto-remove standard threats after a short duration to keep UI clean
+
+      // Matrix Grid Positioning Engine 
+      // Prevents overlap and cleanly leaves a hole in the direct center for the Server Node
+      const isMobile = window.innerWidth <= 1024;
+      let r, c, cellKey;
+      let attempts = 0;
+      let found = false;
+
+      while (attempts < 50) {
+          attempts++;
+          if (isMobile) {
+              // 4 columns, 6 rows (Center exclusion zone is Cols:2,3 | Rows:3,4)
+              c = Math.floor(Math.random() * 4) + 1;
+              r = Math.floor(Math.random() * 6) + 1;
+              if ((c === 2 || c === 3) && (r === 3 || r === 4)) continue;
+          } else {
+              // 6 columns, 5 rows (Center exclusion zone is Cols:3,4 | Row:3)
+              c = Math.floor(Math.random() * 6) + 1;
+              r = Math.floor(Math.random() * 5) + 1;
+              if ((c === 3 || c === 4) && r === 3) continue;
+          }
+          
+          cellKey = `${c}-${r}`;
+          if (!occupiedCells.has(cellKey)) {
+              found = true;
+              break;
+          }
+      }
+
+      // If the grid is completely flooded, force out an old card and abort drawing this one to rate-limit
+      if (!found) {
+           const activeCards = threatGrid.querySelectorAll('.floating-card:not(.leaving)');
+           if(activeCards.length > 0) {
+               removeCard(activeCards[0]); 
+           }
+           return; 
+      }
+
+      occupiedCells.add(cellKey);
+      el.style.gridColumn = c;
+      el.style.gridRow = r;
+      el.dataset.cell = cellKey;
+
+      threatGrid.appendChild(el);
+
       setTimeout(() => {
-          if (el.parentNode) el.parentNode.removeChild(el);
+          if (el.parentNode && !el.classList.contains('leaving')) {
+             el.classList.add('random-box');
+          }
+      }, 400); 
+
+      // Max capacity management ensures we never cause hidden layout shifts
+      const maxCards = isMobile ? 18 : 26; 
+      const activeCards = threatGrid.querySelectorAll('.floating-card:not(.leaving)');
+      if (activeCards.length >= maxCards) {
+          const excess = activeCards.length - maxCards + 1;
+          for(let i=0; i<excess; i++) {
+              if(activeCards[i]) removeCard(activeCards[i]);
+          }
+      }
+
+      // Disappear naturally
+      setTimeout(() => {
+          if (el.parentNode) {
+             removeCard(el);
+          }
       }, 7000);
   }
 
+  setInterval(() => {
+      if (receivedStats) return;
+      const now = Date.now();
+      localEventTimes = localEventTimes.filter(t => now - t <= 5000);
+      document.getElementById("metric-logs-sec").innerText =
+          Math.round(localEventTimes.length / 5).toLocaleString();
+  }, 1000);
+
   // Direct connection to rustTCP_handler.py
-  // Browser -> WebSocket -> ws://localhost:4003
- const backendWs = new WebSocket('ws://localhost:4003');
+  const backendWs = new WebSocket('ws://localhost:4003');
 
   backendWs.onopen = () => {
-      console.log('[Frontend] ✅ WebSocket OPEN: ws://localhost:4003');
-
+      console.log('[Frontend] Connected to rustTCP_handler.py WebSocket (4003)');
       const indicator = document.getElementById('status-indicator');
       if (indicator) {
-          indicator.innerHTML =
-              '<span class="status-dot"></span> ONLINE';
-      };
+          indicator.innerHTML = '<span class="status-dot"></span> ONLINE';
+      }
   };
 
   backendWs.onmessage = (event) => {
-      console.log('[Frontend] 📩 RAW WebSocket message:', event.data);
-
       try {
           const data = JSON.parse(event.data);
-
-          console.log('[Frontend] 📦 Parsed WebSocket data:', data);
-
-          handleBackendEvent(data);
+          handleBackendEvent(data, event.data);
       } catch (err) {
-          console.error('[Frontend] ❌ WebSocket JSON parse error:', err);
+          console.error('[Frontend] WebSocket JSON parse error:', err);
       }
   };
 
   backendWs.onerror = (err) => {
-      console.error('[Frontend] ❌ WebSocket error:', err);
+      console.error('[Frontend] rustTCP_handler.py WebSocket error:', err);
   };
 
-  backendWs.onclose = (event) => {
-      console.warn(
-          '[Frontend] 🔌 WebSocket closed:',
-          event.code,
-          event.reason
-      );
-
+  backendWs.onclose = () => {
+      console.warn('[Frontend] rustTCP_handler.py WebSocket disconnected.');
       const indicator = document.getElementById('status-indicator');
       if (indicator) {
           indicator.innerHTML =
