@@ -108,21 +108,17 @@ impl AhoCorasick {
         let mut patterns = Vec::new();
         for &bytes in pattern {
             let bytes = bytes as usize;
-            if self.nodes[curr].next[bytes] == -1 {
-                let mut fail = self.nodes[curr].fail;
-                if fail == 0 {
-                    continue;
-                }
-                while fail != 0 && self.nodes[fail].next[bytes] == -1 {
-                    fail = self.nodes[fail].fail;
-                }
-                curr = fail;
+            while curr != 0 && self.nodes[curr].next[bytes] == -1 {
+                curr = self.nodes[curr].fail;
             }
-            if self.nodes[curr].next[bytes] == -1 {
-                continue;
+
+            if self.nodes[curr].next[bytes] != -1 {
+                curr = self.nodes[curr].next[bytes] as usize;
+            } else {
+                curr = 0;
             }
-            curr = self.nodes[curr].next[bytes] as usize;
-            patterns.extend(self.nodes[curr].outputs.clone());
+
+            patterns.extend(self.nodes[curr].outputs.iter().copied());
         }
 
         patterns

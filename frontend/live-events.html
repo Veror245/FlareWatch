@@ -17,6 +17,22 @@
     overflow: hidden;
   }
 
+  /* Minimal Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
   /* Full Screen Canvas for Interactive Dots */
   #dotCanvas {
     position: fixed;
@@ -39,13 +55,14 @@
   /* Animated Collapsible Sidebar */
   .sidebar {
     width: 68px; /* Collapsed width */
-    background: rgba(10, 10, 13, 0.9);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(14px);
+    background: rgba(10, 10, 13, 0.85);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 0;
+    padding: 24px 0;
     flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -53,17 +70,16 @@
     z-index: 10;
   }
 
-  /* Hover to Expand Sidebar */
   .sidebar:hover {
-    width: 230px; /* Expanded width */
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    width: 240px; /* Expanded width */
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
   }
 
   .brand-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 18px 24px 18px;
+    padding: 0 18px 32px 18px;
     height: 32px;
   }
 
@@ -88,7 +104,6 @@
   /* Animated Text Hiding/Showing */
   .brand-text,
   .nav-text,
-  .status-text,
   .collapse-btn {
     opacity: 0;
     visibility: hidden;
@@ -97,7 +112,6 @@
 
   .sidebar:hover .brand-text,
   .sidebar:hover .nav-text,
-  .sidebar:hover .status-text,
   .sidebar:hover .collapse-btn {
     opacity: 1;
     visibility: visible;
@@ -109,7 +123,7 @@
     border: none;
     color: #666;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
   }
   .collapse-btn:hover { color: #aaa; }
 
@@ -125,26 +139,26 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px;
+    padding: 12px;
     color: #888899;
     text-decoration: none;
     font-size: 13.5px;
     font-weight: 500;
     border-radius: 8px;
-    height: 44px;
+    height: 46px;
     transition: all 0.2s ease;
   }
 
   .nav-item a:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .nav-item.active a {
     color: #fff;
-    background: rgba(255, 42, 42, 0.12);
-    border: 1px solid rgba(255, 42, 42, 0.35);
-    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
+    background: rgba(255, 42, 42, 0.1);
+    border: 1px solid rgba(255, 42, 42, 0.25);
+    box-shadow: inset 0 0 12px rgba(255, 42, 42, 0.05);
   }
 
   .nav-item svg {
@@ -154,62 +168,35 @@
     flex-shrink: 0;
   }
 
-  .sidebar-footer {
-    padding: 0 12px;
-  }
-
-  .status-badge {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    background: rgba(0, 230, 118, 0.06);
-    border: 1px solid rgba(0, 230, 118, 0.2);
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #00e676;
-    letter-spacing: 0.5px;
-    height: 40px;
-  }
-
-  .status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #00e676;
-    box-shadow: 0 0 8px #00e676;
-    flex-shrink: 0;
-  }
-
   /* Main Content Area */
   .main-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 24px 32px;
+    padding: 32px 40px;
     overflow-y: auto;
-    gap: 18px;
+    gap: 24px;
   }
 
   /* Page Top Header */
   .page-header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
+    flex-shrink: 0;
   }
 
   .header-titles h1 {
-    font-size: 20px;
+    font-size: 26px;
     font-weight: 700;
     letter-spacing: 0.3px;
     color: #ffffff;
   }
 
   .header-titles p {
-    font-size: 12px;
+    font-size: 13px;
     color: #777788;
-    margin-top: 3px;
+    margin-top: 6px;
     font-weight: 500;
   }
 
@@ -220,118 +207,163 @@
   }
 
   .action-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(18, 18, 24, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #9999aa;
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    backdrop-filter: blur(8px);
     transition: all 0.2s ease;
   }
 
   .action-btn:hover {
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .action-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     stroke: currentColor;
   }
 
-  /* Events Main Panel Card */
-  .panel-card {
-    background: rgba(12, 12, 16, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    backdrop-filter: blur(14px);
+  /* Metrics Grid (New Information Section) */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .metric-card {
+    background: rgba(12, 12, 16, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    padding: 18px;
-    gap: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    gap: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .metric-title {
+    font-size: 11.5px;
+    color: #888899;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    color: #fff;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+  
+  .metric-value.danger { color: #ff4d4d; }
+  .metric-value.safe { color: #00e676; }
+
+  /* Events Main Panel Card */
+  .panel-card {
+    background: rgba(12, 12, 16, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     flex: 1;
-    min-height: 0;
+    min-height: 0; /* Important for flex child scrolling */
   }
 
   /* Controls Filter Bar */
   .filter-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
 
   .custom-select {
-    background: rgba(18, 18, 24, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #cccccc;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 12.5px;
+    background: rgba(18, 18, 24, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #d1d1d6;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
     outline: none;
     cursor: pointer;
     transition: border 0.2s;
-    min-width: 130px;
+    min-width: 150px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2214%22%20height%3D%2214%22%20viewBox%3D%220%200%24%2024%22%20fill%3D%22none%22%20stroke%3D%22%23888899%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px top 50%;
   }
 
   .custom-select:hover, .custom-select:focus {
-    border-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .search-wrapper {
     position: relative;
     flex: 1;
-    min-width: 200px;
+    min-width: 250px;
   }
 
   .search-icon {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     stroke: #666677;
   }
 
   .search-input {
     width: 100%;
-    background: rgba(18, 18, 24, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(18, 18, 24, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #fff;
-    padding: 8px 12px 8px 34px;
-    border-radius: 6px;
-    font-size: 12.5px;
+    padding: 10px 16px 10px 40px;
+    border-radius: 8px;
+    font-size: 13px;
     outline: none;
     transition: border 0.2s;
   }
 
   .search-input:focus {
-    border-color: rgba(255, 42, 42, 0.5);
+    border-color: rgba(255, 42, 42, 0.4);
   }
 
   .btn-clear {
-    background: rgba(255, 42, 42, 0.08);
-    border: 1px solid rgba(255, 42, 42, 0.4);
+    background: rgba(255, 42, 42, 0.05);
+    border: 1px solid rgba(255, 42, 42, 0.3);
     color: #ff4d4d;
-    padding: 8px 18px;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
   }
 
   .btn-clear:hover {
-    background: rgba(255, 42, 42, 0.18);
-    border-color: rgba(255, 42, 42, 0.7);
+    background: rgba(255, 42, 42, 0.15);
+    border-color: rgba(255, 42, 42, 0.6);
   }
 
   /* Events Table */
@@ -339,7 +371,6 @@
     flex: 1;
     overflow-x: auto;
     overflow-y: auto;
-    border-radius: 6px;
   }
 
   .events-table {
@@ -350,40 +381,46 @@
 
   .events-table th {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     color: #777788;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.01);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    backdrop-filter: blur(8px);
   }
 
   .events-table td {
-    padding: 12px 16px;
-    font-size: 13px;
+    padding: 16px 24px;
+    font-size: 13.5px;
     color: #d1d1d6;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
     white-space: nowrap;
+    transition: background 0.15s;
   }
 
   .events-table tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .cell-time {
-    font-family: monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color: #aaaabb;
     font-size: 12.5px;
   }
 
   .cell-details {
-    font-family: monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color: #888899;
-    font-size: 12px;
+    font-size: 12.5px;
   }
 
   .cell-ip {
-    font-family: monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color: #bbbbcc;
     font-size: 12.5px;
   }
@@ -391,33 +428,31 @@
   /* Severity Badges */
   .badge-sev {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 4px;
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
 
   .badge-sev.high {
-    background: rgba(255, 42, 42, 0.12);
-    border: 1px solid rgba(255, 42, 42, 0.4);
+    background: rgba(255, 42, 42, 0.1);
+    border: 1px solid rgba(255, 42, 42, 0.3);
     color: #ff4d4d;
-    box-shadow: 0 0 6px rgba(255, 42, 42, 0.2);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.1);
   }
 
   .badge-sev.medium {
-    background: rgba(255, 179, 0, 0.12);
-    border: 1px solid rgba(255, 179, 0, 0.4);
+    background: rgba(255, 179, 0, 0.1);
+    border: 1px solid rgba(255, 179, 0, 0.3);
     color: #ffb300;
-    box-shadow: 0 0 6px rgba(255, 179, 0, 0.15);
   }
 
   .badge-sev.low {
-    background: rgba(0, 230, 118, 0.12);
-    border: 1px solid rgba(0, 230, 118, 0.4);
+    background: rgba(0, 230, 118, 0.08);
+    border: 1px solid rgba(0, 230, 118, 0.25);
     color: #00e676;
-    box-shadow: 0 0 6px rgba(0, 230, 118, 0.15);
   }
 
   /* Pagination Bar */
@@ -425,21 +460,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding-top: 10px;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    background: rgba(0, 0, 0, 0.1);
   }
 
   .page-btn {
-    min-width: 30px;
-    height: 30px;
+    min-width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: #888899;
-    border-radius: 5px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -448,18 +485,19 @@
   .page-btn:hover {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .page-btn.active {
-    background: #ff2a2a;
+    background: rgba(255, 42, 42, 0.8);
     border-color: #ff2a2a;
     color: #ffffff;
-    box-shadow: 0 0 10px rgba(255, 42, 42, 0.4);
+    box-shadow: 0 0 12px rgba(255, 42, 42, 0.3);
   }
 
   .page-dots {
     color: #555566;
-    font-size: 12px;
+    font-size: 14px;
     padding: 0 4px;
   }
 
@@ -557,8 +595,8 @@
     <!-- Top Page Header -->
     <div class="page-header">
       <div class="header-titles">
-        <h1>Live Events</h1>
-        <p id="eventCounter">10 / 10 Live Events</p>
+        <h1>Live Events Tracker</h1>
+        <p id="eventCounter">Monitoring Incoming Traffic</p>
       </div>
 
       <div class="header-actions">
@@ -568,6 +606,26 @@
         <button class="action-btn" title="Export CSV">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
+      </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-title">Events Displayed</span>
+        <span class="metric-value" id="metric-total">0</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">Critical Threats</span>
+        <span class="metric-value danger" id="metric-high">0</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">Unique Target IPs</span>
+        <span class="metric-value" id="metric-ips">0</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-title">System Status</span>
+        <span class="metric-value safe">Active</span>
       </div>
     </div>
 
@@ -596,7 +654,7 @@
 
         <div class="search-wrapper">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search events...">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search IP, Details, or Event Type...">
         </div>
 
         <button class="btn-clear" id="clearBtn">Clear Filters</button>
@@ -680,6 +738,11 @@
   const clearBtn = document.getElementById('clearBtn');
   const eventCounter = document.getElementById('eventCounter');
 
+  // Metrics DOM Elements
+  const metricTotal = document.getElementById('metric-total');
+  const metricHigh = document.getElementById('metric-high');
+  const metricIps = document.getElementById('metric-ips');
+
   function renderTable() {
     const selectedType = typeFilter.value;
     const selectedSev = severityFilter.value;
@@ -697,7 +760,12 @@
       return matchType && matchSev && matchSearch;
     });
 
-    eventCounter.textContent = `${filtered.length} / ${initialEvents.length} Live Events`;
+    eventCounter.textContent = `Displaying ${filtered.length} of ${initialEvents.length} Recent Events`;
+
+    // Update dynamic metric cards
+    metricTotal.textContent = filtered.length;
+    metricHigh.textContent = filtered.filter(e => e.severity === 'HIGH').length;
+    metricIps.textContent = new Set(filtered.map(e => e.ip)).size;
 
     tableBody.innerHTML = filtered.map(e => `
       <tr>
@@ -857,59 +925,40 @@
   initGrid();
   requestAnimationFrame(render);
 
-
-
-
-
   //CONNECTION
 
   const eventStream = new EventSource(
     "http://localhost:4004/events"
-);
+  );
 
-
-eventStream.onopen = () => {
-
+  eventStream.onopen = () => {
     console.log(
         "Connected to FlareWatch event stream"
     );
+  };
 
-};
-
-
-eventStream.onmessage = (event) => {
-
+  eventStream.onmessage = (event) => {
     const data = JSON.parse(event.data);
-
     console.log(
         "Received from tcp_server.js:",
         data
     );
 
-
     if (data.type === "connection") {
-
         console.log("Frontend connected");
-
         return;
     }
 
-
     // Your dashboard update goes here
-
     console.log("THREAT:", data);
+  };
 
-};
-
-
-eventStream.onerror = (error) => {
-
+  eventStream.onerror = (error) => {
     console.error(
         "SSE connection error:",
         error
     );
-
-};
+  };
 </script>
 
 </body>
