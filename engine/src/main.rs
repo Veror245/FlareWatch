@@ -1,28 +1,43 @@
-use engine::{aho, tcp_client, tcp_server};
-use std::io;
+use engine::{
+    aho::{self, AhoCorasick},
+    tcp_server,
+};
+use std::{io, sync::Arc};
+const PATTERNS: &str = include_str!("../../aho_patterns.txt");
 
 fn main() -> io::Result<()> {
     println!("Hello, world!");
 
-    let msg = "Hello Stream";
+    let mut ac = aho::AhoCorasick::default();
+    load_patterns(&mut ac);
+    ac.create_failure_links();
 
-    let mut cora = aho::AhoCorasick::default();
-    cora.add("aa".as_bytes(), 1);
-    cora.add("ba".as_bytes(), 2);
-    cora.add("cba".as_bytes(), 3);
-    cora.add("her".as_bytes(), 4);
+    let ac = Arc::new(ac);
 
-    // println!("{:#?}", cora);
-    cora.print();
-    println!("------------------------------------------");
-
-    cora.create_failure_links();
-    cora.print();
-
-    println!("{:#?}", cora.search("cbaa".as_bytes()));
-
-    // tcp_client::client_main(msg)?;
-    tcp_server::server_main()?;
+    tcp_server::server_main(ac)?;
 
     Ok(())
+}
+
+fn load_patterns(ac: &mut AhoCorasick) {
+    let mut count = 0;
+    for line in PATTERNS.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        // Split on |, last part si id
+        if let Some((pattern, id_str)) = line.split_once(',') {
+            let pattern = pattern.trim();
+            let id: usize = id_str.trim().parse().expect("valid pattern ID");
+            if !pattern.is_empty() {
+                ac.add(pattern.as_bytes(), id);
+                count += 1;
+            }
+        } else {
+            eprintln!("Skipping malformed pattern line: {line}");
+        }
+    }
+    println!("Loaded {} patterns", count);
 }

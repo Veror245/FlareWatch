@@ -1,20 +1,15 @@
-#!/usr/bin/env python3
-
 import socket
 import random
 import time
 import struct
 import argparse
 
-
 HOST = "127.0.0.1"
 PORT = 4000
-
 TARGET_RATE = 55_000
 BATCH_SIZE = 1000
 
 random.seed()
-
 
 # ============================================================
 # IPs
@@ -37,9 +32,8 @@ ATTACK_IPS = [
     "192.168.1.200",
 ]
 
-
 # ============================================================
-# Normal traffic
+# Normal requests
 # ============================================================
 
 NORMAL_REQUESTS = [
@@ -60,13 +54,6 @@ NORMAL_REQUESTS = [
     "GET /profile HTTP/1.1",
     "GET /settings HTTP/1.1",
 ]
-
-
-def normal_log():
-    ip = random.choice(NORMAL_IPS)
-    request = random.choice(NORMAL_REQUESTS)
-    return ip, request
-
 
 # ============================================================
 # Threat patterns
@@ -279,81 +266,8 @@ XXE = [
     "expect://",
 ]
 
-
 # ============================================================
-# Individual threat logs
-# ============================================================
-
-
-def sqli_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(SQLI)
-    return ip, f"GET /login?user=admin{pattern} HTTP/1.1"
-
-
-def xss_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(XSS)
-    return ip, f"GET /search?q={pattern} HTTP/1.1"
-
-
-def path_traversal_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(PATH_TRAVERSAL)
-    return ip, f"GET /download?file={pattern} HTTP/1.1"
-
-
-def command_injection_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(COMMAND_INJECTION)
-    return ip, f"GET /ping?host=127.0.0.1{pattern} HTTP/1.1"
-
-
-def sensitive_access_log():
-    ip = random.choice(ATTACK_IPS)
-    path = random.choice(SENSITIVE_ACCESS)
-    return ip, f"GET {path} HTTP/1.1"
-
-
-def ssrf_log():
-    ip = random.choice(ATTACK_IPS)
-    target = random.choice(SSRF)
-    return ip, f"GET /fetch?url=http://{target}:8080/admin HTTP/1.1"
-
-
-def ldap_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(LDAP_INJECTION)
-    return ip, f"GET /users?name={pattern} HTTP/1.1"
-
-
-def xxe_log():
-    ip = random.choice(ATTACK_IPS)
-    pattern = random.choice(XXE)
-    return ip, f"POST /xml HTTP/1.1 body={pattern}"
-
-
-def http_anomaly_log():
-    ip = random.choice(ATTACK_IPS)
-
-    anomalies = [
-        "INVALID_METHOD /login",
-        "GET /login",
-        "GET / HTTP/9.9",
-        "Content-Length: 100 Content-Length: 500",
-        "Content-Length: -1",
-        "OVERSIZED_REQUEST",
-        "OVERSIZED_HEADER",
-        "INVALID_HEADER",
-        "Transfer-Encoding: invalid",
-        "INVALID_CHUNKED_ENCODING",
-    ]
-
-    return ip, "HTTP_ANOMALY " + random.choice(anomalies)
-
-
-# ============================================================
-# Authentication / behavioral sequences
+# Behavioral sequences
 # ============================================================
 
 
@@ -368,16 +282,7 @@ def brute_force_sequence(ip):
 
 
 def credential_attack_sequence(ip):
-    users = [
-        "admin",
-        "root",
-        "administrator",
-        "test",
-        "guest",
-        "support",
-        "user",
-    ]
-
+    users = ["admin", "root", "administrator", "test", "guest", "support", "user"]
     return [(ip, f"LOGIN_FAILED user={user}") for user in users]
 
 
@@ -440,48 +345,7 @@ def endpoint_scan_sequence(ip):
         "/staging",
         "/health",
     ]
-
     return [(ip, f"GET {endpoint} HTTP/1.1") for endpoint in endpoints]
-
-
-# ============================================================
-# Random traffic
-# ============================================================
-
-SIGNATURE_GENERATORS = [
-    sqli_log,
-    xss_log,
-    path_traversal_log,
-    command_injection_log,
-    sensitive_access_log,
-    ssrf_log,
-    ldap_log,
-    xxe_log,
-    http_anomaly_log,
-]
-
-
-def random_event():
-    r = random.random()
-
-    # 90% normal
-    if r < 0.90:
-        return normal_log()
-
-    # 5% authentication events
-    if r < 0.95:
-        ip = random.choice(NORMAL_IPS)
-
-        return random.choice(
-            [
-                lambda: (ip, "LOGIN_FAILED user=user"),
-                lambda: (ip, "LOGIN_SUCCESS user=user"),
-                lambda: (ip, "ADMIN_ACCESS /admin"),
-            ]
-        )()
-
-    # 5% individual threats
-    return random.choice(SIGNATURE_GENERATORS)()
 
 
 # ============================================================
@@ -489,80 +353,175 @@ def random_event():
 # ============================================================
 
 
-def encode_log(ip, request):
-    """
-    Protocol:
-
-        [4-byte length][1-byte type][payload]
-
-    LOG payload:
-
-        [IP len u8][IP][Request len u16][Request]
-
-    All multi-byte integers are big-endian.
-    """
-
+def encode_log_frame(ip, request):
+    """Return the full binary frame for a single log."""
     ip_bytes = ip.encode("utf-8")
-    request_bytes = request.encode("utf-8")
-
-    if len(ip_bytes) > 255:
-        raise ValueError("IP exceeds u8 length")
-
-    if len(request_bytes) > 65535:
-        raise ValueError("Request exceeds u16 length")
-
+    req_bytes = request.encode("utf-8")
+    # Payload: [IP len u8][IP][Request len u16][Request]
     payload = (
-        struct.pack(">B", len(ip_bytes))
+        bytes([len(ip_bytes)])
         + ip_bytes
-        + struct.pack(">H", len(request_bytes))
-        + request_bytes
+        + struct.pack(">H", len(req_bytes))
+        + req_bytes
     )
-
     # Type 0 = LOG
-    body = struct.pack(">B", 0) + payload
-
-    # Length = number of bytes after this 4-byte field.
+    body = b"\x00" + payload
+    # Length prefix
     return struct.pack(">I", len(body)) + body
 
 
+def encode_sequence(seq):
+    """Convert a sequence of (ip, request) tuples into a list of frames."""
+    return [encode_log_frame(ip, req) for ip, req in seq]
+
+
 # ============================================================
-# Batch
+# Pre-encoding all possible frames
+# ============================================================
+
+# Normal logs
+normal_frames = []
+for ip in NORMAL_IPS:
+    for req in NORMAL_REQUESTS:
+        normal_frames.append(encode_log_frame(ip, req))
+
+# Threat logs
+threat_frames = []
+
+# SQLi
+for pattern in SQLI:
+    for ip in ATTACK_IPS:
+        req = f"GET /login?user=admin{pattern} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# XSS
+for pattern in XSS:
+    for ip in ATTACK_IPS:
+        req = f"GET /search?q={pattern} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# Path traversal
+for pattern in PATH_TRAVERSAL:
+    for ip in ATTACK_IPS:
+        req = f"GET /download?file={pattern} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# Command injection
+for pattern in COMMAND_INJECTION:
+    for ip in ATTACK_IPS:
+        req = f"GET /ping?host=127.0.0.1{pattern} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# Sensitive access
+for path in SENSITIVE_ACCESS:
+    for ip in ATTACK_IPS:
+        req = f"GET {path} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# SSRF
+for target in SSRF:
+    for ip in ATTACK_IPS:
+        req = f"GET /fetch?url=http://{target}:8080/admin HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# LDAP
+for pattern in LDAP_INJECTION:
+    for ip in ATTACK_IPS:
+        req = f"GET /users?name={pattern} HTTP/1.1"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# XXE
+for pattern in XXE:
+    for ip in ATTACK_IPS:
+        req = f"POST /xml HTTP/1.1 body={pattern}"
+        threat_frames.append(encode_log_frame(ip, req))
+
+# HTTP anomaly
+http_anomalies = [
+    "INVALID_METHOD /login",
+    "GET /login",
+    "GET / HTTP/9.9",
+    "Content-Length: 100 Content-Length: 500",
+    "Content-Length: -1",
+    "OVERSIZED_REQUEST",
+    "OVERSIZED_HEADER",
+    "INVALID_HEADER",
+    "Transfer-Encoding: invalid",
+    "INVALID_CHUNKED_ENCODING",
+]
+for anomaly in http_anomalies:
+    for ip in ATTACK_IPS:
+        req = "HTTP_ANOMALY " + anomaly
+        threat_frames.append(encode_log_frame(ip, req))
+
+# Auth events (non-threat)
+auth_events = []
+for ip in NORMAL_IPS:
+    auth_events.append(encode_log_frame(ip, "LOGIN_FAILED user=user"))
+    auth_events.append(encode_log_frame(ip, "LOGIN_SUCCESS user=user"))
+    auth_events.append(encode_log_frame(ip, "ADMIN_ACCESS /admin"))
+
+# Non-threat pool (normal + auth)
+non_threat_pool = normal_frames + auth_events
+threat_pool = threat_frames
+
+# Behavioral sequences (pre-encoded)
+brute_force_sequences = [encode_sequence(brute_force_sequence(ip)) for ip in ATTACK_IPS]
+credential_attack_sequences = [
+    encode_sequence(credential_attack_sequence(ip)) for ip in ATTACK_IPS
+]
+account_compromise_sequences = [
+    encode_sequence(account_compromise_sequence(ip)) for ip in ATTACK_IPS
+]
+multi_stage_sequences = [encode_sequence(multi_stage_sequence(ip)) for ip in ATTACK_IPS]
+recon_sequences = [encode_sequence(recon_sequence(ip)) for ip in ATTACK_IPS]
+endpoint_scan_sequences = [
+    encode_sequence(endpoint_scan_sequence(ip)) for ip in ATTACK_IPS
+]
+
+# ============================================================
+# Batch generation (optimized)
 # ============================================================
 
 
 def generate_batch(size):
+    """Return bytes containing `size` concatenated frames."""
     frames = []
 
-    # Occasionally create a correlated behavioral sequence.
+    # Occasionally insert a behavioral sequence
     r = random.random()
-
     if r < 0.002:
-        sequence = brute_force_sequence(random.choice(ATTACK_IPS))
-
+        seq = random.choice(brute_force_sequences)
+        frames.extend(seq)
+        size -= len(seq)
     elif r < 0.004:
-        sequence = credential_attack_sequence(random.choice(ATTACK_IPS))
-
+        seq = random.choice(credential_attack_sequences)
+        frames.extend(seq)
+        size -= len(seq)
     elif r < 0.006:
-        sequence = account_compromise_sequence(random.choice(ATTACK_IPS))
-
+        seq = random.choice(account_compromise_sequences)
+        frames.extend(seq)
+        size -= len(seq)
     elif r < 0.008:
-        sequence = multi_stage_sequence(random.choice(ATTACK_IPS))
-
+        seq = random.choice(multi_stage_sequences)
+        frames.extend(seq)
+        size -= len(seq)
     elif r < 0.010:
-        sequence = recon_sequence(random.choice(ATTACK_IPS))
-
+        seq = random.choice(recon_sequences)
+        frames.extend(seq)
+        size -= len(seq)
     elif r < 0.012:
-        sequence = endpoint_scan_sequence(random.choice(ATTACK_IPS))
+        seq = random.choice(endpoint_scan_sequences)
+        frames.extend(seq)
+        size -= len(seq)
 
-    else:
-        sequence = []
-
-    for ip, request in sequence:
-        frames.append(encode_log(ip, request))
-
-    while len(frames) < size:
-        ip, request = random_event()
-        frames.append(encode_log(ip, request))
+    while size > 0:
+        # 90% non-threat, 10% threat
+        if random.random() < 0.90:
+            frames.append(random.choice(non_threat_pool))
+        else:
+            frames.append(random.choice(threat_pool))
+        size -= 1
 
     return b"".join(frames)
 
@@ -581,20 +540,9 @@ def run(host, port, target_rate):
     print()
 
     print("Connecting...")
-
-    sock = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_STREAM,
-    )
-
-    sock.setsockopt(
-        socket.SOL_SOCKET,
-        socket.SO_SNDBUF,
-        4 * 1024 * 1024,
-    )
-
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4 * 1024 * 1024)
     sock.connect((host, port))
-
     print("Connected.")
     print()
 
@@ -604,53 +552,39 @@ def run(host, port, target_rate):
 
     batches_per_second = target_rate / BATCH_SIZE
     batch_interval = 1.0 / batches_per_second
-
     next_send = time.perf_counter()
 
     try:
         while True:
             batch = generate_batch(BATCH_SIZE)
-
-            # Multiple framed messages are sent in one TCP write.
             sock.sendall(batch)
-
             sent_logs += BATCH_SIZE
             next_send += batch_interval
 
             now = time.perf_counter()
-
             if now - last_report >= 1.0:
                 elapsed = now - start
                 rate = sent_logs / elapsed
-
                 print(
-                    f"\r"
-                    f"logs={sent_logs:,} | "
-                    f"rate={rate:,.0f}/sec | "
+                    f"\rlogs={sent_logs:,} | rate={rate:,.0f}/sec | "
                     f"target={target_rate:,}/sec",
                     end="",
                     flush=True,
                 )
-
                 last_report = now
 
             sleep_time = next_send - time.perf_counter()
-
             if sleep_time > 0:
                 time.sleep(sleep_time)
-
             elif time.perf_counter() - next_send > 1.0:
                 next_send = time.perf_counter()
 
     except KeyboardInterrupt:
         elapsed = time.perf_counter() - start
-
         print("\n\nStopped.")
-
         if elapsed > 0:
             print(f"Total logs : {sent_logs:,}")
             print(f"Average    : {sent_logs / elapsed:,.0f} logs/sec")
-
     finally:
         sock.close()
 
@@ -661,29 +595,8 @@ def run(host, port, target_rate):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FlareWatch TCP log generator")
-
-    parser.add_argument(
-        "--host",
-        default=HOST,
-    )
-
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=PORT,
-    )
-
-    parser.add_argument(
-        "--rate",
-        type=int,
-        default=TARGET_RATE,
-        help="Target logs/sec",
-    )
-
+    parser.add_argument("--host", default=HOST)
+    parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument("--rate", type=int, default=TARGET_RATE, help="Target logs/sec")
     args = parser.parse_args()
-
-    run(
-        args.host,
-        args.port,
-        args.rate,
-    )
+    run(args.host, args.port, args.rate)

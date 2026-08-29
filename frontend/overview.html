@@ -193,14 +193,26 @@
   /* Top Bar */
   .topbar {
     height: 60px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    background: rgba(10, 10, 14, 0.7);
-    backdrop-filter: blur(10px);
+    margin-top: 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 28px;
+    width: 100%;
   }
+
+  .header-container {
+    display: flex;
+    height: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.097);
+    backdrop-filter: blur(2px);
+    background-color: rgba(255, 255, 255, 0.071);
+    border-radius: 30px;
+    align-items: center;
+    justify-content: center;
+    width: 30%;
+  }
+
 
   .topbar-info {
     display: flex;
@@ -296,15 +308,15 @@
   }
 
   .metric-card {
-    background: rgba(14, 14, 18, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
     padding: 18px;
-    backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 120px;
+     border: 1px solid rgba(255, 255, 255, 0.097);
+    backdrop-filter: blur(2px);
+    background-color: rgba(255, 255, 255, 0.071);
+    border-radius: 30px;
   }
 
   .metric-header {
@@ -471,15 +483,15 @@
   }
 
   .floating-card {
-    background: rgba(10, 10, 16, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     border-left: 4px solid #ff3b3b;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 14px;
-    backdrop-filter: blur(10px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     pointer-events: auto;
     transition: transform 0.2s ease;
+    backdrop-filter: blur(2px);
+    background-color: rgba(255, 255, 255, 0.071);
+    
   }
 
   .floating-card:hover {
@@ -646,7 +658,9 @@
 
     <!-- Header / Topbar -->
     <header class="topbar">
-      <div class="topbar-info">
+      <div class="header-container">
+
+        <div class="topbar-info">
         <div class="info-item">
           <span class="info-label">System Status</span>
           <span class="info-value online"><span class="status-dot"></span> ONLINE</span>
@@ -660,20 +674,9 @@
           <span class="info-value">10:24:15 AM</span>
         </div>
       </div>
-
-      <div class="topbar-actions">
-        <button class="icon-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="badge">12</span>
-        </button>
-        <button class="icon-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        </button>
-        <div class="avatar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
       </div>
-    </header>
+
+      </header>
 
     <!-- Main Dashboard Content -->
     <main class="content-area">
@@ -754,7 +757,7 @@
             <!-- Center Server Box -->
             <div class="server-node">
               <div class="server-title">SERVER</div>
-              <div class="server-sub">&#9679; FIREWALL ACTIVE</div>
+              
             </div>
 
             <!-- Side Threat Cards Overlay -->
