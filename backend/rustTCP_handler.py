@@ -667,7 +667,7 @@ def parse_message(message):
 # TCP CLIENT HANDLER
 # ============================================================
 
-def handle_tcp_client(client_socket, client_address):
+def handle_tcp_client(client_socket, client_address,message):
     """
     Handle one Rust TCP connection.
 
@@ -676,6 +676,8 @@ def handle_tcp_client(client_socket, client_address):
 
     Event processing is intentionally NOT implemented yet.
     """
+
+    message_type = message[0]
 
     print(
         f"[TCP] Rust connected: {client_address}"
@@ -767,7 +769,7 @@ def handle_tcp_client(client_socket, client_address):
             # EVENT PROCESSING IS NOT IMPLEMENTED YET.
             # ------------------------------------------------
 
-            if event["type"] == "stats":
+            if message_type == TYPE_STATS:
                print(f"[TCP] Stats: {event}")
 
     except ProtocolError as error:
