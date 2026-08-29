@@ -720,10 +720,10 @@ def handle_tcp_client(client_socket, client_address):
                 length_bytes
             )[0]
 
-            print(
-                f"[TCP] Message length: "
-                f"{message_length}"
-            )
+            # print(
+            #     f"[TCP] Message length: "
+            #     f"{message_length}"
+            # )
 
             # ------------------------------------------------
             # Validate length.
