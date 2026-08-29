@@ -95,17 +95,27 @@ fn handle_client(
     let mut t1 = time::Instant::now();
     let tottime = time::Instant::now();
 
-    let mut downstream_backend = TcpStream::connect("127.0.0.1:4002")?;
-    println!(
-        "Server is writing to backend {:?}",
-        downstream_backend.local_addr()?
-    );
+    let mut downstream_backend = match TcpStream::connect("127.0.0.1:4002") {
+        Ok(stream) => {
+            println!("Server is writing to backend {:?}", stream.local_addr()?);
+            Some(stream)
+        }
+        Err(_) => {
+            eprintln!("failure to connect to backend server");
+            None
+        }
+    };
 
-    let mut downstream_analysis = TcpStream::connect("127.0.0.1:4001")?;
-    println!(
-        "Server is writing to analysus {:?}",
-        downstream_analysis.local_addr()?
-    );
+    let mut downstream_analysis = match TcpStream::connect("127.0.0.1:4001") {
+        Ok(stream) => {
+            println!("Server is writing to analysus {:?}", stream.local_addr()?);
+            Some(stream)
+        }
+        Err(_) => {
+            eprintln!("failure to connect to analysis server");
+            None
+        }
+    };
 
     loop {
         if let Ok(()) = stream.read_exact(&mut lenbuf) {
@@ -171,17 +181,32 @@ fn handle_client(
                     frame.extend_from_slice(&payload);
 
                     if threat_code != 9 {
-                        if let Err(e) = downstream_backend.write_all(&frame) {
-                            eprintln!("Client Error: {e}");
+                        if let Some(stream) = downstream_backend.as_mut() {
+                            if let Err(e) = stream.write_all(&frame) {
+                                eprintln!("Client Error: {e}");
+                                break;
+                            }
+                        } else {
+                            eprintln!("Not connected to backend");
                             break;
                         }
-                        if let Err(e) = downstream_analysis.write_all(&frame) {
-                            eprintln!("Client Error: {e}");
+                        if let Some(stream) = downstream_analysis.as_mut() {
+                            if let Err(e) = stream.write_all(&frame) {
+                                eprintln!("Client Error: {e}");
+                                break;
+                            }
+                        } else {
+                            eprintln!("Not connected to analysis server");
                             break;
                         }
                     } else {
-                        if let Err(e) = downstream_analysis.write_all(&frame) {
-                            eprintln!("Client Error: {e}");
+                        if let Some(stream) = downstream_analysis.as_mut() {
+                            if let Err(e) = stream.write_all(&frame) {
+                                eprintln!("Client Error: {e}");
+                                break;
+                            }
+                        } else {
+                            eprintln!("Not connected to analysis server");
                             break;
                         }
                     }
@@ -197,8 +222,13 @@ fn handle_client(
                     frame.push(2);
                     frame.extend_from_slice(&payload);
 
-                    if let Err(e) = downstream_backend.write_all(&frame) {
-                        eprintln!("Client Error: {e}");
+                    if let Some(stream) = downstream_backend.as_mut() {
+                        if let Err(e) = stream.write_all(&frame) {
+                            eprintln!("Client Error: {e}");
+                            break;
+                        }
+                    } else {
+                        eprintln!("Not connected to backend");
                         break;
                     }
                 }
@@ -222,8 +252,13 @@ fn handle_client(
                     frame.push(3);
                     frame.extend_from_slice(&payload);
 
-                    if let Err(e) = downstream_backend.write_all(&frame) {
-                        eprintln!("Client Error: {e}");
+                    if let Some(stream) = downstream_backend.as_mut() {
+                        if let Err(e) = stream.write_all(&frame) {
+                            eprintln!("Client Error: {e}");
+                            break;
+                        }
+                    } else {
+                        eprintln!("Not connected to backend");
                         break;
                     }
                 }
