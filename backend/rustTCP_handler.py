@@ -770,7 +770,7 @@ def handle_tcp_client(client_socket, client_address):
             # EVENT PROCESSING IS NOT IMPLEMENTED YET.
             # ------------------------------------------------
 
-            print(f"[TCP] Parsed event: {event}")
+            #print(f"[TCP] Parsed event: {event}")
 
     except ProtocolError as error:
 
