@@ -150,8 +150,32 @@ fn handle_client(
                     payload.extend_from_slice(&(msglen.to_be_bytes()));
                     payload.extend_from_slice(msg);
 
-                    let total_len = payload.len();
+                    let total_len = payload.len() + 1;
+                    let mut frame = Vec::with_capacity(total_len);
+                    frame.extend_from_slice(&(total_len as u32).to_be_bytes());
+                    frame.push(1);
+                    frame.extend_from_slice(&payload);
+
+                    if let Err(e) = downstream.write_all(&frame) {
+                        eprintln!("Client Error: {e}");
+                        break;
+                    }
                 } else {
+                    payload.push(iplen);
+                    payload.extend_from_slice(ip);
+                    payload.extend_from_slice(&(msglen.to_be_bytes()));
+                    payload.extend_from_slice(msg);
+
+                    let total_len = payload.len() + 1;
+                    let mut frame = Vec::with_capacity(total_len);
+                    frame.extend_from_slice(&(total_len as u32).to_be_bytes());
+                    frame.push(2);
+                    frame.extend_from_slice(&payload);
+
+                    if let Err(e) = downstream.write_all(&frame) {
+                        eprintln!("Client Error: {e}");
+                        break;
+                    }
                 }
             } else {
                 eprintln!("Error at reading msg bytes");
