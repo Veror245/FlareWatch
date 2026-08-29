@@ -83,28 +83,33 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
                         let msg =
                             &reqbuf[(msgst + 2) as usize..(msglen + 2 + msgst as u16) as usize];
                         let matches = ac.search(msg);
+                        println!(
+                            "req: {}, matches: {:#?}",
+                            String::from_utf8_lossy(msg),
+                            matches
+                        );
 
-                        if matches
-                            .iter()
-                            .any(|&id| threat_table[id] != ThreatType::Unknown)
-                        {
-                            let threats: HashSet<ThreatType> = matches
-                                .iter()
-                                .map(|&id| threat_table[id])
-                                .filter(|&t| t != ThreatType::Unknown)
-                                .collect();
-                            println!(
-                                "Threats Found in req: {} are {:?}",
-                                String::from_utf8_lossy(msg),
-                                threats
-                            );
-                        } else {
-                            println!(
-                                "No Threats Found in req: {} are {:?}",
-                                String::from_utf8_lossy(msg),
-                                matches
-                            );
-                        }
+                        // if matches
+                        //     .iter()
+                        //     .any(|&id| threat_table[id] != ThreatType::Unknown)
+                        // {
+                        //     let threats: HashSet<ThreatType> = matches
+                        //         .iter()
+                        //         .map(|&id| threat_table[id])
+                        //         .filter(|&t| t != ThreatType::Unknown)
+                        //         .collect();
+                        //     println!(
+                        //         "Threats Found in req: {} are {:?}",
+                        //         String::from_utf8_lossy(msg),
+                        //         threats
+                        //     );
+                        // } else {
+                        //     println!(
+                        //         "No Threats Found in req: {} are {:?}",
+                        //         String::from_utf8_lossy(msg),
+                        //         matches
+                        //     );
+                        // }
                     } else {
                         eprintln!("Error at reading msg bytes");
                         break;
