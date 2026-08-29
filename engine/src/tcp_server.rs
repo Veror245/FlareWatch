@@ -66,7 +66,7 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
 
-    let mut downstream = TcpStream::connect("127.0.0.1:4002")?;
+    let mut downstream = TcpStream::connect("127.0.0.1:4001")?;
     println!("Server is writing to {:?}", downstream.local_addr()?);
 
     let threat_table = build_id_to_threat_table();
@@ -103,8 +103,6 @@ fn handle_client(
     let mut processed: u32 = 0;
     let mut threats_count: u32 = 0;
 
-    let mut payload: Vec<u8> = vec![0u8];
-
     loop {
         if let Ok(()) = stream.read_exact(&mut lenbuf) {
             reqlen = u32::from_be_bytes(lenbuf);
@@ -119,6 +117,7 @@ fn handle_client(
                 let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
                 let msg = &reqbuf[(msgst + 2) as usize..(msglen + 2 + msgst as u16) as usize];
                 let matches = ac.search(msg);
+                let mut payload: Vec<u8> = Vec::new();
 
                 if matches
                     .iter()
