@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlareWatch - Threat Details</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #050507;
+    color: #e1e1e6;
+    overflow: hidden;
+  }
+
+  /* Custom Scrollbar for modern look */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+  /* Full Screen Canvas for Interactive Dots */
+  #dotCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* App Layout Container */
+  .app-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Animated Collapsible Sidebar */
+  .sidebar {
+    width: 68px; /* Collapsed width */
+    background: rgba(8, 8, 11, 0.75);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+  }
+
+  .sidebar:hover {
+    width: 240px; /* Expanded width */
+    background: rgba(10, 10, 14, 0.95);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .brand-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px 32px 20px;
+    height: 32px;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .brand-logo svg {
+    width: 24px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .brand-logo .red { color: #ff2a2a; }
+  .brand-logo .white { color: #ffffff; }
+
+  /* Animated Text Hiding/Showing */
+  .brand-text,
+  .nav-text,
+  .collapse-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .sidebar:hover .brand-text,
+  .sidebar:hover .nav-text,
+  .sidebar:hover .collapse-btn {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0.05s;
+  }
+
+  .collapse-btn {
+    background: transparent;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .collapse-btn:hover { color: #fff; }
+
+  .nav-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 12px;
+  }
+
+  .nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 12px;
+    color: #71717a;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    height: 42px;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item a:hover {
+    color: #e1e1e6;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .nav-item.active a {
+    color: #fff;
+    background: linear-gradient(90deg, rgba(255, 42, 42, 0.1) 0%, rgba(255, 42, 42, 0.0) 100%);
+    border-left: 2px solid #ff2a2a;
+    border-radius: 4px;
+  }
+
+  .nav-item svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Main Viewport */
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Content Dashboard Area */
+  .content-area {
+    flex: 1;
+    padding: 32px 48px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* Page Header Row */
+  .page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    font-weight: 500;
+    color: #71717a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .breadcrumb span { color: #e1e1e6; }
+
+  .btn-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #a1a1aa;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Threat Hero Section */
+  .threat-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .threat-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .shield-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255, 42, 42, 0.15) 0%, rgba(255, 42, 42, 0.02) 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 42, 42, 0.2);
+    box-shadow: 0 0 30px rgba(255, 42, 42, 0.1);
+  }
+  
+  .shield-icon svg { width: 36px; height: 42px; }
+
+  .threat-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .badges-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .badge.severity {
+    background: rgba(255, 42, 42, 0.1);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 42, 42, 0.3);
+  }
+
+  .badge.status {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .badge.status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #34d399;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #34d399;
+  }
+
+  .threat-titles h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .threat-meta-right {
+    display: flex;
+    gap: 32px;
+    text-align: right;
+  }
+
+  .meta-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .meta-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #71717a;
+    text-transform: uppercase;
+  }
+
+  .meta-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: #e1e1e6;
+  }
+
+  .meta-val.risk {
+    color: #ff4d4d;
+    font-weight: 700;
+    font-size: 20px;
+  }
+
+  /* Metrics Grid (Expanded) */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 16px;
+  }
+
+  .stat-box {
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 0.2s;
+  }
+
+  .stat-box:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .stat-lbl {
+    font-size: 11px;
+    color: #71717a;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f4f4f5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 400;}
+
+  /* 3-Column Details Grid */
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .card {
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .card-icon {
+    color: #71717a;
+    width: 16px;
+    height: 16px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #a1a1aa;
+    text-transform: uppercase;
+  }
+
+  /* Data List Styling */
+  .data-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .data-item.row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .data-label {
+    font-size: 12px;
+    color: #71717a;
+  }
+
+  .data-value {
+    font-size: 13.5px;
+    color: #d4d4d8;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+  
+  .data-value.highlight {
+    color: #fff;
+    font-weight: 500;
+  }
+
+  /* Payload / Code Box */
+  .code-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 42, 42, 0.15);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #ff6b6b;
+    line-height: 1.6;
+    word-wrap: break-word;
+    margin-top: 4px;
+  }
+
+  /* Raw Log Full Width */
+  .raw-log-section {
+    grid-column: span 3;
+    margin-top: -8px;
+  }
+
+  .raw-log-pre {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 20px;
+    color: #a1a1aa;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+  }
+  
+  .raw-log-pre .highlight-danger { color: #ff4d4d; font-weight: 700; }
+  .raw-log-pre .highlight-key { color: #60a5fa; }
+
+  @media (max-width: 1400px) {
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .details-grid { grid-template-columns: repeat(2, 1fr); }
+    .raw-log-section { grid-column: span 2; }
+  }
+
+  @media (max-width: 1024px) {
+    .details-grid { grid-template-columns: 1fr; }
+    .raw-log-section { grid-column: span 1; }
+    .threat-hero { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .threat-meta-right { width: 100%; justify-content: space-between; }
+  }
+
+  /* Page Transition Animation */
+  .app-container {
+    animation: page-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Full Screen Dynamic Interactive Canvas -->
+<canvas id="dotCanvas"></canvas>
+
+<div class="app-container">
+
+  <!-- Hover-Expandable Animated Sidebar -->
+  <aside class="sidebar">
+    <div>
+      <div class="brand-header">
+        <div class="brand-logo">
+          <svg viewBox="0 0 88 104" fill="none">
+            <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+            <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+          </svg>
+          <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
+        </div>
+        <button class="collapse-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span class="nav-text">Live Events</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="nav-text">Search Logs</span>
+          </a>
+        </li>
+        <li class="nav-item active">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span class="nav-text">Threats</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span class="nav-text">Rules Engine</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span class="nav-text">Settings</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- Main Section -->
+  <div class="main-wrapper">
+    <main class="content-area">
+
+      <!-- Breadcrumb & Back Row -->
+      <div class="page-header-row">
+        <div class="breadcrumb">
+          Live Events <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg> <span>Threat Details</span>
+        </div>
+        <button class="btn-back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back to feed
+        </button>
+      </div>
+
+      <!-- Threat Hero Header -->
+      <div class="threat-hero">
+        <div class="threat-hero-left">
+          <div class="shield-icon">
+            <svg viewBox="0 0 88 104" fill="none">
+              <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+              <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+            </svg>
+          </div>
+          <div class="threat-titles">
+            <div class="badges-row">
+              <span class="badge severity">High Severity</span>
+              <span class="badge status">Mitigated - Blocked</span>
+            </div>
+            <h2>SQL Injection Detected</h2>
+          </div>
+        </div>
+        <div class="threat-meta-right">
+          <div class="meta-block">
+            <span class="meta-label">Risk Score</span>
+            <span class="meta-val risk">98 / 100</span>
+          </div>
+          <div class="meta-block">
+            <span class="meta-label">Event Timestamp</span>
+            <span class="meta-val">2026-08-20 02:41:10 UTC</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Row (Expanded to full width) -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-lbl">Source IP</span>
+          <span class="stat-val mono">176.113.115.12</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Category</span>
+          <span class="stat-val">SQL Injection</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Method</span>
+          <span class="stat-val mono">GET</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Target Endpoint</span>
+          <span class="stat-val mono">/api/v1/search</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Target Host</span>
+          <span class="stat-val mono">api.example.com</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Matched Rule ID</span>
+          <span class="stat-val mono">FW-SQLI-091</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Bytes Transferred</span>
+          <span class="stat-val mono">1.25 KB</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Processing Time</span>
+          <span class="stat-val mono">42 ms</span>
+        </div>
+      </div>
+
+      <!-- 3-Column Details Layout -->
+      <div class="details-grid">
+        
+        <!-- Col 1: Network & Origin Context -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            <span class="card-title">Network & Origin Context</span>
+          </div>
+          <div class="data-list">
+            <div class="data-item">
+              <span class="data-label">Geographic Location</span>
+              <span class="data-value highlight">Moscow, Russia (RU)</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Autonomous System (ASN)</span>
+              <span class="data-value">AS12389 - Rostelecom</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Threat Actor / Reputation</span>
+              <span class="data-value">Known Scanner / Suspected Botnet</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">User Agent String</span>
+              <span class="data-value mono">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 2: Request & Payload Details -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span class="card-title">Request & Attack Payload</span>
+          </div>
+          <div class="data-list">
+            <div class="data-item">
+              <span class="data-label">Full Request URL</span>
+              <span class="data-value mono">https://api.example.com/search?id=1 union select username,password from users</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Decoded Attack Payload (Query Parameter: id)</span>
+              <div class="code-box">
+                1 UNION SELECT username, password FROM users--
+              </div>
+            </div>
+            <div class="data-item row">
+              <span class="data-label">Content-Type</span>
+              <span class="data-value mono">application/x-www-form-urlencoded</span>
+            </div>
+            <div class="data-item row">
+              <span class="data-label">HTTP Protocol</span>
+              <span class="data-value mono">HTTP/1.1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 3: Detection & Mitigation Action -->
+        <div class="card">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <span class="card-title">Detection & Mitigation</span>
+          </div>
+          <div class="data-list">
+            <div class="data-item row">
+              <span class="data-label">Detection Engine</span>
+              <span class="data-value">Aho-Corasick Regex Matcher</span>
+            </div>
+            <div class="data-item row">
+              <span class="data-label">Rule Name</span>
+              <span class="data-value">Suspicious UNION SELECT Pattern</span>
+            </div>
+            <div class="data-item">
+              <span class="data-label">Triggered Pattern</span>
+              <span class="data-value mono" style="color: #60a5fa;">(?i)union\s+(all\s+)?select</span>
+            </div>
+            <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 8px 0;"></div>
+            <div class="data-item row">
+              <span class="data-label">Action Taken</span>
+              <span class="data-value highlight" style="color: #34d399;">Connection Dropped (403)</span>
+            </div>
+            <div class="data-item row">
+              <span class="data-label">Subsequent Action</span>
+              <span class="data-value">IP Blocked at Edge (24h)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Width Raw Log Section -->
+        <div class="card raw-log-section">
+          <div class="card-header">
+            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="3" y2="4"></line><line x1="21" y1="12" x2="3" y2="12"></line><line x1="21" y1="20" x2="3" y2="20"></line></svg>
+            <span class="card-title">Raw HTTP Request Log</span>
+          </div>
+          <div class="raw-log-pre"><span class="highlight-key">2026-08-20T02:41:10.145Z</span> [176.113.115.12:49381 -> 10.0.2.15:443] 
+GET /api/v1/search?id=<span class="highlight-danger">1%20union%20select%20username%2Cpassword%20from%20users</span> HTTP/1.1
+Host: api.example.com
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+X-Forwarded-For: 176.113.115.12</div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Full Screen Interactive Canvas Grid Engine (Untouched - exactly as requested)
+  const canvas = document.getElementById('dotCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height;
+  let dots = [];
+  const spacing = 22;             
+  const baseRadius = 0.7;        
+  const hoverRadius = 140;        
+  const MAX_DOT_RADIUS = 4.5;     
+
+  let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+
+  function initGrid() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    dots = [];
+    const cols = Math.ceil(width / spacing) + 1;
+    const rows = Math.ceil(height / spacing) + 1;
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const baseX = i * spacing;
+        const baseY = j * spacing;
+        
+        const isThreat = Math.random() < 0.012;
+        const isSuspicious = !isThreat && Math.random() < 0.018;
+
+        const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
+
+        dots.push({
+          baseX,
+          baseY,
+          x: baseX,
+          y: baseY,
+          baseR: initialR,
+          r: initialR,
+          colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
+          opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', initGrid);
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.targetX = e.clientX;
+    mouse.targetY = e.clientY;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.targetX = -1000;
+    mouse.targetY = -1000;
+  });
+
+  function render(time) {
+    ctx.clearRect(0, 0, width, height);
+
+    mouse.x += (mouse.targetX - mouse.x) * 0.1;
+    mouse.y += (mouse.targetY - mouse.y) * 0.1;
+
+    const t = time * 0.0025;
+
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+
+      const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
+      const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
+
+      const dx = mouse.x - d.baseX;
+      const dy = mouse.y - d.baseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let targetX = d.baseX + waveX;
+      let targetY = d.baseY + waveY;
+      let targetR = d.baseR;
+      let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
+
+      if (dist < hoverRadius) {
+        const norm = 1 - dist / hoverRadius;
+        const factor = norm * norm * (3 - 2 * norm);
+
+        const addedRadius = factor * 2.8;
+        targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
+        targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
+
+        const angle = Math.atan2(dy, dx);
+        const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
+        const pushAmount = factor * 12;
+
+        targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
+        targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
+      }
+
+      d.x += (targetX - d.x) * 0.12;
+      d.y += (targetY - d.y) * 0.12;
+      d.r += (targetR - d.r) * 0.12;
+      d.opacity += (targetOpacity - d.opacity) * 0.12;
+
+      let color;
+      if (d.colorType === 'threat') {
+        color = `rgba(255, 42, 42, ${d.opacity})`;
+      } else if (d.colorType === 'suspicious') {
+        color = `rgba(255, 179, 0, ${d.opacity})`;
+      } else {
+        color = `rgba(0, 229, 255, ${d.opacity})`;
+      }
+
+      const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (d.colorType === 'threat' || finalRadius > 3.2) {
+        ctx.shadowBlur = finalRadius * 2;
+        ctx.shadowColor = color;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  initGrid();
+  requestAnimationFrame(render);
+</script>
+
+</body>
+</html>
