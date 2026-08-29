@@ -66,8 +66,17 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
 
-    let mut downstream = TcpStream::connect("127.0.0.1:4001")?;
-    println!("Server is writing to {:?}", downstream.local_addr()?);
+    let mut downstream_backend = TcpStream::connect("127.0.0.1:4001")?;
+    println!(
+        "Server is writing to backend {:?}",
+        downstream_backend.local_addr()?
+    );
+
+    let mut downstream_analysis = TcpStream::connect("127.0.0.1:4002")?;
+    println!(
+        "Server is writing to analysus {:?}",
+        downstream_analysis.local_addr()?
+    );
 
     let threat_table = build_id_to_threat_table();
 
@@ -77,8 +86,13 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
             let t1 = time::Instant::now();
-            let (processed, threats) =
-                handle_client(&mut stream, ac, threat_table, &mut downstream);
+            let (processed, threats) = handle_client(
+                &mut stream,
+                ac,
+                threat_table,
+                &mut downstream_backend,
+                &mut downstream_analysis,
+            );
             let elapsed = t1.elapsed().as_secs_f64();
             println!("logs/sec: {:?}", processed as f64 / elapsed);
             println!("Total Threats: {}", threats);
@@ -96,7 +110,8 @@ fn handle_client(
     stream: &mut TcpStream,
     ac: Arc<AhoCorasick>,
     threat_table: [ThreatType; 212],
-    downstream: &mut TcpStream,
+    downstream_backend: &mut TcpStream,
+    downstream_analysis: &mut TcpStream,
 ) -> (u32, u32) {
     let mut lenbuf = [0u8; 4];
     let mut reqlen;
@@ -118,6 +133,7 @@ fn handle_client(
                 let msg = &reqbuf[(msgst + 2) as usize..(msglen + 2 + msgst as u16) as usize];
                 let matches = ac.search(msg);
                 let mut payload: Vec<u8> = Vec::new();
+                let mut threat_code: u8 = 9;
 
                 if matches
                     .iter()
@@ -130,7 +146,7 @@ fn handle_client(
                         .filter(|&t| t != ThreatType::Unknown)
                         .collect();
                     if let Some(th) = threats.iter().next() {
-                        let threat_code: u8 = match *th {
+                        threat_code = match *th {
                             ThreatType::SQLI => 0,
                             ThreatType::XSS => 1,
                             ThreatType::PathTraversal => 2,
@@ -140,9 +156,15 @@ fn handle_client(
                             ThreatType::LDAPInjection => 6,
                             ThreatType::XXE => 7,
                             ThreatType::HTTPAnomaly => 8,
+                            ThreatType::HTTPEvent => 9,
                             _ => 255,
                         };
-                        payload.push(threat_code);
+                        if threat_code != 9 {
+                            payload.push(threat_code);
+                        } else {
+                            let eventtype = matches[0] - 208;
+                            payload.push(eventtype as u8);
+                        }
                     }
                     payload.push(iplen);
                     payload.extend_from_slice(ip);
@@ -152,12 +174,23 @@ fn handle_client(
                     let total_len = payload.len() + 1;
                     let mut frame = Vec::with_capacity(total_len);
                     frame.extend_from_slice(&(total_len as u32).to_be_bytes());
-                    frame.push(1);
+                    if threat_code != 9 {
+                        frame.push(1);
+                    } else {
+                        frame.push(4);
+                    }
                     frame.extend_from_slice(&payload);
 
-                    if let Err(e) = downstream.write_all(&frame) {
-                        eprintln!("Client Error: {e}");
-                        break;
+                    if threat_code != 9 {
+                        if let Err(e) = downstream_backend.write_all(&frame) {
+                            eprintln!("Client Error: {e}");
+                            break;
+                        }
+                    } else {
+                        if let Err(e) = downstream_analysis.write_all(&frame) {
+                            eprintln!("Client Error: {e}");
+                            break;
+                        }
                     }
                 } else {
                     payload.push(iplen);
@@ -171,7 +204,7 @@ fn handle_client(
                     frame.push(2);
                     frame.extend_from_slice(&payload);
 
-                    if let Err(e) = downstream.write_all(&frame) {
+                    if let Err(e) = downstream_backend.write_all(&frame) {
                         eprintln!("Client Error: {e}");
                         break;
                     }
