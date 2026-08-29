@@ -1,198 +1,207 @@
-' OR 1=1|0
-' OR '1'='1|1
-" OR 1=1|2
-" OR "1"="1|3
-' OR 1=1--|4
-' OR 1=1#|5
-' OR 1=1/*|6
-' AND 1=1|7
-' AND '1'='1|8
-' AND 1=2|9
-" AND 1=1|10
-" AND 1=2|11
-UNION SELECT|12
-UNION ALL SELECT|13
-UNION DISTINCT SELECT|14
-UNION SELECT NULL|15
-UNION ALL SELECT NULL|16
-SELECT * FROM|17
-SELECT username|18
-SELECT password|19
-FROM users|20
-FROM information_schema|21
-DROP TABLE|22
-DROP DATABASE|23
-INSERT INTO|24
-DELETE FROM|25
-UPDATE users|26
-ALTER TABLE|27
-OR 1=1|28
-AND 1=1|29
-OR TRUE|30
-AND TRUE|31
-OR 'x'='x|32
---|33
-#|34
-/*|35
-*/|36
-<script|37
-</script>|38
-<script>|39
-<script src=|40
-javascript:|41
-javascript://|42
-vbscript:|43
-data:text/html|44
-onerror=|45
-onload=|46
-onclick=|47
-onmouseover=|48
-onfocus=|49
-onblur=|50
-onchange=|51
-onsubmit=|52
-onkeydown=|53
-onkeyup=|54
-<iframe|55
-<iframe src=|56
-<object|57
-<embed|58
-<svg|59
-<svg onload=|60
-<img src=|61
-<img onerror=|62
-<body onload=|63
-<input onfocus=|64
-<details open|65
-../|66
-../../|67
-../../../|68
-../../../../|69
-../etc/|70
-../../etc/|71
-../../etc/passwd|72
-/etc/passwd|73
-/etc/shadow|74
-/etc/hosts|75
-/etc/issue|76
-/proc/self/|77
-proc/self/environ|78
-..\|79
-..\..\|80
-..\..\..\|81
-..\windows\|82
-..\windows\system32|83
-windows/system32|84
-windows/win.ini|85
-win.ini|86
-boot.ini|87
-%2e%2e%2f|88
-%2e%2e/|89
-..%2f|90
-%2e%2e%5c|91
-..%5c|92
-%252e%252e%252f|93
-; whoami|94
-; id|95
-; ls|96
-; cat|97
-; pwd|98
-| whoami|99
-| id|100
-| ls|101
-&& whoami|102
-&& id|103
-&& ls|104
-|| whoami|105
-|| id|106
-$(whoami)|107
-$(id)|108
-$(cat /etc/passwd)|109
-`whoami`|110
-`id`|111
-`cat /etc/passwd`|112
-/bin/sh|113
-/bin/bash|114
-/bin/zsh|115
-/bin/dash|116
-cmd.exe|117
-powershell|118
-powershell.exe|119
-pwsh|120
-whoami|121
-/etc/passwd|122
-id|123
-uname -a|124
-ifconfig|125
-ipconfig|126
-netstat|127
-/.env|128
-/.env.local|129
-/.env.production|130
-/config|131
-/config.php|132
-/config.yml|133
-/config.yaml|134
-/config.json|135
-/.git/|136
-/.git/config|137
-/.git/HEAD|138
-/.git/index|139
-id_rsa|140
-id_ed25519|141
-authorized_keys|142
-.ssh/|143
-wp-config.php|144
-web.config|145
-.htaccess|146
-.htpasswd|147
-/etc/passwd|148
-/etc/shadow|149
-/etc/hosts|150
-/etc/hostname|151
-/proc/self/environ|152
-localhost|153
-127.0.0.1|154
-127.0.0.0|155
-0.0.0.0|156
-::1|157
-10.|158
-192.168.|159
-172.16.|160
-172.17.|161
-172.18.|162
-172.19.|163
-172.20.|164
-172.21.|165
-172.22.|166
-172.23.|167
-172.24.|168
-172.25.|169
-172.26.|170
-172.27.|171
-172.28.|172
-172.29.|173
-172.30.|174
-172.31.|175
-169.254.169.254|176
-/latest/meta-data|177
-/latest/user-data|178
-metadata.google.internal|179
-*)(uid=*|180
-*)(cn=*|181
-*)(objectClass=*|182
-(|(uid=|183
-(|(cn=|184
-(&(uid=|185
-(&(cn=|186
-*))|187
-*))(|188
-<!DOCTYPE|189
-<!ENTITY|190
-SYSTEM "|191
-SYSTEM '|192
-PUBLIC "|193
-PUBLIC '|194
-file://|195
-php://|196
-expect://|197
+' OR 1=1,0
+' OR '1'='1,1
+" OR 1=1,2
+" OR "1"="1",3
+' OR 1=1--,4
+' OR 1=1#,5
+' OR 1=1/*,6
+' AND 1=1,7
+' AND '1'='1,8
+' AND 1=2,9
+" AND 1=1,10
+" AND 1=2,11
+UNION SELECT,12
+UNION ALL SELECT,13
+UNION DISTINCT SELECT,14
+UNION SELECT NULL,15
+UNION ALL SELECT NULL,16
+SELECT * FROM,17
+SELECT username,18
+SELECT password,19
+FROM users,20
+FROM information_schema,21
+DROP TABLE,22
+DROP DATABASE,23
+INSERT INTO,24
+DELETE FROM,25
+UPDATE users,26
+ALTER TABLE,27
+OR 1=1,28
+AND 1=1,29
+OR TRUE,30
+AND TRUE,31
+OR 'x'='x,32
+--,33
+#,34
+/*,35
+*/,36
+<script,37
+</script>,38
+<script>,39
+<script src=,40
+javascript:,41
+javascript://,42
+vbscript:,43
+data:text/html,44
+onerror=,45
+onload=,46
+onclick=,47
+onmouseover=,48
+onfocus=,49
+onblur=,50
+onchange=,51
+onsubmit=,52
+onkeydown=,53
+onkeyup=,54
+<iframe,55
+<iframe src=,56
+<object,57
+<embed,58
+<svg,59
+<svg onload=,60
+<img src=,61
+<img onerror=,62
+<body onload=,63
+<input onfocus=,64
+<details open,65
+../,66
+../../,67
+../../../,68
+../../../../,69
+../etc/,70
+../../etc/,71
+../../etc/passwd,72
+/etc/passwd,73
+/etc/shadow,74
+/etc/hosts,75
+/etc/issue,76
+/proc/self/,77
+proc/self/environ,78
+..\,79
+..\..\,80
+..\..\..\,81
+..\windows\,82
+..\windows\system32,83
+windows/system32,84
+windows/win.ini,85
+win.ini,86
+boot.ini,87
+%2e%2e%2f,88
+%2e%2e/,89
+..%2f,90
+%2e%2e%5c,91
+..%5c,92
+%252e%252e%252f,93
+; whoami,94
+; id,95
+; ls,96
+; cat,97
+; pwd,98
+| whoami,99
+| id,100
+| ls,101
+&& whoami,102
+&& id,103
+&& ls,104
+|| whoami,105
+|| id,106
+$(whoami),107
+$(id),108
+$(cat /etc/passwd),109
+`whoami`,110
+`id`,111
+`cat /etc/passwd`,112
+/bin/sh,113
+/bin/bash,114
+/bin/zsh,115
+/bin/dash,116
+cmd.exe,117
+powershell,118
+powershell.exe,119
+pwsh,120
+whoami,121
+/etc/passwd,122
+id,123
+uname -a,124
+ifconfig,125
+ipconfig,126
+netstat,127
+/.env,128
+/.env.local,129
+/.env.production,130
+/config,131
+/config.php,132
+/config.yml,133
+/config.yaml,134
+/config.json,135
+/.git/,136
+/.git/config,137
+/.git/HEAD,138
+/.git/index,139
+id_rsa,140
+id_ed25519,141
+authorized_keys,142
+.ssh/,143
+wp-config.php,144
+web.config,145
+.htaccess,146
+.htpasswd,147
+/etc/passwd,148
+/etc/shadow,149
+/etc/hosts,150
+/etc/hostname,151
+/proc/self/environ,152
+localhost,153
+127.0.0.1,154
+127.0.0.0,155
+0.0.0.0,156
+::1,157
+10.,158
+192.168.,159
+172.16.,160
+172.17.,161
+172.18.,162
+172.19.,163
+172.20.,164
+172.21.,165
+172.22.,166
+172.23.,167
+172.24.,168
+172.25.,169
+172.26.,170
+172.27.,171
+172.28.,172
+172.29.,173
+172.30.,174
+172.31.,175
+169.254.169.254,176
+/latest/meta-data,177
+/latest/user-data,178
+metadata.google.internal,179
+*)(uid=*,180
+*)(cn=*,181
+*)(objectClass=*,182
+(|(uid=,183
+(|(cn=,184
+(&(uid=,185
+(&(cn=,186
+*)),187
+*)) (,188
+<!DOCTYPE,189
+<!ENTITY,190
+SYSTEM ",191
+SYSTEM ',192
+PUBLIC ",193
+PUBLIC ',194
+file://,195
+php://,196
+expect://,197
+INVALID_METHOD /login,198
+GET / HTTP/9.9,200
+Content-Length: 100 Content-Length: 500,201
+Content-Length: -1,202
+OVERSIZED_REQUEST,203
+OVERSIZED_HEADER,204
+INVALID_HEADER,205
+Transfer-Encoding: invalid,206
+INVALID_CHUNKED_ENCODING,207
