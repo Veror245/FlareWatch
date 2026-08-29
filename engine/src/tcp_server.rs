@@ -113,7 +113,7 @@ fn handle_client(
             let mut reqbuf: Vec<u8> = vec![0u8; reqlen as usize];
             if stream.read_exact(&mut reqbuf).is_ok() {
                 processed += 1;
-                let msg_type = reqbuf[0];
+                let _msg_type = reqbuf[0];
                 let iplen = reqbuf[1];
                 let ip = &reqbuf[2..(iplen + 2) as usize];
                 let msgst = (2 + iplen) as usize;
