@@ -175,6 +175,10 @@ fn handle_client(
                             eprintln!("Client Error: {e}");
                             break;
                         }
+                        if let Err(e) = downstream_analysis.write_all(&frame) {
+                            eprintln!("Client Error: {e}");
+                            break;
+                        }
                     } else {
                         if let Err(e) = downstream_analysis.write_all(&frame) {
                             eprintln!("Client Error: {e}");

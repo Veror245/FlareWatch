@@ -8,15 +8,11 @@ const PATTERNS: &str = include_str!("../../aho_patterns.txt");
 fn main() -> io::Result<()> {
     println!("Hello, world!");
 
-    // let table = build_id_to_threat_table();
-
     let mut ac = aho::AhoCorasick::default();
     load_patterns(&mut ac);
     ac.create_failure_links();
 
     let ac = Arc::new(ac);
-
-    //ac.print();
 
     tcp_server::server_main(ac)?;
 
@@ -38,7 +34,6 @@ fn load_patterns(ac: &mut AhoCorasick) {
             if !pattern.is_empty() {
                 ac.add(pattern.as_bytes(), id);
                 count += 1;
-                println!("{}", pattern);
             }
         } else {
             eprintln!("Skipping malformed pattern line: {line}");
