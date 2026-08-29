@@ -55,14 +55,13 @@
   /* Animated Collapsible Sidebar */
   .sidebar {
     width: 68px; /* Collapsed width */
-    background: rgba(8, 8, 11, 0.75);
-    border-right: 1px solid rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10, 10, 13, 0.9);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 24px 0;
+    padding: 20px 0;
     flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -70,17 +69,17 @@
     z-index: 10;
   }
 
+  /* Hover to Expand Sidebar */
   .sidebar:hover {
-    width: 240px; /* Expanded width */
-    background: rgba(10, 10, 14, 0.95);
-    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
+    width: 230px; /* Expanded width */
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
   }
 
   .brand-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px 32px 20px;
+    padding: 0 18px 24px 18px;
     height: 32px;
   }
 
@@ -89,14 +88,13 @@
     align-items: center;
     gap: 12px;
     font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+    font-size: 18px;
+    letter-spacing: 1px;
   }
 
   .brand-logo svg {
-    width: 24px;
-    height: 28px;
+    width: 26px;
+    height: 30px;
     flex-shrink: 0;
   }
 
@@ -106,6 +104,7 @@
   /* Animated Text Hiding/Showing */
   .brand-text,
   .nav-text,
+  .status-text,
   .collapse-btn {
     opacity: 0;
     visibility: hidden;
@@ -114,26 +113,27 @@
 
   .sidebar:hover .brand-text,
   .sidebar:hover .nav-text,
+  .sidebar:hover .status-text,
   .sidebar:hover .collapse-btn {
     opacity: 1;
     visibility: visible;
-    transition-delay: 0.05s;
+    transition-delay: 0.08s;
   }
 
   .collapse-btn {
     background: transparent;
     border: none;
-    color: #555;
+    color: #666;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
   }
-  .collapse-btn:hover { color: #fff; }
+  .collapse-btn:hover { color: #aaa; }
 
   .nav-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     padding: 0 12px;
   }
 
@@ -141,32 +141,60 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px 12px;
-    color: #71717a;
+    padding: 10px;
+    color: #888899;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 500;
-    border-radius: 6px;
-    height: 42px;
+    border-radius: 8px;
+    height: 44px;
     transition: all 0.2s ease;
   }
 
   .nav-item a:hover {
-    color: #e1e1e6;
-    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .nav-item.active a {
     color: #fff;
-    background: linear-gradient(90deg, rgba(255, 42, 42, 0.1) 0%, rgba(255, 42, 42, 0.0) 100%);
-    border-left: 2px solid #ff2a2a;
-    border-radius: 4px;
+    background: rgba(255, 42, 42, 0.12);
+    border: 1px solid rgba(255, 42, 42, 0.35);
+    box-shadow: 0 0 10px rgba(255, 42, 42, 0.18);
   }
 
   .nav-item svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 0 12px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(0, 230, 118, 0.06);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #00e676;
+    letter-spacing: 0.5px;
+    height: 40px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00e676;
+    box-shadow: 0 0 8px #00e676;
     flex-shrink: 0;
   }
 
@@ -546,46 +574,44 @@
           </svg>
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
         </div>
-        <button class="collapse-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
+        <button class="collapse-btn">&laquo;</button>
       </div>
 
       <ul class="nav-list">
-        <li class="nav-item">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span class="nav-text">Dashboard</span>
+        <li class="nav-item active">
+          <a href="/frontend/overview.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="nav-text">Overview</span>
           </a>
         </li>
         <li class="nav-item">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <a href="/frontend/live-events.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             <span class="nav-text">Live Events</span>
           </a>
         </li>
         <li class="nav-item">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <a href="/frontend/search-logs.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <span class="nav-text">Search Logs</span>
           </a>
         </li>
-        <li class="nav-item active">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <li class="nav-item">
+          <a href="/frontend/threatDetails.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span class="nav-text">Threats</span>
           </a>
         </li>
         <li class="nav-item">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span class="nav-text">Rules Engine</span>
+          <a href="/frontend/rules.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="nav-text">Rules</span>
           </a>
         </li>
         <li class="nav-item">
-          <a href="#">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span class="nav-text">Settings</span>
+          <a href="/frontend/about.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span class="nav-text">About</span>
           </a>
         </li>
       </ul>
