@@ -66,13 +66,13 @@ pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
 
-    let mut downstream_backend = TcpStream::connect("127.0.0.1:4001")?;
+    let mut downstream_backend = TcpStream::connect("127.0.0.1:4002")?;
     println!(
         "Server is writing to backend {:?}",
         downstream_backend.local_addr()?
     );
 
-    let mut downstream_analysis = TcpStream::connect("127.0.0.1:4002")?;
+    let mut downstream_analysis = TcpStream::connect("127.0.0.1:4001")?;
     println!(
         "Server is writing to analysus {:?}",
         downstream_analysis.local_addr()?
