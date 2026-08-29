@@ -352,12 +352,21 @@ def handle_rust_connection(conn):
             # Type 4: EVENT
             elif msg_type == 4:  
                 event_id = struct.unpack('>B', payload[0:1])[0]
-                ip_address, endpoint, user, _ = _parse_ip_and_optional_fields(payload, 1)
+                threat_id = struct.unpack('>B', payload[1:2])[0]  # newly added threat_type field
+                
+                if event_id == 255: 
+                    continue  # NO_EVENT flag bypass
+                
+                # Shift offset to 2 to account for both 1-byte fields
+                ip_address, request_str, _ = _parse_payload_data(payload, 2)
                 
                 event_str = INBOUND_EVENTS.get(event_id, "UNKNOWN_EVENT")
                 event_queue.put(Event(
-                    IP=ip_address, event_type=event_str, severity=0,
-                    user=user, endpoint=endpoint, metadata={"event_id": event_id}
+                    IP=ip_address, 
+                    event_type=event_str, 
+                    severity=0,
+                    endpoint=request_str, 
+                    metadata={"event_id": event_id, "threat_id": threat_id}
                 ))
                 
             # Type 0 (LOG) or 2 (NOTHREAT)
