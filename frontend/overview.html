@@ -659,11 +659,10 @@
     <!-- Header / Topbar -->
     <header class="topbar">
       <div class="header-container">
-
         <div class="topbar-info">
         <div class="info-item">
           <span class="info-label">System Status</span>
-          <span class="info-value online"><span class="status-dot"></span> ONLINE</span>
+          <span class="info-value online" id="status-indicator"><span class="status-dot"></span> ONLINE</span>
         </div>
         <div class="info-item">
           <span class="info-label">Uptime</span>
@@ -671,12 +670,11 @@
         </div>
         <div class="info-item">
           <span class="info-label">Last Updated</span>
-          <span class="info-value">10:24:15 AM</span>
+          <span class="info-value">LIVE</span>
         </div>
       </div>
       </div>
-
-      </header>
+    </header>
 
     <!-- Main Dashboard Content -->
     <main class="content-area">
@@ -688,13 +686,13 @@
         <div class="metric-card">
           <div class="metric-header">LOGS / SEC</div>
           <div class="metric-body">
-            <div class="metric-value">50,000</div>
+            <div class="metric-value" id="metric-logs-sec">0</div>
           </div>
           <div class="metric-footer">
             <svg class="sparkline" viewBox="0 0 100 25">
               <path id="spark-1" fill="none" stroke="#00e676" stroke-width="2"/>
             </svg>
-            <div class="trend up-green">&uarr; 12.5%</div>
+            <div class="trend up-green">&uarr;</div>
           </div>
         </div>
 
@@ -702,13 +700,13 @@
         <div class="metric-card red">
           <div class="metric-header">THREATS DETECTED</div>
           <div class="metric-body">
-            <div class="metric-value red">127</div>
+            <div class="metric-value red" id="metric-threats">0</div>
           </div>
           <div class="metric-footer">
             <svg class="sparkline" viewBox="0 0 100 25">
               <path id="spark-2" fill="none" stroke="#ff3b3b" stroke-width="2"/>
             </svg>
-            <div class="trend up-red">&uarr; 8.3%</div>
+            <div class="trend up-red">&uarr;</div>
           </div>
         </div>
 
@@ -716,13 +714,13 @@
         <div class="metric-card">
           <div class="metric-header">TOTAL LOGS</div>
           <div class="metric-body">
-            <div class="metric-value">2,481,203</div>
+            <div class="metric-value" id="metric-total-logs">0</div>
           </div>
           <div class="metric-footer">
             <svg class="sparkline" viewBox="0 0 100 25">
               <path id="spark-3" fill="none" stroke="#00e5ff" stroke-width="2"/>
             </svg>
-            <div class="trend up-cyan">&uarr; 18.7%</div>
+            <div class="trend up-cyan">&uarr;</div>
           </div>
         </div>
 
@@ -730,13 +728,13 @@
         <div class="metric-card purple">
           <div class="metric-header">BYTES PROCESSED</div>
           <div class="metric-body">
-            <div class="metric-value">482.93 MB</div>
+            <div class="metric-value" id="metric-bytes">0 MB</div>
           </div>
           <div class="metric-footer">
             <svg class="sparkline" viewBox="0 0 100 25">
               <path id="spark-4" fill="none" stroke="#b388ff" stroke-width="2"/>
             </svg>
-            <div class="trend up-purple">&uarr; 22.1%</div>
+            <div class="trend up-purple">&uarr;</div>
           </div>
         </div>
 
@@ -757,70 +755,12 @@
             <!-- Center Server Box -->
             <div class="server-node">
               <div class="server-title">SERVER</div>
-              
             </div>
 
-            <!-- Side Threat Cards Overlay -->
+            <!-- Side Threat Cards Overlay (Dynamic Injection Base) -->
             <div class="threat-cards-overlay">
-              <!-- Left Side Threats -->
-              <div class="threat-column">
-                <div class="floating-card">
-                  <div class="card-top">
-                    <span class="card-ip">192.168.1.104</span>
-                    <span class="card-priority red">CRITICAL</span>
-                  </div>
-                  <div class="card-threat">SQL Injection</div>
-                  <div class="card-req">POST /api/login ' UNION SELECT</div>
-                </div>
-
-                <div class="floating-card yellow">
-                  <div class="card-top">
-                    <span class="card-ip">10.0.4.88</span>
-                    <span class="card-priority yellow">SUSPICIOUS</span>
-                  </div>
-                  <div class="card-threat">Login Failed</div>
-                  <div class="card-req">POST /auth (Attempt #5)</div>
-                </div>
-
-                <div class="floating-card">
-                  <div class="card-top">
-                    <span class="card-ip">172.16.0.42</span>
-                    <span class="card-priority red">CRITICAL</span>
-                  </div>
-                  <div class="card-threat">Path Traversal</div>
-                  <div class="card-req">GET /files/../../etc/passwd</div>
-                </div>
-              </div>
-
-              <!-- Right Side Threats -->
-              <div class="threat-column">
-                <div class="floating-card">
-                  <div class="card-top">
-                    <span class="card-ip">45.33.21.90</span>
-                    <span class="card-priority red">CRITICAL</span>
-                  </div>
-                  <div class="card-threat">Command Injection</div>
-                  <div class="card-req">GET /ping?host=127.0.0.1;cmd.exe</div>
-                </div>
-
-                <div class="floating-card green">
-                  <div class="card-top">
-                    <span class="card-ip">192.168.1.12</span>
-                    <span class="card-priority green">CLEARED</span>
-                  </div>
-                  <div class="card-threat">Safe Web Traffic</div>
-                  <div class="card-req">GET /index.html [200 OK]</div>
-                </div>
-
-                <div class="floating-card">
-                  <div class="card-top">
-                    <span class="card-ip">185.220.101.5</span>
-                    <span class="card-priority red">CRITICAL</span>
-                  </div>
-                  <div class="card-threat">XSS Attempt</div>
-                  <div class="card-req">POST /comment &lt;script&gt;</div>
-                </div>
-              </div>
+              <div class="threat-column" id="left-threats"></div>
+              <div class="threat-column" id="right-threats"></div>
             </div>
           </div>
         </div>
@@ -917,8 +857,6 @@
 
   function updateSparklines(time) {
     const t = time * 0.003;
-
-    // Generate smooth continuous sine-wave paths across 4 cards with different frequency/phase offsets
     function getWavePath(freq, amp, phase) {
       let d = "";
       const steps = 20;
@@ -930,7 +868,6 @@
       }
       return d;
     }
-
     if (sparkPath1) sparkPath1.setAttribute('d', getWavePath(0.45, 6, 0));
     if (sparkPath2) sparkPath2.setAttribute('d', getWavePath(0.35, 7, 1.5));
     if (sparkPath3) sparkPath3.setAttribute('d', getWavePath(0.5, 5, 3.0));
@@ -939,20 +876,16 @@
 
   function render(time) {
     ctx.clearRect(0, 0, width, height);
-
     mouse.x += (mouse.targetX - mouse.x) * 0.1;
     mouse.y += (mouse.targetY - mouse.y) * 0.1;
-
     const t = time * 0.0025;
 
     updateSparklines(time);
 
     for (let i = 0; i < dots.length; i++) {
       const d = dots[i];
-
       const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
       const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
-
       const dx = mouse.x - d.baseX;
       const dy = mouse.y - d.baseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -965,15 +898,12 @@
       if (dist < hoverRadius) {
         const norm = 1 - dist / hoverRadius;
         const factor = norm * norm * (3 - 2 * norm);
-
         const addedRadius = factor * 2.8;
         targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
         targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
-
         const angle = Math.atan2(dy, dx);
         const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
         const pushAmount = factor * 12;
-
         targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
         targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
       }
@@ -984,13 +914,9 @@
       d.opacity += (targetOpacity - d.opacity) * 0.12;
 
       let color;
-      if (d.colorType === 'threat') {
-        color = `rgba(255, 42, 42, ${d.opacity})`;
-      } else if (d.colorType === 'suspicious') {
-        color = `rgba(255, 179, 0, ${d.opacity})`;
-      } else {
-        color = `rgba(0, 229, 255, ${d.opacity})`;
-      }
+      if (d.colorType === 'threat') color = `rgba(255, 42, 42, ${d.opacity})`;
+      else if (d.colorType === 'suspicious') color = `rgba(255, 179, 0, ${d.opacity})`;
+      else color = `rgba(0, 229, 255, ${d.opacity})`;
 
       const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
 
@@ -1006,7 +932,6 @@
         ctx.shadowBlur = 0;
       }
     }
-
     requestAnimationFrame(render);
   }
 
@@ -1016,7 +941,6 @@
   /* Traffic Flow Animation Engine (Server Center Stream) */
   const tfCanvas = document.getElementById('trafficCanvas');
   const tfCtx = tfCanvas.getContext('2d');
-
   let tfWidth, tfHeight;
   let particles = [];
   let streams = [];
@@ -1035,18 +959,11 @@
 
     for (let i = 0; i < numStreams; i++) {
       const offsetX = (i - (numStreams - 1) / 2) * 22;
-      
       const randVal = Math.random();
       let color = '#00e676';
       if (randVal < 0.45) color = '#ff3b3b'; 
       else if (randVal < 0.75) color = '#ffb300'; 
-
-      streams.push({
-        id: i,
-        bottomX: centerX + offsetX * 1.6,
-        topX: centerX + offsetX * 1.4,
-        color: color
-      });
+      streams.push({ id: i, bottomX: centerX + offsetX * 1.6, topX: centerX + offsetX * 1.4, color: color });
     }
   }
 
@@ -1055,7 +972,6 @@
   function createParticle() {
     const stream = streams[Math.floor(Math.random() * streams.length)];
     const isIncoming = Math.random() < 0.65; 
-
     let pColor, pName;
     if (isIncoming) {
       pColor = stream.color;
@@ -1082,7 +998,6 @@
 
   function animateTraffic() {
     tfCtx.clearRect(0, 0, tfWidth, tfHeight);
-
     const centerX = tfWidth / 2;
     const centerY = tfHeight / 2;
     const serverTopY = centerY - 35;
@@ -1107,20 +1022,13 @@
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.progress += p.speed;
-
-      if (p.progress >= 1) {
-        particles.splice(i, 1);
-        continue;
-      }
-
+      if (p.progress >= 1) { particles.splice(i, 1); continue; }
       let currX, currY;
-
       if (p.isIncoming) {
         const startX = p.stream.bottomX;
         const startY = tfHeight;
         const endX = centerX;
         const endY = serverBottomY;
-
         const t = p.progress;
         currX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * (centerX + (startX - centerX) * 0.5) + t * t * endX;
         currY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * (serverBottomY + 30) + t * t * endY;
@@ -1129,12 +1037,10 @@
         const startY = serverTopY;
         const endX = p.stream.topX;
         const endY = 0;
-
         const t = p.progress;
         currX = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * (centerX) + t * t * endX;
         currY = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * (serverTopY - 30) + t * t * endY;
       }
-
       tfCtx.beginPath();
       tfCtx.arc(currX, currY, p.size, 0, Math.PI * 2);
       tfCtx.fillStyle = p.color;
@@ -1147,7 +1053,6 @@
         tfCtx.font = "bold 9px -apple-system, sans-serif";
         tfCtx.fillStyle = "rgba(255, 255, 255, 0.75)";
         tfCtx.fillText(p.name, currX + 12, currY + 3);
-
         tfCtx.beginPath();
         tfCtx.moveTo(currX + p.size + 2, currY);
         tfCtx.lineTo(currX + 10, currY);
@@ -1156,7 +1061,6 @@
         tfCtx.stroke();
       }
     }
-
     requestAnimationFrame(animateTraffic);
   }
 
@@ -1165,36 +1069,128 @@
     animateTraffic();
   }, 100);
 
-  // Inject Random Wiggle Boxes Dynamically
+  // ==========================================================
+  // LIVE BACKEND DATA INTEGRATION
+  // ==========================================================
+
   const visualizerStage = document.querySelector('.flow-visualizer-body');
   
-  const randomThreats = [
-    { ip: '10.0.0.5', prio: 'SUSPICIOUS', threat: 'Port Scan', req: 'SYN: 80,443', color: 'yellow', left: '26%', top: '22%', delay: '1.2s', dur: '5s' },
-    { ip: '172.16.5.9', prio: 'CLEARED', threat: 'API Request', req: 'GET /api/v1', color: 'green', left: '22%', top: '48%', delay: '2.5s', dur: '4.5s' },
-    { ip: '45.1.2.3', prio: 'CRITICAL', threat: 'Malware Payload', req: 'POST /upload.php', color: 'red', left: '25%', top: '78%', delay: '0.8s', dur: '3.8s' },
-    { ip: '8.8.4.4', prio: 'SUSPICIOUS', threat: 'DNS Tunneling', req: 'UDP 53 query', color: 'yellow', left: '62%', top: '15%', delay: '1.7s', dur: '4.2s' },
-    { ip: '192.168.2.1', prio: 'CRITICAL', threat: 'DDoS Attempt', req: 'GET /flood', color: 'red', left: '60%', top: '45%', delay: '0s', dur: '4s' },
-    { ip: '192.168.1.15', prio: 'CRITICAL', threat: 'Privilege Esc.', req: 'POST /admin/su', color: 'red', left: '66%', top: '75%', delay: '0.5s', dur: '4.7s' }
-  ];
+  function handleBackendEvent(data) {
+      if (!data || typeof data !== "object") return;
 
-  randomThreats.forEach(data => {
-    const el = document.createElement('div');
-    el.className = `floating-card random-box ${data.color}`;
-    el.style.left = data.left;
-    el.style.top = data.top;
-    el.style.animationDelay = data.delay;
-    el.style.animationDuration = data.dur;
-    
-    el.innerHTML = `
-      <div class="card-top">
-        <span class="card-ip">${data.ip}</span>
-        <span class="card-priority ${data.color}">${data.prio}</span>
-      </div>
-      <div class="card-threat">${data.threat}</div>
-      <div class="card-req">${data.req}</div>
-    `;
-    visualizerStage.appendChild(el);
-  });
+      if (data.type === "connection") return;
+
+      if (data.type === "stats") {
+          if (data.logs_per_second !== undefined) {
+              document.getElementById("metric-logs-sec").innerText =
+                  Number(data.logs_per_second).toLocaleString();
+          }
+          if (data.threats_detected !== undefined) {
+              document.getElementById("metric-threats").innerText =
+                  Number(data.threats_detected).toLocaleString();
+          }
+          if (data.logs_processed !== undefined) {
+              document.getElementById("metric-total-logs").innerText =
+                  Number(data.logs_processed).toLocaleString();
+          }
+          if (data.bytes_processed !== undefined) {
+              document.getElementById("metric-bytes").innerText =
+                  `${(Number(data.bytes_processed) / (1024 * 1024)).toFixed(2)} MB`;
+          }
+      } else if (data.type === "threat") {
+          spawnLiveThreatCard(data);
+      }
+  }
+
+  function escapeHtml(value) {
+      return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+  }
+
+  function spawnLiveThreatCard(data) {
+      const el = document.createElement('div');
+      
+      const threatName = data.threat_name || data.threat || "Unknown Threat";
+      const ip = data.ip || "Unknown IP";
+      const req = data.request || "-";
+      
+      const isCritical = threatName.toUpperCase().includes("SQL") || 
+                         threatName.toUpperCase().includes("COMMAND") || 
+                         threatName.toUpperCase().includes("INJECTION");
+      const color = isCritical ? 'red' : 'yellow';
+      const prio = isCritical ? 'CRITICAL' : 'SUSPICIOUS';
+      
+      el.className = `floating-card random-box ${color}`;
+      el.style.left = Math.floor(Math.random() * 70 + 5) + '%';
+      el.style.top = Math.floor(Math.random() * 60 + 10) + '%';
+      el.style.animationDuration = '4.5s';
+      
+      el.innerHTML = `
+        <div class="card-top">
+          <span class="card-ip">${escapeHtml(ip)}</span>
+          <span class="card-priority ${color}">${escapeHtml(prio)}</span>
+        </div>
+        <div class="card-threat">${escapeHtml(threatName)}</div>
+        <div class="card-req">${escapeHtml(req)}</div>
+      `;
+      visualizerStage.appendChild(el);
+      
+      // Auto-remove standard threats after a short duration to keep UI clean
+      setTimeout(() => {
+          if (el.parentNode) el.parentNode.removeChild(el);
+      }, 7000);
+  }
+
+  // Direct connection to rustTCP_handler.py
+  // Browser -> WebSocket -> ws://localhost:4003
+ const backendWs = new WebSocket('ws://localhost:4003');
+
+  backendWs.onopen = () => {
+      console.log('[Frontend] ✅ WebSocket OPEN: ws://localhost:4003');
+
+      const indicator = document.getElementById('status-indicator');
+      if (indicator) {
+          indicator.innerHTML =
+              '<span class="status-dot"></span> ONLINE';
+      };
+  };
+
+  backendWs.onmessage = (event) => {
+      console.log('[Frontend] 📩 RAW WebSocket message:', event.data);
+
+      try {
+          const data = JSON.parse(event.data);
+
+          console.log('[Frontend] 📦 Parsed WebSocket data:', data);
+
+          handleBackendEvent(data);
+      } catch (err) {
+          console.error('[Frontend] ❌ WebSocket JSON parse error:', err);
+      }
+  };
+
+  backendWs.onerror = (err) => {
+      console.error('[Frontend] ❌ WebSocket error:', err);
+  };
+
+  backendWs.onclose = (event) => {
+      console.warn(
+          '[Frontend] 🔌 WebSocket closed:',
+          event.code,
+          event.reason
+      );
+
+      const indicator = document.getElementById('status-indicator');
+      if (indicator) {
+          indicator.innerHTML =
+              '<span class="status-dot" style="background:#ff3b3b;box-shadow:0 0 8px #ff3b3b;"></span> OFFLINE';
+      }
+  };
+
 </script>
 
 </body>

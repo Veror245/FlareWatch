@@ -765,10 +765,12 @@ def handle_tcp_client(client_socket, client_address):
             )
 
             # ------------------------------------------------
-            # EVENT PROCESSING IS NOT IMPLEMENTED YET.
+            # Forward the parsed event to every connected browser.
             # ------------------------------------------------
 
             print(f"[TCP] Parsed event: {event}")
+
+            broadcast_json(event)
 
     except ProtocolError as error:
 
