@@ -132,7 +132,34 @@ fn handle_client(
             let mut reqbuf: Vec<u8> = vec![0u8; reqlen as usize];
             if stream.read_exact(&mut reqbuf).is_ok() {
                 processed += 1;
-                let _msg_type = reqbuf[0];
+                let msg_type = reqbuf[0];
+                if msg_type == 5 {
+                    let msglen = &reqbuf[1..=2];
+                    let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
+                    let msg = &reqbuf[3..(3 + msglen) as usize];
+                    let mut results = Vec::new();
+                    let term: String = String::from_utf8_lossy(msg).into();
+                    if let Ok(idx) = index.lock() {
+                        results = idx.search_by_token(&term);
+                    } else {
+                        eprintln!("failed to lock index");
+                    }
+                    let payloadlen = results.len() + 1;
+                    let mut frame = Vec::with_capacity(payloadlen);
+                    frame.extend_from_slice(&(payloadlen as u32).to_be_bytes());
+                    frame.push(5);
+                    frame.extend_from_slice(&(results.join("\n").into_bytes()));
+
+                    if let Some(stream) = downstream_backend.as_mut() {
+                        if let Err(e) = stream.write_all(&frame) {
+                            eprintln!("Error sending search results: {}", e);
+                            break;
+                        }
+                    } else {
+                        eprintln!("Not connected to bakckend");
+                    }
+                    continue;
+                }
                 let iplen = reqbuf[1];
                 let ip = &reqbuf[2..(iplen + 2) as usize];
                 let msgst = (2 + iplen) as usize;

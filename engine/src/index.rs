@@ -38,11 +38,11 @@ impl ThreatIndex {
         }
     }
 
-    pub fn search_by_token(&self, term: &str) -> Vec<&String> {
+    pub fn search_by_token(&self, term: &str) -> Vec<String> {
         let term = term.to_lowercase();
         self.index
             .get(&term)
-            .map(|indices| indices.iter().map(|&i| &self.logs[i]).collect())
+            .map(|indices| indices.iter().map(|&i| self.logs[i].clone()).collect())
             .unwrap_or_default()
     }
 }
