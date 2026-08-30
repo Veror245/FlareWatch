@@ -2,71 +2,30 @@
 FlareWatch Backend
 ==================
 
-STANDARD LIBRARY ONLY.
+ARCHITECTURE FOR SEARCH + LIVE TELEMETRY
 
-No external Python packages are used.
+Browser
+   |
+   | WebSocket :4005
+   v
+Python Backend
+   |
+   | TCP :4000
+   v
+Rust TCP Server
 
-This file contains:
+SEARCH:
+Browser -> Python -> Rust -> Python -> same Browser WebSocket
 
-    1. Rust -> Python TCP IPC server
-    2. FlareWatch binary protocol parser
-    3. Python -> Browser WebSocket server
+LIVE RUST EVENTS:
+Rust -> Python -> all connected Browser WebSockets
 
-Ports:
+The browser remains a WebSocket client. Python is the only
+component that talks to the browser over WebSocket.
 
-    Rust -> Python TCP IPC:
-        4001
-
-    Python -> Browser WebSocket:
-        8000
-
-
-Architecture:
-
-                    RUST
-                      |
-                      | TCP :4001
-                      | Binary protocol
-                      v
-             +--------------------+
-             |   TCP IPC SERVER   |
-             +---------+----------+
-                       |
-                       v
-                PROTOCOL PARSER
-                       |
-                       v
-                 Python dict
-                       |
-                       X
-                EVENT HANDLING
-                NOT IMPLEMENTED
-
-
-                    BROWSER
-                       |
-                       | WebSocket
-                       | TCP :8000
-                       v
-             +--------------------+
-             | WEBSOCKET SERVER   |
-             |                    |
-             | HTTP Upgrade       |
-             | Frame handling     |
-             | JSON messages      |
-             +--------------------+
-
-
-Only Python standard-library modules are used:
-
-    socket
-    struct
-    threading
-    json
-    hashlib
-    base64
-    time
+Only Python standard-library modules are used.
 """
+
 
 
 # ============================================================
@@ -80,6 +39,7 @@ import json
 import hashlib
 import base64
 import time
+import queue
 
 
 # ============================================================
@@ -87,15 +47,22 @@ import time
 # ============================================================
 
 # ------------------------------------------------------------
-# Rust -> Python TCP IPC
+# Rust TCP SERVER
+#
+# Python connects TO Rust on port 4000.
+# Rust is the TCP server.
 # ------------------------------------------------------------
 
-TCP_HOST = "0.0.0.0"
-TCP_PORT = 4002
+RUST_HOST = "127.0.0.1"
+RUST_REQUEST_PORT = 4000
+RUST_RESPONSE_HOST = "0.0.0.0"
+RUST_RESPONSE_PORT = 4002
 
 
 # ------------------------------------------------------------
 # Browser WebSocket server
+#
+# Keep the existing project WebSocket port: 4003.
 # ------------------------------------------------------------
 
 WS_HOST = "0.0.0.0"
@@ -117,6 +84,32 @@ TYPE_LOG = 0
 TYPE_THREAT = 1
 TYPE_NOTHREAT = 2
 TYPE_STATS = 3
+TYPE_EVENT = 4
+TYPE_SEARCH = 5
+
+
+# ------------------------------------------------------------
+# Rust connection state
+# ------------------------------------------------------------
+
+rust_request_socket = None
+rust_request_lock = threading.Lock()
+rust_request_connected = threading.Event()
+
+rust_response_socket = None
+rust_response_socket_lock = threading.Lock()
+rust_response_connected = threading.Event()
+
+
+# ------------------------------------------------------------
+# SEARCH response coordination
+#
+# The current protocol has no request-id field, so only one
+# SEARCH request may be in flight at a time.
+# ------------------------------------------------------------
+
+search_lock = threading.Lock()
+search_response_queue = queue.Queue()
 
 
 # ============================================================
@@ -665,29 +658,214 @@ def parse_message(message):
 
 
 # ============================================================
-# TCP CLIENT HANDLER
+# RUST REQUEST CONNECTION :4000
 # ============================================================
 
-def handle_tcp_client(client_socket, client_address):
+def connect_to_rust():
     """
-    Handle one Rust TCP connection.
+    Connect Python to the Rust TCP server on port 4000.
 
-    Multiple protocol messages can travel over the same
-    TCP connection.
+    Direction:
 
-    Event processing is intentionally NOT implemented yet.
+        Python --TCP--> Rust :4000
+
+    This socket is used ONLY for sending requests to Rust.
     """
+
+    global rust_request_socket
+
+    sock = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM
+    )
+
+    sock.settimeout(5)
 
     print(
-        f"[TCP] Rust connected: {client_address}"
+        f"[RUST:4000] Connecting to "
+        f"{RUST_HOST}:{RUST_REQUEST_PORT}..."
     )
+
+    sock.connect(
+        (
+            RUST_HOST,
+            RUST_REQUEST_PORT
+        )
+    )
+
+    # Persistent connection after the initial connect.
+    sock.settimeout(None)
+
+    with rust_request_lock:
+        old_socket = rust_request_socket
+        rust_request_socket = sock
+
+    if old_socket is not None:
+        try:
+            old_socket.close()
+        except OSError:
+            pass
+
+    rust_request_connected.set()
+
+    print(
+        f"[RUST:4000] Connected to Rust"
+    )
+
+
+def send_to_rust(data):
+    """
+    Send a complete protocol message to Rust over port 4000.
+    """
+
+    global rust_request_socket
+
+    if not rust_request_connected.is_set():
+
+        connect_to_rust()
+
+
+    with rust_request_lock:
+
+        sock = rust_request_socket
+
+        if sock is None:
+            raise ConnectionError(
+                "Rust request socket is unavailable"
+            )
+
+        try:
+
+            sock.sendall(data)
+
+        except (
+            BrokenPipeError,
+            ConnectionResetError,
+            OSError
+        ):
+
+            rust_request_connected.clear()
+
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+            rust_request_socket = None
+
+            raise ConnectionError(
+                "Rust request connection was lost"
+            )
+
+
+# ============================================================
+# RUST RESPONSE SERVER :4002
+# ============================================================
+
+def start_rust_response_server():
+    """
+    Python listens on port 4002.
+
+    Rust connects to this port and sends responses/events.
+
+    Direction:
+
+        Rust --TCP--> Python :4002
+    """
+
+    global rust_response_socket
+
+    server = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM
+    )
+
+    server.setsockopt(
+        socket.SOL_SOCKET,
+        socket.SO_REUSEADDR,
+        1
+    )
+
+    server.bind(
+        (
+            RUST_RESPONSE_HOST,
+            RUST_RESPONSE_PORT
+        )
+    )
+
+    server.listen(5)
+
+    print(
+        f"[RUST:4002] Listening for Rust "
+        f"responses on "
+        f"{RUST_RESPONSE_HOST}:{RUST_RESPONSE_PORT}"
+    )
+
+    while True:
+
+        client_socket, client_address = (
+            server.accept()
+        )
+
+        print(
+            f"[RUST:4002] Rust connected from "
+            f"{client_address}"
+        )
+
+        # If Rust reconnects, replace the previous connection.
+        with rust_response_socket_lock:
+
+            old_socket = rust_response_socket
+            rust_response_socket = client_socket
+
+        if old_socket is not None:
+            try:
+                old_socket.close()
+            except OSError:
+                pass
+
+        rust_response_connected.set()
+
+        thread = threading.Thread(
+            target=handle_rust_response_connection,
+            args=(
+                client_socket,
+                client_address
+            ),
+            daemon=True
+        )
+
+        thread.start()
+
+
+def handle_rust_response_connection(
+    client_socket,
+    client_address
+):
+    """
+    Read all Rust -> Python messages from the connection
+    accepted on port 4002.
+
+    Protocol:
+
+        [4-byte length]
+        [1-byte type]
+        [payload]
+
+    SEARCH responses are placed in the SEARCH queue.
+
+    Other Rust messages are parsed and broadcast to all
+    connected browsers.
+    """
+
+    global rust_response_socket
 
     try:
 
         while True:
 
             # ------------------------------------------------
-            # Read 4-byte length.
+            # Read message length
             # ------------------------------------------------
 
             length_bytes = recv_exact(
@@ -697,51 +875,36 @@ def handle_tcp_client(client_socket, client_address):
 
             if length_bytes is None:
 
-                print(
-                    f"[TCP] Rust disconnected: "
-                    f"{client_address}"
+                raise ConnectionError(
+                    "Rust closed the :4002 connection"
                 )
 
-                break
-
-            # ------------------------------------------------
-            # Convert 4 bytes -> u32.
-            #
-            # >I:
-            #
-            # > = big-endian
-            # I = unsigned 32-bit integer
-            # ------------------------------------------------
 
             message_length = struct.unpack(
                 ">I",
                 length_bytes
             )[0]
 
-            print(
-                 f"[TCP] Message length: "
-                 f"{message_length}"
-             )
-
-            # ------------------------------------------------
-            # Validate length.
-            # ------------------------------------------------
 
             if message_length < 1:
 
                 raise ProtocolError(
-                    "Message length must be at least 1"
+                    "Rust message length must be at least 1"
                 )
+
 
             if message_length > MAX_MESSAGE_SIZE:
 
                 raise ProtocolError(
-                    f"Message too large: "
+                    f"Rust message too large: "
                     f"{message_length}"
                 )
 
+
             # ------------------------------------------------
-            # Read complete message.
+            # The length includes:
+            #
+            #     1-byte type + payload
             # ------------------------------------------------
 
             message = recv_exact(
@@ -752,136 +915,412 @@ def handle_tcp_client(client_socket, client_address):
             if message is None:
 
                 raise ConnectionError(
-                    "Rust disconnected while sending "
-                    "a message"
+                    "Rust disconnected while "
+                    "sending a message"
                 )
 
-            # ------------------------------------------------
-            # Decode protocol.
-            # ------------------------------------------------
 
-            event = parse_message(
+            message_type = message[0]
+            payload = message[1:]
+
+
+            # =================================================
+            # SEARCH RESPONSE
+            # =================================================
+
+            if message_type == TYPE_SEARCH:
+
+                print(
+                    "[RUST:4002] SEARCH response received"
+                )
+
+                search_response_queue.put(
+                    payload
+                )
+
+                continue
+
+
+            # =================================================
+            # NORMAL RUST TELEMETRY
+            # =================================================
+
+            event = parse_rust_message(
                 message
             )
 
-            # ------------------------------------------------
-            # Forward the parsed event to every connected browser.
-            # ------------------------------------------------
+            print(
+                "[RUST:4002] Parsed:"
+            )
 
-            print(f"[TCP] Parsed event: {event}")
+            print(
+                json.dumps(
+                    event,
+                    indent=4
+                )
+            )
 
-            broadcast_json(event)
 
-    except ProtocolError as error:
+            # Send live telemetry to all browser clients.
+            broadcast_json(
+                event
+            )
+
+
+    except (
+        ConnectionError,
+        ConnectionResetError,
+        OSError,
+        ProtocolError
+    ) as error:
 
         print(
-            f"[TCP] Protocol error: {error}"
+            f"[RUST:4002] Connection ended: "
+            f"{error}"
         )
 
-    except ConnectionError as error:
-
-        print(
-            f"[TCP] Connection error: {error}"
-        )
-
-    except OSError as error:
-
-        print(
-            f"[TCP] Socket error: {error}"
-        )
 
     finally:
 
-        client_socket.close()
+        with rust_response_socket_lock:
 
-        print(
-            f"[TCP] Connection closed: "
-            f"{client_address}"
-        )
+            if rust_response_socket is client_socket:
+
+                rust_response_socket = None
+                rust_response_connected.clear()
+
+
+        try:
+            client_socket.close()
+        except OSError:
+            pass
 
 
 # ============================================================
-# TCP SERVER
+# SEARCH REQUEST BUILDER
 # ============================================================
 
-def start_tcp_server():
+def build_search_message(request):
     """
-    Start the Rust -> Python TCP server.
+    Build the SEARCH request sent to Rust:4000.
+
+    Protocol:
+
+        [4-byte length]
+        [1-byte type = 5]
+        [2-byte request length]
+        [UTF-8 request]
+
+    The 4-byte length counts everything AFTER itself.
     """
 
-    # --------------------------------------------------------
-    # Create IPv4 TCP socket.
-    # --------------------------------------------------------
-
-    server = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_STREAM
+    request_bytes = request.encode(
+        "utf-8"
     )
 
-    # --------------------------------------------------------
-    # Allow address reuse when restarting server.
-    # --------------------------------------------------------
-
-    server.setsockopt(
-        socket.SOL_SOCKET,
-        socket.SO_REUSEADDR,
-        1
+    request_length = len(
+        request_bytes
     )
 
-    # --------------------------------------------------------
-    # Bind IP + port.
-    # --------------------------------------------------------
+    if request_length > 65535:
 
-    server.bind(
-        (
-            TCP_HOST,
-            TCP_PORT
+        raise ProtocolError(
+            "Search request is too long"
         )
+
+
+    payload = struct.pack(
+        ">H",
+        request_length
     )
 
-    # --------------------------------------------------------
-    # Start listening.
-    # --------------------------------------------------------
+    payload += request_bytes
 
-    server.listen(5)
 
-    print(
-        f"[TCP] IPC server listening on "
-        f"{TCP_HOST}:{TCP_PORT}"
+    message_length = (
+        1 + len(payload)
     )
 
-    try:
+
+    return (
+        struct.pack(
+            ">I",
+            message_length
+        )
+        + struct.pack(
+            ">B",
+            TYPE_SEARCH
+        )
+        + payload
+    )
+
+
+# ============================================================
+# SEARCH RESPONSE PARSER
+# ============================================================
+
+def parse_search_response(payload):
+    """
+    Parse the SEARCH response payload.
+
+    Expected Rust response:
+
+        [TIMESTAMP][THREAT][IP][REQ]
+        [TIMESTAMP][THREAT][IP][REQ]
+        ...
+
+    Each record is separated by '\\n'.
+    """
+
+    text = payload.decode(
+        "utf-8",
+        errors="replace"
+    )
+
+    results = []
+
+
+    for line_number, line in enumerate(
+        text.splitlines(),
+        start=1
+    ):
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+
+        if not (
+            line.startswith("[")
+            and line.endswith("]")
+        ):
+
+            raise ProtocolError(
+                f"Invalid SEARCH record at "
+                f"line {line_number}: {line!r}"
+            )
+
+
+        content = line[1:-1]
+
+
+        parts = content.split(
+            "][",
+            3
+        )
+
+
+        if len(parts) != 4:
+
+            raise ProtocolError(
+                f"Invalid SEARCH record at "
+                f"line {line_number}: "
+                f"expected "
+                "[TIMESTAMP][THREAT][IP][REQ]"
+            )
+
+
+        timestamp = parts[0]
+        threat = parts[1]
+        ip = parts[2]
+        request = parts[3]
+
+
+        try:
+            timestamp = int(timestamp)
+        except ValueError:
+            pass
+
+
+        results.append({
+            "timestamp": timestamp,
+            "threat": threat,
+            "ip": ip,
+            "request": request
+        })
+
+
+    return results
+
+
+# ============================================================
+# RUST MESSAGE PARSER
+# ============================================================
+
+def parse_rust_message(message):
+    """
+    Parse a complete Rust message.
+
+    message is:
+
+        [1-byte type][payload]
+    """
+
+    if len(message) < 1:
+
+        raise ProtocolError(
+            "Rust message has no type byte"
+        )
+
+
+    message_type = message[0]
+    payload = message[1:]
+
+
+    if message_type == TYPE_LOG:
+
+        return parse_log(
+            payload
+        )
+
+
+    if message_type == TYPE_THREAT:
+
+        return parse_threat(
+            payload
+        )
+
+
+    if message_type == TYPE_NOTHREAT:
+
+        return parse_nothreat(
+            payload
+        )
+
+
+    if message_type == TYPE_STATS:
+
+        return parse_stats(
+            payload
+        )
+
+
+    if message_type == TYPE_SEARCH:
+
+        results = parse_search_response(
+            payload
+        )
+
+        return {
+            "type": "search_response",
+            "message_type": TYPE_SEARCH,
+            "count": len(results),
+            "results": results
+        }
+
+
+    raise ProtocolError(
+        f"Unknown Rust message type: "
+        f"{message_type}"
+    )
+
+
+# ============================================================
+# SEARCH OPERATION
+# ============================================================
+
+def search_rust(request):
+    """
+    Execute one complete SEARCH transaction.
+
+        Browser
+           |
+           | WebSocket
+           v
+        Python
+           |
+           | TCP :4000
+           v
+        Rust
+           |
+           | TCP :4002
+           v
+        Python
+           |
+           | WebSocket
+           v
+        Browser
+
+    The protocol currently has no request-id, so SEARCH
+    requests are serialized using search_lock.
+    """
+
+    with search_lock:
+
+        # ----------------------------------------------------
+        # Remove stale responses
+        # ----------------------------------------------------
 
         while True:
 
-            # Wait for Rust.
-            client_socket, client_address = server.accept()
+            try:
 
-            # One worker thread per TCP connection.
-            thread = threading.Thread(
-                target=handle_tcp_client,
-                args=(
-                    client_socket,
-                    client_address,
-                ),
-                daemon=True
+                search_response_queue.get_nowait()
+
+            except queue.Empty:
+
+                break
+
+
+        # ----------------------------------------------------
+        # Build Rust SEARCH message
+        # ----------------------------------------------------
+
+        frame = build_search_message(
+            request
+        )
+
+
+        # ----------------------------------------------------
+        # Send through Python -> Rust :4000
+        # ----------------------------------------------------
+
+        send_to_rust(
+            frame
+        )
+
+
+        print(
+            f"[SEARCH] Sent to Rust: "
+            f"{request!r}"
+        )
+
+
+        # ----------------------------------------------------
+        # Wait for Rust -> Python :4002
+        # ----------------------------------------------------
+
+        try:
+
+            payload = search_response_queue.get(
+                timeout=30
             )
 
-            thread.start()
+        except queue.Empty:
 
-    except OSError as error:
+            raise TimeoutError(
+                "Timed out waiting for Rust "
+                "SEARCH response on port 4002"
+            )
 
-        print(
-            f"[TCP] Server error: {error}"
+
+        # ----------------------------------------------------
+        # Parse response
+        # ----------------------------------------------------
+
+        results = parse_search_response(
+            payload
         )
 
-    finally:
 
-        server.close()
-
-        print(
-            "[TCP] Server stopped"
-        )
+        return {
+            "type": "search_response",
+            "message_type": TYPE_SEARCH,
+            "query": request,
+            "count": len(results),
+            "results": results
+        }
 
 
 # ============================================================
@@ -1441,10 +1880,115 @@ def handle_websocket_client(
                         f"{text}"
                     )
 
+                    data = json.loads(text)
+
                 except UnicodeDecodeError:
 
-                    print(
-                        "[WS] Invalid UTF-8 text"
+                    send_json_websocket(
+                        client_socket,
+                        {
+                            "type": "error",
+                            "error": "Invalid UTF-8 WebSocket payload"
+                        }
+                    )
+
+                    continue
+
+                except json.JSONDecodeError as error:
+
+                    send_json_websocket(
+                        client_socket,
+                        {
+                            "type": "error",
+                            "error": f"Invalid JSON: {error}"
+                        }
+                    )
+
+                    continue
+
+                # ------------------------------------------------
+                # SEARCH
+                #
+                # Browser sends:
+                #
+                # {
+                #     "totalFrameBytes": 12,
+                #     "type": 5,
+                #     "requestLength": 5,
+                #     "request": "error"
+                # }
+                #
+                # totalFrameBytes is a WebSocket/application
+                # value supplied by the frontend. It is NOT used
+                # to frame the TCP message to Rust.
+                # ------------------------------------------------
+
+                if data.get("type") == TYPE_SEARCH:
+
+                    request = data.get("request")
+
+                    if not isinstance(request, str):
+
+                        send_json_websocket(
+                            client_socket,
+                            {
+                                "type": "search_response",
+                                "message_type": TYPE_SEARCH,
+                                "query": "",
+                                "count": 0,
+                                "results": [],
+                                "error": (
+                                    "SEARCH request must "
+                                    "contain a string 'request'"
+                                )
+                            }
+                        )
+
+                        continue
+
+                    try:
+
+                        result = search_rust(
+                            request
+                        )
+
+                        # Send the structured Rust result
+                        # back through THIS SAME WebSocket.
+                        send_json_websocket(
+                            client_socket,
+                            result
+                        )
+
+                    except (
+                        ConnectionError,
+                        TimeoutError,
+                        ProtocolError,
+                        OSError
+                    ) as error:
+
+                        send_json_websocket(
+                            client_socket,
+                            {
+                                "type": "search_response",
+                                "message_type": TYPE_SEARCH,
+                                "query": request,
+                                "count": 0,
+                                "results": [],
+                                "error": str(error)
+                            }
+                        )
+
+                else:
+
+                    send_json_websocket(
+                        client_socket,
+                        {
+                            "type": "error",
+                            "error": (
+                                f"Unsupported message type: "
+                                f"{data.get('type')}"
+                            )
+                        }
                     )
 
             # ------------------------------------------------
@@ -1626,7 +2170,7 @@ def start_websocket_server():
 
     Port:
 
-        8000
+        4005
     """
 
     # --------------------------------------------------------
@@ -1714,38 +2258,67 @@ def start_websocket_server():
 
 def main():
     """
-    Start both servers.
+    Start the complete backend.
 
-    TCP server:
-        Rust -> Python
-        port 4001
+    Ports:
 
-    WebSocket server:
-        Browser -> Python
-        port 8000
+        Rust :4000
+            Rust listens.
+            Python connects and sends requests.
+
+        Python :4002
+            Python listens.
+            Rust connects and sends responses/events.
+
+        Python WebSocket :4005
+            Browser connects here.
     """
 
     # --------------------------------------------------------
-    # Start TCP server in its own thread.
+    # IMPORTANT:
+    #
+    # Start :4002 BEFORE connecting to Rust.
+    #
+    # Rust needs Python's :4002 listener to be available
+    # before Rust can establish its response connection.
     # --------------------------------------------------------
 
-    tcp_thread = threading.Thread(
-        target=start_tcp_server,
+    rust_response_thread = threading.Thread(
+        target=start_rust_response_server,
         daemon=True
     )
 
-    tcp_thread.start()
+    rust_response_thread.start()
+
 
     # --------------------------------------------------------
-    # Start WebSocket server in the main thread.
+    # Connect to Rust :4000
+    # --------------------------------------------------------
+
+    try:
+
+        connect_to_rust()
+
+    except OSError as error:
+
+        print(
+            f"[RUST:4000] Initial connection failed: "
+            f"{error}"
+        )
+
+        print(
+            "[RUST:4000] The WebSocket server will "
+            "still start. Rust can be restarted and "
+            "the request connection can be retried."
+        )
+
+
+    # --------------------------------------------------------
+    # Start WebSocket server :4005
     # --------------------------------------------------------
 
     start_websocket_server()
 
-
-# ============================================================
-# PROGRAM ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
 
