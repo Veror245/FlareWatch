@@ -50,7 +50,7 @@ class Event:
     metadata: dict = field(default_factory=dict)
 
 RUST_PORT = 4001
-DEV1_PORT = 4002
+DEV1_PORT = 4004
 
 RECONNECT_INITIAL_DELAY = 1.0
 RECONNECT_MAX_DELAY = 30.0
