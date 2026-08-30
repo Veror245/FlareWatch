@@ -147,11 +147,12 @@ fn handle_client(
                     } else {
                         eprintln!("failed to lock index");
                     }
-                    let payloadlen = results.len() + 1;
-                    let mut frame = Vec::with_capacity(payloadlen);
-                    frame.extend_from_slice(&(payloadlen as u32).to_be_bytes());
+                    let result_bytes = results.join("\n").into_bytes();
+                    let total_len = 1 + result_bytes.len(); // type byte + payload
+                    let mut frame = Vec::with_capacity(4 + total_len);
+                    frame.extend_from_slice(&(total_len as u32).to_be_bytes());
                     frame.push(5);
-                    frame.extend_from_slice(&(results.join("\n").into_bytes()));
+                    frame.extend_from_slice(&result_bytes);
 
                     if let Some(stream) = downstream_backend.as_mut() {
                         if let Err(e) = stream.write_all(&frame) {
