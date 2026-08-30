@@ -287,7 +287,6 @@
     width: 30%;
   }
 
-
   .topbar-info {
     display: flex;
     align-items: center;
@@ -348,7 +347,6 @@
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
-    /* Added tile enter animation */
     animation: tileFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
 
@@ -425,7 +423,6 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    /* Added tile enter animation with a delay so it follows the metric cards */
     animation: tileFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
     animation-delay: 0.5s;
   }
@@ -473,28 +470,72 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(8, 10, 16, 0.95);
-    border: 2px solid #805ad5;
-    box-shadow: 0 0 30px rgba(128, 90, 213, 0.45), inset 0 0 20px rgba(128, 90, 213, 0.25);
-    border-radius: 10px;
-    padding: 18px 45px;
-    text-align: center;
+    background: rgba(14, 16, 22, 0.85); /* Minimalist dark glass */
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.06); 
+    border-top: 1px solid rgba(0, 229, 255, 0.4); /* Subtle cyber-accent */
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    padding: 14px 35px;
     z-index: 5;
     pointer-events: none;
-    animation: serverGlow 3s infinite alternate ease-in-out;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: serverFloat 4s ease-in-out infinite;
+    width: 200px;
+  height: 80px;
   }
 
-  @keyframes serverGlow {
-    0% { box-shadow: 0 0 20px rgba(128, 90, 213, 0.3), inset 0 0 15px rgba(128, 90, 213, 0.15); border-color: #805ad5; }
-    100% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.6), inset 0 0 25px rgba(0, 229, 255, 0.3); border-color: #00e5ff; }
+  /* Ambient Data Scanning Line */
+  .server-node::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.12), transparent);
+    transform: skewX(-20deg);
+    animation: serverScan 3s ease-in-out infinite;
+  }
+
+  /* Pulsing Status Dot */
+  .server-node::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #00e676;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00e676;
+    animation: statusPulse 2s infinite ease-in-out;
   }
 
   .server-title {
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 4px;
-    font-size: 18px;
-    color: #ffffff;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    color: #e1e1e6;
+    text-transform: uppercase;
+    z-index: 2;
+  }
+
+  /* --- Server Box Animations --- */
+  @keyframes serverFloat {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, calc(-50% - 6px)); }
+  }
+
+  @keyframes serverScan {
+    0% { left: -100%; }
+    100% { left: 200%; }
+  }
+
+  @keyframes statusPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.2); }
   }
 
   /* Unified Grid Matrix */
@@ -646,7 +687,7 @@
 </head>
 <body>
 
-<!-- NEW: Intro Overlay for First Load -->
+<!-- Intro Overlay for First Load -->
 <div id="intro-overlay">
   <div class="intro-logo">
     <svg viewBox="0 0 88 104" fill="none">
@@ -838,7 +879,6 @@
 </div>
 
 <script>
-  // NEW: Logic to handle First Load Intro using sessionStorage
   document.addEventListener("DOMContentLoaded", () => {
     const introOverlay = document.getElementById("intro-overlay");
     if (introOverlay) {
@@ -935,10 +975,6 @@
   const sparkPath2 = document.getElementById('spark-2');
   const sparkPath3 = document.getElementById('spark-3');
   const sparkPath4 = document.getElementById('spark-4');
-
-  // ==========================================================
-  // UPDATED SMOOTH REACTIVE SPARKLINE LOGIC (NO FLICKER)
-  // ==========================================================
   
   let targetLogAmp = 1.5, currentLogAmp = 1.5;
   let targetThreatAmp = 1.5, currentThreatAmp = 1.5;
@@ -946,16 +982,13 @@
   let targetBytesAmp = 1.5, currentBytesAmp = 1.5;
 
   function updateSparklines(time) {
-    // Keep absolute time continuous. No variable speed multipliers.
     const t = time * 0.003;
     
-    // Decay slowly and gently back to an idle baseline (1.5)
     targetLogAmp += (1.5 - targetLogAmp) * 0.01;
     targetThreatAmp += (1.5 - targetThreatAmp) * 0.01;
     targetTotalAmp += (1.5 - targetTotalAmp) * 0.01;
     targetBytesAmp += (1.5 - targetBytesAmp) * 0.01;
 
-    // Smoothly ease the visible amplitude to match the target over time
     currentLogAmp += (targetLogAmp - currentLogAmp) * 0.04;
     currentThreatAmp += (targetThreatAmp - currentThreatAmp) * 0.04;
     currentTotalAmp += (targetTotalAmp - currentTotalAmp) * 0.04;
@@ -966,7 +999,6 @@
       const steps = 20;
       for (let i = 0; i <= steps; i++) {
         const x = (i / steps) * 100;
-        // Strict continuous sine wave, only dynamically interpolating the amplitude
         const y = 12.5 + Math.sin((i * freq) + t + phase) * amp + Math.cos((i * freq * 0.5) - t * 0.7) * (amp * 0.4);
         if (i === 0) d += `M${x},${y}`;
         else d += ` L${x},${y}`;
@@ -1181,9 +1213,6 @@
       if (typeof occupiedCells !== 'undefined') occupiedCells.clear();
   });
 
-  // ==========================================================
-  // LIVE BACKEND DATA INTEGRATION
-  // ==========================================================
 
   const threatGrid = document.getElementById('threat-grid');
   const occupiedCells = new Set();
@@ -1204,7 +1233,7 @@
       // React to payload byte changes
       if (rawMessage) {
           localBytes += new TextEncoder().encode(rawMessage).length;
-          targetBytesAmp = Math.min(10, targetBytesAmp + 1.0); // Gently bump target
+          targetBytesAmp = Math.min(10, targetBytesAmp + 1.0); 
       }
 
       if (data.type === "connection") return;
@@ -1237,13 +1266,11 @@
       if (data.type === "log" || data.type === "threat" || data.type === "nothreat") {
           localTotalLogs += 1;
           
-          // Bump targets smoothly
           targetLogAmp = Math.min(10, targetLogAmp + 0.5);
           targetTotalAmp = Math.min(10, targetTotalAmp + 0.5);
 
           if (data.type === "threat") {
               localThreats += 1;
-              // React with a solid, smooth target increase to incoming threats
               targetThreatAmp = Math.min(12, targetThreatAmp + 4.0); 
           }
 
@@ -1383,7 +1410,6 @@
           Math.round(localEventTimes.length / 5).toLocaleString();
   }, 1000);
 
-  // Direct connection to rustTCP_handler.py
   const backendWs = new WebSocket('ws://localhost:4003');
 
   backendWs.onopen = () => {
@@ -1417,6 +1443,5 @@
   };
 
 </script>
-
 </body>
 </html>
