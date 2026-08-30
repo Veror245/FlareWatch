@@ -136,6 +136,7 @@ fn handle_client(
                 processed += 1;
                 let msg_type = reqbuf[0];
                 if msg_type == 5 {
+                    println!("Received Search Query");
                     let msglen = &reqbuf[1..=2];
                     let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
                     let msg = &reqbuf[3..(3 + msglen) as usize];
@@ -160,6 +161,7 @@ fn handle_client(
                     } else {
                         eprintln!("Not connected to bakckend");
                     }
+                    println!("Sent Result");
                     continue;
                 }
                 let iplen = reqbuf[1];
