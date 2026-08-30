@@ -800,18 +800,6 @@
     });
   });
 
-  // Search request handling via WebSocket on port 4003.
-  //
-  // EXACT browser -> port 4003 application frame:
-  // [4-byte u32 total frame length]
-  // [1-byte u8 type = 5]
-  // [2-byte u16 request length]
-  // [request UTF-8 bytes]
-  //
-  // Example:
-  // [12 as u32][5 as u8][5 as u16]["error".asBytes]
-  //
-  // One persistent WebSocket connection is used for all searches.
   const searchBtn = document.querySelector('.btn-search');
   const searchInput = document.querySelector('.search-input');
   const resultsMeta = document.querySelector('.results-meta');
@@ -869,10 +857,18 @@
           if (data.type === 'search_response') {
             if (data.error) {
               console.error('[FlareWatch] Search error:', data.error);
+              if (searchBtn) {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+              }
               return;
             }
 
             updateSearchResults(data.query || '', data.results || []);
+            if (searchBtn) {
+              searchBtn.disabled = false;
+              searchBtn.textContent = 'Search';
+            }
             console.log('[FlareWatch] Search response received:', {
               query: data.query || '',
               count: data.count || 0
@@ -953,7 +949,7 @@
 
       const entryCell = document.createElement('td');
 
-      if (result.threat) {
+      if (result.threat && String(result.threat).toUpperCase() !== 'NOTHREAT') {
         const badge = document.createElement('span');
         badge.className = 'badge-error';
         badge.textContent = String(result.threat);
@@ -973,6 +969,7 @@
   }
 
   function sendSearchRequest(query) {
+    query = String(query || '').trim();
     console.log('[FlareWatch] Search button triggered.', { query });
 
     if (!query) {
@@ -980,47 +977,24 @@
       return;
     }
 
-    const queryBytes = new TextEncoder().encode(query);
-
-    // u16 = 2 bytes.
-    if (queryBytes.length > 0xFFFF) {
-      console.error(
-        '[FlareWatch] Search request is too large. Maximum UTF-8 request length is 65535 bytes.'
-      );
-      return;
+    if (searchBtn) {
+      searchBtn.disabled = true;
+      searchBtn.textContent = 'Searching...';
     }
 
-    const type = 5;
-    const requestLength = queryBytes.length;
+    // Convert string to bytes to calculate exact payload sizes just in case,
+    // though the Python script handles this automatically on its end.
+    const queryLength = new TextEncoder().encode(query).length;
 
-    // Exact requested frame size:
-    // 4-byte u32 + 1-byte u8 + 2-byte u16 + request bytes.
-    // "error" => 4 + 1 + 2 + 5 = 12.
-    const totalFrameBytes = 4 + 1 + 2 + requestLength;
-
-    const buffer = new ArrayBuffer(totalFrameBytes);
-    const view = new DataView(buffer);
-
-    // [4-byte u32] = COMPLETE frame length, big-endian.
-    view.setUint32(0, totalFrameBytes, false);
-
-    // [1-byte u8] = type 5.
-    view.setUint8(4, type);
-
-    // [2-byte u16] = request length, big-endian.
-    view.setUint16(5, requestLength, false);
-
-    // [request bytes] = UTF-8.
-    new Uint8Array(buffer, 7, requestLength).set(queryBytes);
-
-    const frameInfo = {
-      totalFrameBytes,
-      type,
-      requestLength,
+    // Construct the exact JSON payload the Python backend expects
+    const payload = {
+      totalFrameBytes: 7 + queryLength, 
+      type: 5,                           
+      requestLength: queryLength,
       request: query
     };
 
-    console.log('[FlareWatch] Search frame:', frameInfo);
+    console.log('[FlareWatch] Search frame:', payload);
 
     getSearchSocket()
       .then((ws) => {
@@ -1029,11 +1003,16 @@
           return;
         }
 
-        ws.send(buffer);
-        console.log('[FlareWatch] Search request sent.', frameInfo);
+        // Send as a JSON string so Python reads it as a text frame (opcode 0x1)
+        ws.send(JSON.stringify(payload));
+        console.log('[FlareWatch] Search request sent.');
       })
       .catch((error) => {
         console.error('[FlareWatch] Could not connect to port 4003:', error);
+        if (searchBtn) {
+          searchBtn.disabled = false;
+          searchBtn.textContent = 'Search';
+        }
       });
   }
 
