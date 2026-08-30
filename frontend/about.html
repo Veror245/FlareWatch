@@ -234,7 +234,23 @@
     gap: 6px;
   }
 
-  /* 12-Column Responsive Grid System for Full Screen Utilization */
+  /* Core Entry Animations */
+  @keyframes slideUpFade {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInRight {
+    0% { opacity: 0; transform: translateX(-15px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes pulseFlow {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(6px); opacity: 0.5; }
+  }
+
+  /* 12-Column Responsive Grid System */
   .about-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
@@ -244,21 +260,20 @@
   }
 
   .card {
-    background: rgba(14, 14, 18, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(90, 90, 91, 0.173); /* Enhanced Translucency */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Brighter edge */
     border-radius: 16px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(2px); /* Smoother glassmorphism */
+    -webkit-backdrop-filter: blur(2px);
     padding: 32px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); /* Deeper shadow */
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, background 0.3s ease;
+    animation: slideUpFade 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
-  .card:hover {
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+  
 
   .card-title {
     font-size: 12px;
@@ -272,13 +287,23 @@
     gap: 8px;
   }
 
-  /* Grid Placements */
-  .hero-card { grid-column: span 8; }
-  .sys-info-card { grid-column: span 4; }
-  .arch-card { grid-column: span 7; }
-  .perf-card { grid-column: span 5; }
-  .tech-section { grid-column: span 12; }
-  .features-section { grid-column: span 12; margin-bottom: 20px; }
+  /* Grid Placements & Loading Staggers */
+  .hero-card { grid-column: span 8; animation-delay: 0.1s; }
+  .sys-info-card { grid-column: span 4; animation-delay: 0.2s; }
+  .arch-card { grid-column: span 7; animation-delay: 0.3s; }
+  .perf-card { grid-column: span 5; animation-delay: 0.4s; }
+  .features-section { grid-column: span 12; margin-bottom: 20px; animation-delay: 0.5s; }
+  
+  /* Remove layout animation for pure structural wrapper, child elements will animate */
+  .tech-section { 
+    grid-column: span 12; 
+    animation: none; 
+    padding: 32px; 
+    background: transparent; 
+    border: none; 
+    box-shadow: none; 
+    backdrop-filter: none;
+  }
 
   @media (max-width: 1200px) {
     .hero-card, .sys-info-card, .arch-card, .perf-card { grid-column: span 12; }
@@ -364,7 +389,7 @@
   }
   .check-icon svg { width: 12px; height: 12px; stroke: #22c55e; stroke-width: 3; }
 
-  /* System Information Table */
+  /* System Information Table with Inner Staggers */
   .sys-info-list {
     display: flex;
     flex-direction: column;
@@ -380,8 +405,16 @@
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     font-size: 13px;
-    
+    animation: slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
+
+  /* Staggering rows */
+  .sys-info-list .sys-info-row:nth-child(1) { animation-delay: 0.35s; }
+  .sys-info-list .sys-info-row:nth-child(2) { animation-delay: 0.40s; }
+  .sys-info-list .sys-info-row:nth-child(3) { animation-delay: 0.45s; }
+  .sys-info-list .sys-info-row:nth-child(4) { animation-delay: 0.50s; }
+  .sys-info-list .sys-info-row:nth-child(5) { animation-delay: 0.55s; }
+  .sys-info-list .sys-info-row:nth-child(6) { animation-delay: 0.60s; }
 
   .sys-info-row:last-child {
     border-bottom: none;
@@ -407,7 +440,7 @@
     box-shadow: 0 0 10px #22c55e;
   }
 
-  /* Performance Metrics (New) */
+  /* Performance Metrics with Inner Staggers */
   .perf-metrics-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -423,7 +456,13 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
+
+  .perf-metrics-grid .metric-box:nth-child(1) { animation-delay: 0.5s; }
+  .perf-metrics-grid .metric-box:nth-child(2) { animation-delay: 0.6s; }
+  .perf-metrics-grid .metric-box:nth-child(3) { animation-delay: 0.7s; }
+  .perf-metrics-grid .metric-box:nth-child(4) { animation-delay: 0.8s; }
 
   .metric-value {
     font-size: 24px;
@@ -438,7 +477,7 @@
     letter-spacing: 0.5px;
   }
 
-  /* Linear Architecture Flow Diagram */
+  /* Linear Architecture Flow Diagram (Animated) */
   .arch-diagram {
     display: flex;
     align-items: center;
@@ -459,7 +498,13 @@
     flex: 1;
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
+
+  .arch-diagram .arch-box:nth-child(1) { animation-delay: 0.5s; }
+  .arch-diagram .arch-box:nth-child(3) { animation-delay: 0.7s; }
+  .arch-diagram .arch-box:nth-child(5) { animation-delay: 0.9s; }
+  .arch-diagram .arch-box:nth-child(7) { animation-delay: 1.1s; }
 
   .arch-box.generator { border-top: 3px solid #888899; }
   .arch-box.rust { border-top: 3px solid #ef4444; background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, rgba(0,0,0,0) 100%); }
@@ -507,9 +552,16 @@
     padding: 0 16px;
     display: flex;
     align-items: center;
+    animation: 
+      fadeInRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+      pulseFlow 1.5s ease-in-out infinite alternate;
   }
 
-  /* Technology & Capability Grids */
+  .arch-diagram .arch-arrow:nth-child(2) { animation-delay: 0.6s, 1.1s; }
+  .arch-diagram .arch-arrow:nth-child(4) { animation-delay: 0.8s, 1.3s; }
+  .arch-diagram .arch-arrow:nth-child(6) { animation-delay: 1.0s, 1.5s; }
+
+  /* Technology & Capability Grids (Staggered Tiles) */
   .tech-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -518,17 +570,22 @@
   @media (max-width: 1000px) { .tech-grid { grid-template-columns: 1fr; } }
 
   .tech-card {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(248, 248, 248, 0.061);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 12px;
     padding: 24px;
     display: flex;
     gap: 20px;
     align-items: flex-start;
-    transition: background 0.2s ease;
+    transition: background 0.3s ease, transform 0.3s ease;
+    animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
-  .tech-card:hover { background: rgba(255, 255, 255, 0.02); }
+  
+  .tech-grid .tech-card:nth-child(1) { animation-delay: 0.6s; }
+  .tech-grid .tech-card:nth-child(2) { animation-delay: 0.7s; }
+  .tech-grid .tech-card:nth-child(3) { animation-delay: 0.8s; }
 
+ 
   .tech-icon-wrapper {
     width: 48px;
     height: 48px;
@@ -565,7 +622,14 @@
     border: 1px solid rgba(255, 255, 255, 0.03);
     font-size: 13px;
     color: #e1e1e6;
+    animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
+  
+  .features-grid .feature-item:nth-child(1) { animation-delay: 0.6s; }
+  .features-grid .feature-item:nth-child(2) { animation-delay: 0.7s; }
+  .features-grid .feature-item:nth-child(3) { animation-delay: 0.8s; }
+  .features-grid .feature-item:nth-child(4) { animation-delay: 0.9s; }
+
   .feature-item svg { width: 16px; height: 16px; color: #888899; }
 
 </style>
@@ -634,8 +698,6 @@
 
   <div class="main-wrapper">
     <main class="content-area">
-
-     
 
       <div class="about-grid">
 
@@ -792,7 +854,7 @@
           </div>
         </div>
 
-        <div class="tech-section card" style="padding: 32px; background: transparent; border: none; box-shadow: none; backdrop-filter: none;">
+        <div class="tech-section">
           <div class="card-title" style="margin-bottom: 20px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             Technology Domains
