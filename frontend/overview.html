@@ -17,6 +17,78 @@
     overflow: hidden;
   }
 
+  /* NEW: Intro Overlay Animation Styles */
+  #intro-overlay {
+    position: fixed;
+    inset: 0;
+    background: #050507;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+
+  .intro-logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    color: #fff;
+  }
+
+  .intro-logo svg {
+    width: 48px;
+    height: 56px;
+  }
+
+  .intro-logo .red { color: #ff2a2a; }
+
+  .intro-progress-bar {
+    width: 220px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-progress-fill {
+    height: 100%;
+    background: #00e676;
+    width: 0%;
+    box-shadow: 0 0 10px #00e676;
+    animation: introLoad 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .intro-status {
+    font-family: monospace;
+    font-size: 11px;
+    color: #888899;
+    letter-spacing: 2px;
+    animation: introPulse 1s infinite alternate;
+  }
+
+  @keyframes introLoad {
+    0% { width: 0%; }
+    40% { width: 65%; }
+    100% { width: 100%; }
+  }
+
+  @keyframes introPulse {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+  }
+
+  .intro-fade-out {
+    opacity: 0;
+    visibility: hidden;
+  }
+
   /* Full Screen Canvas for Interactive Dots */
   #dotCanvas {
     position: fixed;
@@ -34,6 +106,8 @@
     display: flex;
     width: 100vw;
     height: 100vh;
+    animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: center top;
   }
 
   /* Animated Collapsible Sidebar */
@@ -270,11 +344,19 @@
     flex-direction: column;
     justify-content: space-between;
     height: 120px;
-     border: 1px solid rgba(255, 255, 255, 0.097);
+    border: 1px solid rgba(255, 255, 255, 0.097);
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
+    /* Added tile enter animation */
+    animation: tileFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
+
+  /* Stagger the entrance of each metric card */
+  .metric-card:nth-child(1) { animation-delay: 0.1s; }
+  .metric-card:nth-child(2) { animation-delay: 0.2s; }
+  .metric-card:nth-child(3) { animation-delay: 0.3s; }
+  .metric-card:nth-child(4) { animation-delay: 0.4s; }
 
   .metric-header {
     font-size: 11px;
@@ -343,6 +425,9 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    /* Added tile enter animation with a delay so it follows the metric cards */
+    animation: tileFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: 0.5s;
   }
 
   .panel-header {
@@ -418,7 +503,6 @@
     inset: 0;
     padding: 18px 20px;
     display: grid;
-    /* 6 columns and 5 rows covers all corners/space cleanly */
     grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(5, 75px);
     align-content: space-between;
@@ -444,7 +528,6 @@
     animation: cardEnter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 
-  /* Custom Leave Animation Class */
   .floating-card.leaving {
     animation: cardLeave 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
   }
@@ -508,7 +591,6 @@
     white-space: nowrap;
   }
 
-  /* Smooth Enter/Leave Animations */
   @keyframes cardEnter {
     0% { opacity: 0; transform: translateY(20px) scale(0.9); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -526,28 +608,58 @@
     100% { transform: translate(0, 0) rotate(0deg); }
   }
 
-  /* Assigned dynamically after entrance to prevent conflict */
   .random-box {
     animation: smoothRandomWiggle 4s ease-in-out infinite alternate;
+  }
+  
+  @keyframes tileFadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes page-enter {
+    0% { 
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1);
+    }
   }
 
   @media (max-width: 1024px) {
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-    /* Compact grid overlay on mobile */
     .threat-cards-overlay {
       grid-template-columns: repeat(4, 1fr);
       grid-template-rows: repeat(6, 75px);
     }
   }
 
-  .app-container {
-    animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-    transform-origin: center top;
-  }
-
 </style>
 </head>
 <body>
+
+<!-- NEW: Intro Overlay for First Load -->
+<div id="intro-overlay">
+  <div class="intro-logo">
+    <svg viewBox="0 0 88 104" fill="none">
+      <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
+      <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
+    </svg>
+    <span><span class="red">FLARE</span>WATCH</span>
+  </div>
+  <div class="intro-progress-bar">
+    <div class="intro-progress-fill"></div>
+  </div>
+  <div class="intro-status">ESTABLISHING SECURE CONNECTION...</div>
+</div>
 
 <!-- Full Screen Interactive Canvas Grid -->
 <canvas id="dotCanvas"></canvas>
@@ -726,6 +838,25 @@
 </div>
 
 <script>
+  // NEW: Logic to handle First Load Intro using sessionStorage
+  document.addEventListener("DOMContentLoaded", () => {
+    const introOverlay = document.getElementById("intro-overlay");
+    if (introOverlay) {
+      if (!sessionStorage.getItem("flarewatch_intro_played")) {
+        // Play the intro for 2.4 seconds, then fade out
+        setTimeout(() => {
+          introOverlay.classList.add("intro-fade-out");
+          sessionStorage.setItem("flarewatch_intro_played", "true");
+          setTimeout(() => introOverlay.remove(), 600); // Wait for CSS transition to end
+        }, 2400); 
+      } else {
+        // Intro has already been played in this session, skip entirely
+        introOverlay.style.display = "none";
+        introOverlay.remove();
+      }
+    }
+  });
+
   const pageContainer = document.querySelector('.app-container');
 
   document.querySelectorAll('a[href]').forEach((link) => {
