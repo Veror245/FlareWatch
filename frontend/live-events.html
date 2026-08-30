@@ -7,7 +7,6 @@
 <link rel="icon" type="image/x-icon" href="./icon/icon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html, body {
     width: 100%;
     height: 100%;
@@ -15,24 +14,14 @@
     background: #050507;
     color: #e1e1e6;
     overflow: hidden;
+    /* Hide scrollbars globally */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-
-  /* Minimal Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
+  
   /* Full Screen Canvas for Interactive Dots */
   #dotCanvas {
     position: fixed;
@@ -42,7 +31,6 @@
     pointer-events: none;
     z-index: 0;
   }
-
   /* App Layout Container */
   .app-container {
     position: relative;
@@ -51,7 +39,6 @@
     width: 100vw;
     height: 100vh;
   }
-
   /* Animated Collapsible Sidebar */
   .sidebar {
     width: 68px; /* Collapsed width */
@@ -69,12 +56,10 @@
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
   }
-
   .sidebar:hover {
     width: 240px; /* Expanded width */
     box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6);
   }
-
   .brand-header {
     display: flex;
     align-items: center;
@@ -82,7 +67,6 @@
     padding: 0 18px 32px 18px;
     height: 32px;
   }
-
   .brand-logo {
     display: flex;
     align-items: center;
@@ -91,16 +75,13 @@
     font-size: 18px;
     letter-spacing: 1px;
   }
-
   .brand-logo svg {
     width: 26px;
     height: 30px;
     flex-shrink: 0;
   }
-
   .brand-logo .red { color: #ff2a2a; }
   .brand-logo .white { color: #ffffff; }
-
   /* Animated Text Hiding/Showing */
   .brand-text,
   .nav-text,
@@ -109,7 +90,6 @@
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
   }
-
   .sidebar:hover .brand-text,
   .sidebar:hover .nav-text,
   .sidebar:hover .collapse-btn {
@@ -117,7 +97,6 @@
     visibility: visible;
     transition-delay: 0.08s;
   }
-
   .collapse-btn {
     background: transparent;
     border: none;
@@ -126,7 +105,6 @@
     font-size: 14px;
   }
   .collapse-btn:hover { color: #aaa; }
-
   .nav-list {
     list-style: none;
     display: flex;
@@ -134,7 +112,6 @@
     gap: 8px;
     padding: 0 12px;
   }
-
   .nav-item a {
     display: flex;
     align-items: center;
@@ -148,26 +125,22 @@
     height: 46px;
     transition: all 0.2s ease;
   }
-
   .nav-item a:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.04);
   }
-
   .nav-item.active a {
     color: #fff;
     background: rgba(255, 42, 42, 0.1);
     border: 1px solid rgba(255, 42, 42, 0.25);
     box-shadow: inset 0 0 12px rgba(255, 42, 42, 0.05);
   }
-
   .nav-item svg {
     width: 20px;
     height: 20px;
     stroke: currentColor;
     flex-shrink: 0;
   }
-
   /* Main Content Area */
   .main-wrapper {
     flex: 1;
@@ -176,37 +149,36 @@
     padding: 32px 40px;
     overflow-y: auto;
     gap: 24px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-
+  .main-wrapper::-webkit-scrollbar {
+    display: none;
+  }
   /* Page Top Header */
   .page-header {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
     flex-shrink: 0;
-    
   }
-
   .header-titles h1 {
     font-size: 26px;
     font-weight: 700;
     letter-spacing: 0.3px;
     color: #ffffff;
   }
-
   .header-titles p {
     font-size: 13px;
     color: #777788;
     margin-top: 6px;
     font-weight: 500;
   }
-
   .header-actions {
     display: flex;
     align-items: center;
     gap: 12px;
   }
-
   .action-btn {
     background: rgba(18, 18, 24, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -221,27 +193,23 @@
     backdrop-filter: blur(8px);
     transition: all 0.2s ease;
   }
-
   .action-btn:hover {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.08);
   }
-
   .action-btn svg {
     width: 18px;
     height: 18px;
     stroke: currentColor;
   }
-
-  /* Metrics Grid (New Information Section) */
+  /* Metrics Grid */
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     flex-shrink: 0;
   }
-
   .metric-card {
     padding: 20px 24px;
     display: flex;
@@ -254,7 +222,6 @@
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
   }
-
   .metric-title {
     font-size: 11.5px;
     color: #888899;
@@ -262,17 +229,14 @@
     letter-spacing: 1px;
     font-weight: 600;
   }
-
   .metric-value {
     font-size: 28px;
     color: #fff;
     font-weight: 300;
     letter-spacing: 0.5px;
   }
-  
   .metric-value.danger { color: #ff4d4d; }
   .metric-value.safe { color: #00e676; }
-
   /* Events Main Panel Card */
   .panel-card {
     -webkit-backdrop-filter: blur(12px);
@@ -280,13 +244,13 @@
     flex-direction: column;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     flex: 1;
-    min-height: 0; /* Important for flex child scrolling */
+    min-height: 0;
     border: 1px solid rgba(255, 255, 255, 0.097);
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
+    overflow: hidden;
   }
-
   /* Controls Filter Bar */
   .filter-bar {
     display: flex;
@@ -296,7 +260,6 @@
     padding: 20px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
-
   .custom-select {
     background: rgba(18, 18, 24, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -313,17 +276,14 @@
     background-repeat: no-repeat;
     background-position: right 12px top 50%;
   }
-
   .custom-select:hover, .custom-select:focus {
     border-color: rgba(255, 255, 255, 0.2);
   }
-
   .search-wrapper {
     position: relative;
     flex: 1;
     min-width: 250px;
   }
-
   .search-icon {
     position: absolute;
     left: 14px;
@@ -333,7 +293,6 @@
     height: 16px;
     stroke: #666677;
   }
-
   .search-input {
     width: 100%;
     background: rgba(18, 18, 24, 0.8);
@@ -345,11 +304,9 @@
     outline: none;
     transition: border 0.2s;
   }
-
   .search-input:focus {
     border-color: rgba(255, 42, 42, 0.4);
   }
-
   .btn-clear {
     background: rgba(255, 42, 42, 0.05);
     border: 1px solid rgba(255, 42, 42, 0.3);
@@ -361,18 +318,22 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-
   .btn-clear:hover {
     background: rgba(255, 42, 42, 0.15);
     border-color: rgba(255, 42, 42, 0.6);
   }
-
-  /* Events Table */
+  /* Events Table Container with hidden scrollbars */
   .table-container {
     flex: 1;
     overflow-x: auto;
     overflow-y: auto;
-    scrollbar-width: none;
+    padding-bottom: 20px;
+    scroll-behavior: smooth;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+  .table-container::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
   }
 
   .events-table {
@@ -380,7 +341,6 @@
     border-collapse: collapse;
     text-align: left;
   }
-
   .events-table th {
     font-size: 11px;
     font-weight: 600;
@@ -394,8 +354,8 @@
     top: 0;
     z-index: 2;
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
-
   .events-table td {
     padding: 16px 24px;
     font-size: 13.5px;
@@ -404,9 +364,25 @@
     white-space: nowrap;
     transition: background 0.15s;
   }
-
   .events-table tr:hover td {
     background: rgba(255, 255, 255, 0.03);
+  }
+  
+  /* New Event Row Entry & Flash Animation */
+  @keyframes newRowAnim {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+      background-color: rgba(255, 42, 42, 0.3);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      background-color: transparent;
+    }
+  }
+  .live-row.new-event-anim {
+    animation: newRowAnim 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .cell-time {
@@ -414,19 +390,16 @@
     color: #aaaabb;
     font-size: 12.5px;
   }
-
   .cell-details {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color: #888899;
     font-size: 12.5px;
   }
-
   .cell-ip {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color: #bbbbcc;
     font-size: 12.5px;
   }
-
   /* Severity Badges */
   .badge-sev {
     display: inline-block;
@@ -437,95 +410,60 @@
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
-
   .badge-sev.high {
     background: rgba(255, 42, 42, 0.1);
     border: 1px solid rgba(255, 42, 42, 0.3);
     color: #ff4d4d;
     box-shadow: 0 0 10px rgba(255, 42, 42, 0.1);
   }
-
   .badge-sev.medium {
     background: rgba(255, 179, 0, 0.1);
     border: 1px solid rgba(255, 179, 0, 0.3);
     color: #ffb300;
   }
-
   .badge-sev.low {
     background: rgba(0, 230, 118, 0.08);
     border: 1px solid rgba(0, 230, 118, 0.25);
     color: #00e676;
   }
-
-  /* Pagination Bar */
-  .pagination-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
-    background: rgba(0, 0, 0, 0.1);
-  }
-
-  .page-btn {
-    min-width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: #888899;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .page-btn:hover {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .page-btn.active {
-    background: rgba(255, 42, 42, 0.8);
-    border-color: #ff2a2a;
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(255, 42, 42, 0.3);
-  }
-
-  .page-dots {
-    color: #555566;
-    font-size: 14px;
-    padding: 0 4px;
-  }
-
   .app-container {
     animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
     transform-origin: center top;
   }
-
+  .app-container:not(.page-leaving) {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
   .app-container.page-leaving {
     animation: page-leave 0.28s cubic-bezier(0.4, 0, 1, 1) both;
     pointer-events: none;
   }
-
   @keyframes page-enter {
     from { opacity: 0; transform: translateY(12px) scale(0.99); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
-
   @keyframes page-leave {
     from { opacity: 1; transform: translateY(0) scale(1); }
     to { opacity: 0; transform: translateY(-8px) scale(0.995); }
   }
-
   @media (prefers-reduced-motion: reduce) {
     .app-container,
     .app-container.page-leaving { animation: none; }
+  }
+</style>
+
+<style id="live-events-visibility-fix">
+  body > .app-container {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    filter: none !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  body > .app-container .sidebar,
+  body > .app-container .main-wrapper {
+    visibility: visible !important;
   }
 </style>
 </head>
@@ -535,7 +473,6 @@
 <canvas id="dotCanvas"></canvas>
 
 <div class="app-container">
-
   <!-- Hover-Expandable Animated Sidebar -->
   <aside class="sidebar">
     <div>
@@ -549,7 +486,6 @@
         </div>
         <button class="collapse-btn">&laquo;</button>
       </div>
-
       <ul class="nav-list">
         <li class="nav-item">
           <a href="/frontend/overview.html">
@@ -577,11 +513,11 @@
         </li>
         <li class="nav-item">
           <a href="/frontend/rules.html">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span class="nav-text">Rules</span>
           </a>
         </li>
-        <li class="nav-item ">
+        <li class="nav-item">
           <a href="/frontend/about.html">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <span class="nav-text">About</span>
@@ -593,14 +529,12 @@
 
   <!-- Main Section -->
   <main class="main-wrapper">
-
     <!-- Top Page Header -->
     <div class="page-header">
       <div class="header-titles">
         <h1>Live Events Tracker</h1>
         <p id="eventCounter">Monitoring Incoming Traffic</p>
       </div>
-
       <div class="header-actions">
         <button class="action-btn" title="Quick Search">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -633,7 +567,6 @@
 
     <!-- Panel Card Containing Filter & Table -->
     <div class="panel-card">
-
       <!-- Controls Filter Bar -->
       <div class="filter-bar">
         <select class="custom-select" id="typeFilter">
@@ -646,24 +579,21 @@
           <option value="XSS Attempt">XSS Attempt</option>
           <option value="Suspicious Scanner">Suspicious Scanner</option>
         </select>
-
         <select class="custom-select" id="severityFilter">
           <option value="ALL">All Severities</option>
           <option value="HIGH">High</option>
           <option value="MEDIUM">Medium</option>
           <option value="LOW">Low</option>
         </select>
-
         <div class="search-wrapper">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" id="searchInput" class="search-input" placeholder="Search IP, Details, or Event Type...">
         </div>
-
         <button class="btn-clear" id="clearBtn">Clear Filters</button>
       </div>
 
-      <!-- Events Data Table -->
-      <div class="table-container">
+      <!-- Events Data Table with hidden scrollbar -->
+      <div class="table-container" id="scrollableTable">
         <table class="events-table">
           <thead>
             <tr>
@@ -679,115 +609,117 @@
           </tbody>
         </table>
       </div>
-
-      <!-- Pagination -->
-      <div class="pagination-container">
-        <button class="page-btn">&lt;</button>
-        <button class="page-btn active">1</button>
-        <button class="page-btn">2</button>
-        <button class="page-btn">3</button>
-        <button class="page-btn">4</button>
-        <button class="page-btn">5</button>
-        <span class="page-dots">...</span>
-        <button class="page-btn">42</button>
-        <button class="page-btn">&gt;</button>
-      </div>
-
     </div>
-
   </main>
-
 </div>
 
 <script>
   const pageContainer = document.querySelector('.app-container');
-
   document.querySelectorAll('a[href]').forEach((link) => {
     link.addEventListener('click', (event) => {
       const destination = new URL(link.href, window.location.href);
       const isPageNavigation = destination.origin === window.location.origin &&
         destination.pathname !== window.location.pathname &&
         destination.protocol !== 'mailto:';
-
       if (!isPageNavigation || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
       }
-
       event.preventDefault();
       pageContainer.classList.add('page-leaving');
       window.setTimeout(() => { window.location.href = destination.href; }, 280);
     });
   });
 
-  // Dataset matching image exactly
-  const initialEvents = [
-    { time: '10:24:10', severity: 'HIGH', type: 'SQL Injection', details: 'Pattern: union select', ip: '192.168.1.10' },
-    { time: '10:24:09', severity: 'HIGH', type: 'Path Traversal', details: 'Pattern: ../', ip: '192.168.1.22' },
-    { time: '10:24:08', severity: 'HIGH', type: 'Command Injection', details: 'Pattern: cmd.exe', ip: '192.168.1.55' },
-    { time: '10:24:07', severity: 'MEDIUM', type: 'Login Failed', details: 'User: admin', ip: '192.168.1.45' },
-    { time: '10:24:06', severity: 'LOW', type: 'Normal Traffic', details: 'GET /index.html', ip: '192.168.1.12' },
-    { time: '10:24:05', severity: 'HIGH', type: 'XSS Attempt', details: 'Pattern: <script>', ip: '192.168.1.99' },
-    { time: '10:24:04', severity: 'MEDIUM', type: 'Suspicious Scanner', details: 'Nmap Scan Detected', ip: '192.168.1.77' },
-    { time: '10:24:03', severity: 'LOW', type: 'Normal Traffic', details: 'POST /login', ip: '192.168.1.33' },
-    { time: '10:24:02', severity: 'HIGH', type: 'SQL Injection', details: 'Pattern: \'or 1=1', ip: '192.168.1.10' },
-    { time: '10:24:01', severity: 'LOW', type: 'Normal Traffic', details: 'GET /about', ip: '192.168.1.12' }
-  ];
-
+  let initialEvents = []; 
+  
   const tableBody = document.getElementById('eventsTableBody');
+  const scrollableTable = document.getElementById('scrollableTable');
   const typeFilter = document.getElementById('typeFilter');
   const severityFilter = document.getElementById('severityFilter');
   const searchInput = document.getElementById('searchInput');
   const clearBtn = document.getElementById('clearBtn');
   const eventCounter = document.getElementById('eventCounter');
-
-  // Metrics DOM Elements
+  
   const metricTotal = document.getElementById('metric-total');
   const metricHigh = document.getElementById('metric-high');
   const metricIps = document.getElementById('metric-ips');
+
+  let liveEvents = [];
+
+  function normalizeText(value) {
+    return value == null ? '' : String(value);
+  }
 
   function renderTable() {
     const selectedType = typeFilter.value;
     const selectedSev = severityFilter.value;
     const query = searchInput.value.toLowerCase().trim();
+    
+    const allEvents = initialEvents.concat(liveEvents);
 
-    const filtered = initialEvents.filter(item => {
-      const matchType = selectedType === 'ALL' || item.type === selectedType;
-      const matchSev = selectedSev === 'ALL' || item.severity === selectedSev;
-      const matchSearch = query === '' || 
-        item.type.toLowerCase().includes(query) ||
-        item.details.toLowerCase().includes(query) ||
-        item.ip.toLowerCase().includes(query) ||
-        item.time.includes(query);
+    const filtered = allEvents.filter(item => {
+      const itemType = normalizeText(item.type);
+      const itemSeverity = normalizeText(item.severity).toUpperCase();
+      const itemDetails = normalizeText(item.details);
+      const itemIp = normalizeText(item.ip);
+      const itemTime = normalizeText(item.time);
+
+      const matchType = selectedType === 'ALL' || itemType === selectedType;
+      const matchSev = selectedSev === 'ALL' || itemSeverity === selectedSev;
+      const matchSearch = query === '' ||
+        itemType.toLowerCase().includes(query) ||
+        itemDetails.toLowerCase().includes(query) ||
+        itemIp.toLowerCase().includes(query) ||
+        itemTime.includes(query);
 
       return matchType && matchSev && matchSearch;
     });
 
-    eventCounter.textContent = `Displaying ${filtered.length} of ${initialEvents.length} Recent Events`;
+    if (filtered.length === 0) {
+      eventCounter.textContent = 'Awaiting Incoming Events...';
+    } else {
+      eventCounter.textContent = `Displaying ${filtered.length} of ${allEvents.length} Events`;
+    }
+    
+    metricTotal.textContent = filtered.length.toLocaleString();
+    metricHigh.textContent = filtered.filter(e => normalizeText(e.severity).toUpperCase() === 'HIGH').length.toLocaleString();
+    metricIps.textContent = new Set(filtered.map(e => normalizeText(e.ip)).filter(Boolean)).size.toLocaleString();
 
-    // Update dynamic metric cards
-    metricTotal.textContent = filtered.length;
-    metricHigh.textContent = filtered.filter(e => e.severity === 'HIGH').length;
-    metricIps.textContent = new Set(filtered.map(e => e.ip)).size;
+    tableBody.innerHTML = filtered.map(e => {
+      const severity = normalizeText(e.severity).toUpperCase() || 'LOW';
+      const type = normalizeText(e.type) || 'Unknown Event';
+      const details = normalizeText(e.details) || '-';
+      const ip = normalizeText(e.ip) || '-';
+      const time = normalizeText(e.time) || '--:--:--';
+      const animClass = e.isNew ? 'new-event-anim' : '';
 
-    tableBody.innerHTML = filtered.map(e => `
-      <tr>
-        <td class="cell-time">${e.time}</td>
-        <td><span class="badge-sev ${e.severity.toLowerCase()}">${e.severity}</span></td>
-        <td><strong>${e.type}</strong></td>
-        <td class="cell-details">${escapeHtml(e.details)}</td>
-        <td class="cell-ip">${e.ip}</td>
-      </tr>
-    `).join('');
+      return `
+        <tr class="live-row ${animClass}">
+          <td class="cell-time">${escapeHtml(time)}</td>
+          <td><span class="badge-sev ${severity.toLowerCase()}">${escapeHtml(severity)}</span></td>
+          <td><strong>${escapeHtml(type)}</strong></td>
+          <td class="cell-details">${escapeHtml(details)}</td>
+          <td class="cell-ip">${escapeHtml(ip)}</td>
+        </tr>`;
+    }).join('');
+
+    if (scrollableTable) {
+      scrollableTable.scrollTop = scrollableTable.scrollHeight;
+    }
   }
 
   function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return normalizeText(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   typeFilter.addEventListener('change', renderTable);
   severityFilter.addEventListener('change', renderTable);
   searchInput.addEventListener('input', renderTable);
-
   clearBtn.addEventListener('click', () => {
     typeFilter.value = 'ALL';
     severityFilter.value = 'ALL';
@@ -797,36 +729,30 @@
 
   renderTable();
 
-  // Full Screen Dynamic Canvas Engine with Clamped Radius Limiter
+  // Full Screen Dynamic Canvas Engine
   const canvas = document.getElementById('dotCanvas');
   const ctx = canvas.getContext('2d');
-
   let width, height;
   let dots = [];
   const spacing = 22;             
   const baseRadius = 0.95;        
   const hoverRadius = 140;        
   const MAX_DOT_RADIUS = 4.5;     
-
   let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
 
   function initGrid() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-
     dots = [];
     const cols = Math.ceil(width / spacing) + 1;
     const rows = Math.ceil(height / spacing) + 1;
-
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
         const baseX = i * spacing;
         const baseY = j * spacing;
-        
         const isThreat = Math.random() < 0.012;
         const isSuspicious = !isThreat && Math.random() < 0.018;
         const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
-
         dots.push({
           baseX,
           baseY,
@@ -842,12 +768,10 @@
   }
 
   window.addEventListener('resize', initGrid);
-
   window.addEventListener('mousemove', (e) => {
     mouse.targetX = e.clientX;
     mouse.targetY = e.clientY;
   });
-
   window.addEventListener('mouseleave', () => {
     mouse.targetX = -1000;
     mouse.targetY = -1000;
@@ -855,48 +779,38 @@
 
   function render(time) {
     ctx.clearRect(0, 0, width, height);
-
     mouse.x += (mouse.targetX - mouse.x) * 0.1;
     mouse.y += (mouse.targetY - mouse.y) * 0.1;
-
     const t = time * 0.0025;
-
     for (let i = 0; i < dots.length; i++) {
       const d = dots[i];
-
       const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
       const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
-
       const dx = mouse.x - d.baseX;
       const dy = mouse.y - d.baseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-
       let targetX = d.baseX + waveX;
       let targetY = d.baseY + waveY;
       let targetR = d.baseR;
       let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
-
+      
       if (dist < hoverRadius) {
         const norm = 1 - dist / hoverRadius;
         const factor = norm * norm * (3 - 2 * norm);
-
         const addedRadius = factor * 2.8;
         targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
         targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
-
         const angle = Math.atan2(dy, dx);
         const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
         const pushAmount = factor * 12;
-
         targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
         targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
       }
-
       d.x += (targetX - d.x) * 0.12;
       d.y += (targetY - d.y) * 0.12;
       d.r += (targetR - d.r) * 0.12;
       d.opacity += (targetOpacity - d.opacity) * 0.12;
-
+      
       let color;
       if (d.colorType === 'threat') {
         color = `rgba(255, 42, 42, ${d.opacity})`;
@@ -905,14 +819,13 @@
       } else {
         color = `rgba(0, 229, 255, ${d.opacity})`;
       }
-
+      
       const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
-
       ctx.beginPath();
       ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
-
+      
       if (d.colorType === 'threat' || finalRadius > 3.2) {
         ctx.shadowBlur = finalRadius * 2;
         ctx.shadowColor = color;
@@ -920,48 +833,151 @@
         ctx.shadowBlur = 0;
       }
     }
-
     requestAnimationFrame(render);
   }
 
   initGrid();
   requestAnimationFrame(render);
 
-  //CONNECTION
+  // ==========================================================
+  // LIVE CONNECTION TO rustTCP_handler.py
+  // Browser -> WebSocket :4003
+  // ==========================================================
 
-  const eventStream = new EventSource(
-    "http://localhost:4004/events"
-  );
+  const backendWs = new WebSocket('ws://localhost:4003');
 
-  eventStream.onopen = () => {
-    console.log(
-        "Connected to FlareWatch event stream"
-    );
-  };
+  function mapLiveEvent(data) {
+    if (!data || typeof data !== 'object') return null;
 
-  eventStream.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log(
-        "Received from tcp_server.js:",
-        data
-    );
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-GB', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
 
-    if (data.type === "connection") {
-        console.log("Frontend connected");
-        return;
+    const normalized = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        normalized[key.toLowerCase()] = data[key];
+      }
     }
 
-    // Your dashboard update goes here
-    console.log("THREAT:", data);
+    const typeStr = String(normalized.type || normalized.event_type || '').toLowerCase();
+    const threatName = normalized.threat_name || normalized.threat || '';
+
+    let mapped = null;
+    if (typeStr === 'threat' || threatName) {
+      mapped = {
+        time,
+        severity: String(normalized.severity || 'HIGH').toUpperCase(),
+        type: mapThreatType(threatName || typeStr),
+        details: normalized.request || normalized.details || threatName || 'Threat detected',
+        ip: normalized.ip || normalized.source_ip || 'Unknown IP',
+        isNew: true
+      };
+    } else if (typeStr === 'nothreat' || typeStr === 'log' || typeStr === 'normal') {
+      mapped = {
+        time,
+        severity: 'LOW',
+        type: 'Normal Traffic',
+        details: normalized.request || normalized.details || 'Log received',
+        ip: normalized.ip || normalized.source_ip || 'Unknown IP',
+        isNew: true
+      };
+    } else if (normalized.ip) {
+      mapped = {
+        time,
+        severity: 'LOW',
+        type: 'Unknown Event',
+        details: normalized.request || 'Data received',
+        ip: normalized.ip,
+        isNew: true
+      };
+    }
+
+    if (mapped) {
+      // Remove the animation tag after 600ms so filtering doesn't re-trigger it
+      setTimeout(() => {
+        mapped.isNew = false;
+      }, 600);
+    }
+
+    return mapped;
+  }
+
+  function mapThreatType(name) {
+    const value = String(name || '').toUpperCase();
+    if (value === 'SQLI') return 'SQL Injection';
+    if (value === 'XSS') return 'XSS Attempt';
+    if (value === 'PATH_TRAVERSAL') return 'Path Traversal';
+    if (value === 'COMMAND_INJECTION') return 'Command Injection';
+    if (value === 'SENSITIVE_ACCESS') return 'Sensitive Access';
+    if (value === 'SSRF') return 'SSRF';
+    if (value === 'LDAP_INJECTION') return 'LDAP Injection';
+    if (value === 'XXE') return 'XXE';
+    if (value === 'HTTP_ANOMALY') return 'HTTP Anomaly';
+    return name || 'Unknown Threat';
+  }
+
+  backendWs.onopen = () => {
+    console.log('[Live Events] Connected to rustTCP_handler.py WebSocket :4003');
   };
 
-  eventStream.onerror = (error) => {
-    console.error(
-        "SSE connection error:",
-        error
-    );
+  backendWs.onmessage = (event) => {
+    try {
+      let parsedData = JSON.parse(event.data);
+      
+      if (typeof parsedData === 'string') {
+        try { parsedData = JSON.parse(parsedData); } catch (e) {}
+      }
+
+      console.log('[Live Events] Received:', parsedData);
+
+      const processEvent = (data) => {
+        if (!data || typeof data !== 'object') return;
+
+        const typeCheck = String(data.type || data.Type || '').toLowerCase();
+        if (typeCheck === 'connection' || typeCheck === 'stats') return;
+
+        const liveEvent = mapLiveEvent(data);
+        if (!liveEvent) {
+          console.warn('[Live Events] Ignored unsupported event:', data);
+          return;
+        }
+
+        liveEvents.push(liveEvent);
+        
+        if (liveEvents.length > 500) {
+          liveEvents.shift();
+        }
+      };
+
+      if (Array.isArray(parsedData)) {
+        parsedData.forEach(processEvent);
+      } else {
+        processEvent(parsedData);
+      }
+
+      renderTable();
+      
+    } catch (error) {
+      console.error('[Live Events] WebSocket JSON error:', error);
+    }
+  };
+
+  backendWs.onerror = (error) => {
+    console.error('[Live Events] WebSocket error:', error);
+  };
+
+  backendWs.onclose = () => {
+    console.warn('[Live Events] WebSocket disconnected from :4003');
   };
 </script>
 
+<script id="live-events-visibility-fix-js">
+  window.addEventListener('pageshow', () => {
+    const app = document.querySelector('.app-container');
+    if (app) app.classList.remove('page-leaving');
+  });
+</script>
 </body>
 </html>
