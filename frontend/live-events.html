@@ -671,7 +671,18 @@
   const metricHigh = document.getElementById('metric-high');
   const metricIps = document.getElementById('metric-ips');
 
+  // MODIFIED: Initialize liveEvents from sessionStorage
   let liveEvents = [];
+  try {
+    const stored = sessionStorage.getItem('flarewatch_live_events');
+    if (stored) {
+      liveEvents = JSON.parse(stored);
+      // Ensure reloaded events don't trigger the "new" flash animation upon reload
+      liveEvents.forEach(e => e.isNew = false);
+    }
+  } catch (err) {
+    console.error('[Live Events] Failed to parse stored events:', err);
+  }
 
   function normalizeText(value) {
     return value == null ? '' : String(value);
@@ -891,10 +902,6 @@
     const typeStr = String(normalized.type || normalized.event_type || '').toLowerCase();
     let mapped = null;
 
-    // LIVE EVENTS PAGE: show ONLY incidents emitted by bigevent_handler.py.
-    // bigevent_handler.py sends type="big_event" with threat_id,
-    // threat_name, ip and details. Normal logs, nothreat messages,
-    // connection messages, and unrelated event types are ignored.
     if (typeStr === 'big_event') {
       mapped = {
         time,
@@ -910,6 +917,12 @@
       // Remove the animation tag after 600ms so filtering doesn't re-trigger it
       setTimeout(() => {
         mapped.isNew = false;
+        
+        // MODIFIED: Also update storage so animations don't re-trigger upon tab reload
+        try {
+          sessionStorage.setItem('flarewatch_live_events', JSON.stringify(liveEvents));
+        } catch(err) {}
+
       }, 600);
     }
 
@@ -974,6 +987,13 @@
         
         if (liveEvents.length > 500) {
           liveEvents.shift();
+        }
+
+        // MODIFIED: Save the updated array to sessionStorage
+        try {
+          sessionStorage.setItem('flarewatch_live_events', JSON.stringify(liveEvents));
+        } catch (err) {
+          console.error('[Live Events] Failed to save events to storage:', err);
         }
       };
 
