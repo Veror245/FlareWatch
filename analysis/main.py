@@ -52,7 +52,6 @@ class Event:
 RUST_PORT = 4001
 DEV1_PORT = 4002
 
-# Reconnect/backoff tuning for the Dev 1 connection
 RECONNECT_INITIAL_DELAY = 1.0
 RECONNECT_MAX_DELAY = 30.0
 SCORE_DECAY_PER_SECOND = 1.0 / 30.0  
@@ -152,25 +151,24 @@ def send_incident(dev1_client, incident):
     total_length = len(payload) + 1 
     header = struct.pack('>IB', total_length, msg_type)
 
-    print(f"\n[SEND OUTBOUND] DEV1 ALERT: {incident['incident_type']} | IP: {incident['IP']} | Context: {incident['details']}")
-
     with dev1_send_lock:  
         dev1_client.sendall(header + payload)
 
-def worker_loop(dev1_client, dev1_ok_event):
+def worker_loop(dev1_client, dev1_ok_event, dev1_disconnected_event):
     while True:
         current_event = event_queue.get() 
         incident = analyse_threat(current_event)
         
         if incident:
-            if not dev1_ok_event.is_set():
-                print(f"[ALERT DROPPED] Dev 1 unavailable! Could not send {incident['incident_type']}")
-            else:
+            if dev1_ok_event.is_set():
                 try:
                     send_incident(dev1_client, incident)
                 except (BrokenPipeError, ConnectionResetError, OSError):
-                    print("Dev 1 disconnected unexpectedly.")
-                    dev1_ok_event.clear()  
+                    # Only trigger reconnect if we haven't already marked it down
+                    if dev1_ok_event.is_set():
+                        dev1_ok_event.clear()
+                        print("\n[NETWORK] Dev 1 connection lost. Reconnecting in background...")
+                        dev1_disconnected_event.set()  
         event_queue.task_done()
 
 def recv_exact(sock, num_bytes):
@@ -208,18 +206,18 @@ def connect_to_dev1(dev1_ok_event):
         dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             dev1_client.connect(('127.0.0.1', DEV1_PORT))
-            print(f"✅ [NETWORK] Connected OUTBOUND to Dev 1 Dashboard on port {DEV1_PORT}")
+            print(f"\n[NETWORK] Connected OUTBOUND to Dev 1 Dashboard on port {DEV1_PORT}")
             dev1_ok_event.set()
             return dev1_client
         except (ConnectionRefusedError, OSError):
-            print(f"⏳ [NETWORK] Waiting for Dev 1 on port {DEV1_PORT}. Retrying in {delay:.1f}s...")
             time.sleep(delay)
             delay = min(delay * 2, RECONNECT_MAX_DELAY)
 
-def dev1_reconnect_supervisor(dev1_holder, dev1_ok_event):
+def dev1_reconnect_supervisor(dev1_holder, dev1_ok_event, dev1_disconnected_event):
     while True:
-        dev1_ok_event.wait()  
-        dev1_ok_event.clear()
+        # Sleep safely until a worker thread reports a broken pipe
+        dev1_disconnected_event.wait()  
+        dev1_disconnected_event.clear()
         try:
             dev1_holder[0].close()
         except OSError:
@@ -228,11 +226,14 @@ def dev1_reconnect_supervisor(dev1_holder, dev1_ok_event):
 
 def listen_to_rust():
     dev1_ok_event = threading.Event()
+    dev1_disconnected_event = threading.Event()
+    
+    # Initial silent connection attempt
     dev1_client = connect_to_dev1(dev1_ok_event)
     dev1_holder = [dev1_client]  
 
     supervisor = threading.Thread(
-        target=dev1_reconnect_supervisor, args=(dev1_holder, dev1_ok_event), daemon=True
+        target=dev1_reconnect_supervisor, args=(dev1_holder, dev1_ok_event, dev1_disconnected_event), daemon=True
     )
     supervisor.start()
 
@@ -242,26 +243,22 @@ def listen_to_rust():
     dev1_proxy = Dev1Proxy()
 
     for _ in range(3):
-        t = threading.Thread(target=worker_loop, args=(dev1_proxy, dev1_ok_event), daemon=True)
+        t = threading.Thread(target=worker_loop, args=(dev1_proxy, dev1_ok_event, dev1_disconnected_event), daemon=True)
         t.start()
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('127.0.0.1', RUST_PORT))
-    server.listen(1)
+    server.listen(5)
     
-    print(f"[NETWORK] Threat Engine listening for INBOUND Rust binary stream on port {RUST_PORT}...")
+    print(f"🛡️ [NETWORK] Threat Engine permanently listening for Rust stream on port {RUST_PORT}...")
 
     while True:
         conn, addr = server.accept()
-        print(f"[NETWORK] Rust Engine INBOUND connection established from {addr}")
+        print(f"\n[NETWORK] Rust Engine INBOUND connection established from {addr}")
         
-        if dev1_ok_event.is_set():
-            print(f"\n🎉 [PIPELINE ACTIVE] ALL SYSTEMS SYNCHRONIZED! (Rust -> :4001 -> Python -> :4002 -> Dev 1)\n")
-
-        handle_rust_connection(conn)
-        print("[NETWORK] Rust Engine disconnected. Waiting for reconnect...")
-
+        # Spawn handler into a dedicated thread so the server never blocks
+        threading.Thread(target=handle_rust_connection, args=(conn,), daemon=True).start()
 
 def handle_rust_connection(conn):
     try:
@@ -270,15 +267,12 @@ def handle_rust_connection(conn):
             if not length_bytes: break
             payload_length = struct.unpack('>I', length_bytes)[0]
             if payload_length < 1:
-                print(f"[PROTOCOL ERROR] Invalid payload length: {payload_length}")
                 break
             
             type_bytes = recv_exact(conn, 1)
             if not type_bytes: break 
             msg_type = struct.unpack('>B', type_bytes)[0]
             
-            # FATAL BUG FIX: payload_length INCLUDES the 1-byte message type. 
-            # We must only read `payload_length - 1` bytes for the remainder!
             actual_payload_len = payload_length - 1
             payload = recv_exact(conn, actual_payload_len)
             if payload is None and actual_payload_len > 0: break 
@@ -297,15 +291,12 @@ def handle_rust_connection(conn):
                 elif msg_type == 4:  
                     event_id = struct.unpack('>B', payload[0:1])[0]
                     
-                    # BUG FIX FOR RUST (Dev 3): 
-                    # tcp_server.rs forgot to send the `[Threat type u8]` byte for EVENTs.
-                    # If byte 1 is 255, it's correct. If it's an IP length (< 64), it's the broken format.
                     second_byte = struct.unpack('>B', payload[1:2])[0]
                     if second_byte == 255:
-                        offset = 2 # Spec format
+                        offset = 2
                         threat_id = 255
                     else:
-                        offset = 1 # Buggy Rust format
+                        offset = 1 
                         threat_id = 255
                     
                     if event_id != 255: 
@@ -317,9 +308,6 @@ def handle_rust_connection(conn):
                 # Type 0 (LOG) or 2 (NOTHREAT)
                 elif msg_type in (0, 2):  
                     ip_address, request_str, _ = _parse_payload_data(payload, 0)
-                    # NOTE: Uncomment the line below to print ALL regular logs, but be warned: 
-                    # 55,000 logs/sec will severely lag your terminal!
-                    # print(f"[RECV LOG] IP: {ip_address:<14} | Req: {request_str[:20]}...")
                     event_queue.put(Event(IP=ip_address, event_type="LOG", severity=0, endpoint=request_str))
                     
                 # Type 3: STATS
@@ -327,13 +315,11 @@ def handle_rust_connection(conn):
                     logs, threats, rate = struct.unpack('>QQI', payload)
                     print(f"[RECV STATS] Processed: {logs:,} logs | Detected: {threats:,} threats | Rate: {rate:,} req/s")
 
-            except Exception as parse_err:
-                print(f"[PARSE ERROR] Failed to unpack msg_type {msg_type}: {parse_err}")
-                print(f"   Raw Payload Hex: {payload.hex()}")
-                # Notice we do NOT break here! We catch the error and keep the TCP stream alive.
+            except Exception:
+                pass 
 
-    except (ConnectionResetError, OSError, struct.error) as e:
-        print(f"[CONNECTION ERROR] Rust stream dropped: {e}")
+    except (ConnectionResetError, OSError, struct.error):
+        pass
     finally:
         conn.close()
 
