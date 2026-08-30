@@ -538,12 +538,7 @@
             <span class="nav-text">Search Logs</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a href="/frontend/threatDetails.html">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span class="nav-text">Threats</span>
-          </a>
-        </li>
+        
         <li class="nav-item">
           <a href="/frontend/rules.html">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -676,7 +671,18 @@
   const metricHigh = document.getElementById('metric-high');
   const metricIps = document.getElementById('metric-ips');
 
+  // MODIFIED: Initialize liveEvents from sessionStorage
   let liveEvents = [];
+  try {
+    const stored = sessionStorage.getItem('flarewatch_live_events');
+    if (stored) {
+      liveEvents = JSON.parse(stored);
+      // Ensure reloaded events don't trigger the "new" flash animation upon reload
+      liveEvents.forEach(e => e.isNew = false);
+    }
+  } catch (err) {
+    console.error('[Live Events] Failed to parse stored events:', err);
+  }
 
   function normalizeText(value) {
     return value == null ? '' : String(value);
@@ -896,10 +902,6 @@
     const typeStr = String(normalized.type || normalized.event_type || '').toLowerCase();
     let mapped = null;
 
-    // LIVE EVENTS PAGE: show ONLY incidents emitted by bigevent_handler.py.
-    // bigevent_handler.py sends type="big_event" with threat_id,
-    // threat_name, ip and details. Normal logs, nothreat messages,
-    // connection messages, and unrelated event types are ignored.
     if (typeStr === 'big_event') {
       mapped = {
         time,
@@ -915,6 +917,12 @@
       // Remove the animation tag after 600ms so filtering doesn't re-trigger it
       setTimeout(() => {
         mapped.isNew = false;
+        
+        // MODIFIED: Also update storage so animations don't re-trigger upon tab reload
+        try {
+          sessionStorage.setItem('flarewatch_live_events', JSON.stringify(liveEvents));
+        } catch(err) {}
+
       }, 600);
     }
 
@@ -979,6 +987,13 @@
         
         if (liveEvents.length > 500) {
           liveEvents.shift();
+        }
+
+        // MODIFIED: Save the updated array to sessionStorage
+        try {
+          sessionStorage.setItem('flarewatch_live_events', JSON.stringify(liveEvents));
+        } catch (err) {
+          console.error('[Live Events] Failed to save events to storage:', err);
         }
       };
 

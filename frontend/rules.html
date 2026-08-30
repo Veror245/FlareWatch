@@ -1,21 +1,12 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>FlareWatch - Rules / Signatures</title>
-
 <link rel="icon" type="image/x-icon" href="./icon/icon.png">
-
 <style>
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg: #050507;
       --panel: rgba(12, 12, 16, 0.76);
@@ -31,7 +22,6 @@
       --amber: #f59e0b;
       --cyan: #00e5ff;
     }
-
     html, body {
       width: 100%;
       height: 100%;
@@ -40,9 +30,7 @@
       color: var(--text);
       overflow: hidden;
     }
-
     body { min-width: 1080px; }
-
     #dotCanvas {
       position: fixed;
       inset: 0;
@@ -52,7 +40,6 @@
       z-index: 0;
       opacity: 0.78;
     }
-
     .app-container {
       position: relative;
       z-index: 1;
@@ -62,9 +49,8 @@
       min-height: 0;
       animation: page-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-
    .sidebar {
-    width: 68px; /* Collapsed width */
+    width: 68px;
     background: rgba(10, 10, 13, 0.9);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(14px);
@@ -79,9 +65,7 @@
     z-index: 10;
     border-radius: 0px 30px 30px 0px;
   }
-
     .sidebar:hover { width: 236px; box-shadow: 12px 0 34px rgba(0,0,0,0.46); }
-
     .brand-header {
       display: flex;
       align-items: center;
@@ -89,7 +73,6 @@
       padding: 0 18px 24px 18px;
       height: 34px;
     }
-
     .brand-logo {
       display: flex;
       align-items: center;
@@ -98,17 +81,14 @@
       font-size: 18px;
       letter-spacing: 1px;
     }
-
     .brand-logo svg { width: 26px; height: 30px; flex-shrink: 0; }
     .brand-logo .red { color: #ff2a2a; }
     .brand-logo .white { color: #ffffff; }
-
     .brand-text, .nav-text, .status-text, .collapse-btn {
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.2s ease, visibility 0.2s ease;
     }
-
     .sidebar:hover .brand-text,
     .sidebar:hover .nav-text,
     .sidebar:hover .status-text,
@@ -117,7 +97,6 @@
       visibility: visible;
       transition-delay: 0.08s;
     }
-
     .collapse-btn {
       background: transparent;
       border: none;
@@ -125,9 +104,7 @@
       cursor: pointer;
       font-size: 12px;
     }
-
     .collapse-btn:hover { color: #aaa; }
-
     .nav-list {
       list-style: none;
       display: flex;
@@ -135,7 +112,6 @@
       gap: 8px;
       padding: 0 12px;
     }
-
     .nav-item a {
       display: flex;
       align-items: center;
@@ -149,26 +125,21 @@
       height: 44px;
       transition: all 0.2s ease;
     }
-
     .nav-item a:hover { color: #fff; background: rgba(255,255,255,0.05); }
-
     .nav-item.active a {
       color: #fff;
       background: rgba(255,42,42,0.12);
       border: 1px solid rgba(255,42,42,0.35);
       box-shadow: 0 0 10px rgba(255,42,42,0.18);
     }
-
     .nav-item.active a svg { stroke: #ff2a2a; }
     .nav-item svg { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
-
     .sidebar-footer { padding: 0 12px; }
     .info-icon-btn {
       background: transparent; border: none; color: #666; cursor: pointer;
       width: 100%; display: flex; justify-content: center;
     }
     .info-icon-btn:hover { color: #fff; }
-
     .main-wrapper {
       flex: 1;
       min-width: 0;
@@ -176,7 +147,6 @@
       flex-direction: column;
       overflow: hidden;
     }
-
     .content-area {
       flex: 1;
       min-height: 0;
@@ -186,7 +156,6 @@
       flex-direction: column;
       gap: 18px;
     }
-
     .page-header-row {
       display: flex;
       justify-content: space-between;
@@ -194,11 +163,9 @@
       gap: 24px;
       flex-shrink: 0;
     }
-
     .page-title-group { display: flex; flex-direction: column; gap: 5px; }
     .page-title { font-size: clamp(22px, 2vw, 28px); line-height: 1.15; font-weight: 720; color: #fff; }
     .breadcrumb { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
-
     .header-controls { display: flex; align-items: center; gap: 10px; }
     .search-box {
       display: flex; align-items: center;
@@ -214,7 +181,6 @@
     .search-box svg { width: 16px; height: 16px; color: var(--muted); margin-right: 8px; }
     .search-box input { background: transparent; border: none; color: #fff; font-size: 13px; width: 100%; outline: none; }
     .search-box input::placeholder { color: var(--muted-2); }
-
     .btn-primary {
       display: flex; align-items: center; gap: 8px;
       background: var(--red);
@@ -225,14 +191,12 @@
       white-space: nowrap;
     }
     .btn-primary:hover { background: var(--red-bright); box-shadow: 0 0 18px rgba(255,42,42,0.16); transform: translateY(-1px); }
-
     .overview-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
       flex-shrink: 0;
     }
-
     .overview-card {
       min-width: 0;
       padding: 15px 16px;
@@ -242,11 +206,10 @@
       justify-content: space-between;
       gap: 14px;
       border: 1px solid rgba(255, 255, 255, 0.097);
-    backdrop-filter: blur(2px);
-    background-color: rgba(255, 255, 255, 0.071);
-    border-radius: 20px;
+      backdrop-filter: blur(2px);
+      background-color: rgba(255, 255, 255, 0.071);
+      border-radius: 20px;
     }
-
     .overview-label {
       color: var(--muted);
       font-size: 10px;
@@ -255,10 +218,8 @@
       margin-bottom: 6px;
       white-space: nowrap;
     }
-
     .overview-value { color: #fff; font-size: 24px; font-weight: 720; line-height: 1; }
     .overview-note { color: var(--muted-2); font-size: 11px; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
     .overview-accent {
       width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
       display: grid; place-items: center;
@@ -271,7 +232,6 @@
     .overview-accent.amber { color: var(--amber); border-color: rgba(245,158,11,0.16); background: rgba(245,158,11,0.06); }
     .overview-accent.cyan { color: var(--cyan); border-color: rgba(0,229,255,0.15); background: rgba(0,229,255,0.05); }
     .overview-accent svg { width: 17px; height: 17px; }
-
     .table-toolbar {
       min-height: 52px;
       display: flex;
@@ -282,11 +242,9 @@
       border-bottom: 1px solid var(--line-soft);
       flex-shrink: 0;
     }
-
     .table-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .table-heading strong { font-size: 13px; color: #fff; }
     .table-heading span { font-size: 11px; color: var(--muted); }
-
     .coverage-chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
     .coverage-chip {
       display: inline-flex; align-items: center; gap: 6px;
@@ -298,7 +256,6 @@
       background: rgba(255,255,255,0.025);
     }
     .coverage-chip i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; display: block; }
-
     .table-card {
       flex: 1;
       min-height: 360px;
@@ -311,10 +268,21 @@
       background-color: rgba(255, 255, 255, 0.071);
       border-radius: 30px;
     }
-
-    .rules-table-wrap { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
+    
+    /* Scrollable rules wrapper configuration */
+    .rules-table-wrap { 
+      flex: 1; 
+      min-height: 0; 
+      overflow-y: auto; 
+      overflow-x: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+    .rules-table-wrap::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
+    
     .rules-table { width: 100%; min-width: 850px; border-collapse: collapse; text-align: left; table-layout: fixed; }
-
     .rules-table th {
       position: sticky; top: 0; z-index: 2;
       background: rgba(12,12,16,0.96);
@@ -323,23 +291,19 @@
       padding: 13px 18px;
       border-bottom: 1px solid var(--line);
     }
-
     .rules-table td {
       padding: 14px 18px;
       font-size: 13px;
       border-bottom: 1px solid var(--line-soft);
       vertical-align: middle;
     }
-
     .rules-table tbody tr { transition: background 0.18s ease; }
     .rules-table tbody tr:hover { background: rgba(255,255,255,0.025); }
 
-    .rules-table th:nth-child(1), .rules-table td:nth-child(1) { width: 8%; }
-    .rules-table th:nth-child(2), .rules-table td:nth-child(2) { width: 28%; }
-    .rules-table th:nth-child(3), .rules-table td:nth-child(3) { width: 20%; }
-    .rules-table th:nth-child(4), .rules-table td:nth-child(4) { width: 13%; }
-    .rules-table th:nth-child(5), .rules-table td:nth-child(5) { width: 17%; }
-    .rules-table th:nth-child(6), .rules-table td:nth-child(6) { width: 14%; }
+    .rules-table th:nth-child(1), .rules-table td:nth-child(1) { width: 15%; }
+    .rules-table th:nth-child(2), .rules-table td:nth-child(2) { width: 45%; }
+    .rules-table th:nth-child(3), .rules-table td:nth-child(3) { width: 25%; }
+    .rules-table th:nth-child(4), .rules-table td:nth-child(4) { width: 15%; }
 
     .col-id { color: var(--muted); font-variant-numeric: tabular-nums; }
     .col-pattern { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; color: #d4d4d9; font-size: 12px; }
@@ -347,1033 +311,478 @@
     .sev-high { color: var(--red-bright); font-weight: 600; }
     .sev-medium { color: var(--amber); font-weight: 600; }
 
-    .status-wrapper { display: flex; align-items: center; gap: 10px; }
-    .status-text { font-size: 11px; width: 58px; }
-    .status-text.enabled { color: var(--green); }
-    .status-text.disabled { color: var(--muted-2); }
-
-    .toggle-switch { position: relative; display: inline-block; width: 34px; height: 19px; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background-color: #333344; transition: .25s; border-radius: 20px; }
-    .slider:before { position: absolute; content: ""; height: 13px; width: 13px; left: 3px; bottom: 3px; background-color: #888899; transition: .25s; border-radius: 50%; }
-    input:checked + .slider { background-color: #1a5c2d; }
-    input:checked + .slider:before { transform: translateX(15px); background-color: var(--green); }
-
-    .actions-cell { display: flex; gap: 7px; }
-    .btn-action {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.10);
-      color: var(--muted);
-      width: 31px; height: 31px;
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-action:hover { background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.2); }
-    .btn-action.delete { border-color: rgba(255,42,42,0.20); color: var(--red-bright); }
-    .btn-action.delete:hover { background: rgba(255,42,42,0.10); border-color: rgba(255,42,42,0.40); }
-    .btn-action svg { width: 14px; height: 14px; }
-
-    .pagination {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 11px 16px;
-      border-top: 1px solid var(--line-soft);
-      flex-shrink: 0;
-      background: rgba(8,8,11,0.38);
-    }
-
-    .pagination-meta { font-size: 11px; color: var(--muted-2); }
-    .pagination-controls { display: flex; align-items: center; gap: 5px; }
-    .page-btn {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.10);
-      color: var(--muted);
-      min-width: 31px; height: 31px;
-      padding: 0 8px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; cursor: pointer; transition: all 0.2s;
-    }
-    .page-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-    .page-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
-    .page-dots { color: var(--muted); padding: 0 3px; }
-
     @media (max-width: 1250px) {
       .content-area { padding-left: 24px; padding-right: 24px; }
       .overview-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .search-box { width: 250px; }
     }
-
     @media (max-height: 760px) {
       .content-area { padding-top: 20px; padding-bottom: 18px; gap: 12px; }
       .overview-card { padding: 11px 14px; }
       .overview-value { font-size: 20px; }
       .rules-table td { padding-top: 11px; padding-bottom: 11px; }
     }
-
     @keyframes page-enter {
       from { opacity: 0; transform: translateY(12px) scale(0.99); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-
 </style>
-
 </head>
-
 <body>
-
-<!-- Full Screen Dynamic Interactive Canvas -->
-
 <canvas id="dotCanvas"></canvas>
-
 <div class="app-container">
-
-  <!-- Hover-Expandable Animated Sidebar -->
-
    <aside class="sidebar">
-
-    <div style="display: flex;
-  flex-direction: column;
-  gap: 30px;">
-
+    <div style="display: flex; flex-direction: column; gap: 30px;">
       <div class="brand-header">
-
         <div class="brand-logo">
-
           <svg viewBox="0 0 88 104" fill="none">
-
             <path d="M44 3 L79 17 V46 C79 71 64 89 44 101 C24 89 9 71 9 46 V17 Z" stroke="#ff2424" stroke-width="6"/>
-
             <path d="M44 19 C48 28 57 31 57 43 C57 51 52 60 44 64 C36 60 31 51 31 43 C31 34 38 28 44 19Z" fill="#ff2a2a"/>
-
           </svg>
-
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
-
         </div>
-
-
       </div>
-
       <ul class="nav-list">
-
         <li class="nav-item">
-
           <a href="/frontend/overview.html">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-
             <span class="nav-text">Overview</span>
-
           </a>
-
         </li>
-
         <li class="nav-item">
-
           <a href="/frontend/live-events.html">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-
             <span class="nav-text">Live Events</span>
-
           </a>
-
         </li>
-
         <li class="nav-item">
-
           <a href="/frontend/search-logs.html">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-
             <span class="nav-text">Search Logs</span>
-
           </a>
-
         </li>
-
-        <li class="nav-item">
-
-          <a href="/frontend/threatDetails.html">
-
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-
-            <span class="nav-text">Threats</span>
-
-          </a>
-
-        </li>
-
         <li class="nav-item active">
-
           <a href="/frontend/rules.html">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-
             <span class="nav-text">Rules</span>
-
           </a>
-
         </li>
-
         <li class="nav-item ">
-
           <a href="/frontend/about.html">
-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-
             <span class="nav-text">About</span>
-
           </a>
-
         </li>
-
       </ul>
-
     </div>
-
   </aside>
 
-  <!-- Main Section -->
-
   <div class="main-wrapper">
-
     <main class="content-area">
-
-      <!-- Header Row -->
-
       <div class="page-header-row">
-
         <div class="page-title-group">
-
           <h1 class="page-title">Rules / Signatures</h1>
-
           <div class="breadcrumb">/ Rules</div>
-
         </div>
-
         <div class="header-controls">
-
           <div class="search-box">
-
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-
-            <input type="text" placeholder="Search rules...">
-
+            <input type="text" id="ruleSearchInput" placeholder="Search rules...">
           </div>
-
-          <button class="btn-primary">
-
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-
-            Add Rule
-
-          </button>
-
+          
         </div>
-
       </div>
 
       <section class="overview-grid" aria-label="Rule summary">
         <article class="overview-card">
-          <div><div class="overview-label">Total Rules</div><div class="overview-value">10</div><div class="overview-note">Active detection signatures</div></div>
+          <div><div class="overview-label">Total Rules</div><div class="overview-value">211</div><div class="overview-note">Active detection signatures</div></div>
           <div class="overview-accent red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10V6l8-4z"/><path d="M12 7v5"/><path d="M12 16h.01"/></svg></div>
         </article>
         <article class="overview-card">
-          <div><div class="overview-label">Enabled</div><div class="overview-value">9</div><div class="overview-note">90% of configured rules</div></div>
+          <div><div class="overview-label">Enabled</div><div class="overview-value">211</div><div class="overview-note">100% of configured rules</div></div>
           <div class="overview-accent green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
         </article>
         <article class="overview-card">
-          <div><div class="overview-label">High Severity</div><div class="overview-value">8</div><div class="overview-note">Priority signatures</div></div>
+          <div><div class="overview-label">High Severity</div><div class="overview-value">146</div><div class="overview-note">Priority signatures</div></div>
           <div class="overview-accent amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 2.8L1.9 17a2 2 0 001.7 3h16.8a2 2 0 001.7-3L13.7 2.8a2 2 0 00-3.4 0z"/><path d="M12 8v5"/><path d="M12 17h.01"/></svg></div>
         </article>
         <article class="overview-card">
-          <div><div class="overview-label">Categories</div><div class="overview-value">4</div><div class="overview-note">SQL · XSS · Path · Command</div></div>
+          <div><div class="overview-label">Categories</div><div class="overview-value">9</div><div class="overview-note">SQL · XSS · Path · Cmd · SSRF...</div></div>
           <div class="overview-accent cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
         </article>
       </section>
 
-      <!-- Table Content -->
-
       <div class="table-card">
         <div class="table-toolbar">
-          <div class="table-heading"><strong>Detection signatures</strong><span>10 configured rules</span></div>
+          <div class="table-heading"><strong>Detection signatures</strong><span id="ruleCountLabel">211 configured rules</span></div>
           <div class="coverage-chips" aria-label="Rule category summary">
-            <span class="coverage-chip"><i style="color:#ff3b3b"></i>SQL Injection · 4</span>
-            <span class="coverage-chip"><i style="color:#00e5ff"></i>Path Traversal · 3</span>
-            <span class="coverage-chip"><i style="color:#f59e0b"></i>Command Injection · 2</span>
-            <span class="coverage-chip"><i style="color:#888899"></i>XSS · 1</span>
+            <span class="coverage-chip"><i style="color:#ff3b3b"></i>SQL Injection · 39</span>
+            <span class="coverage-chip"><i style="color:#f59e0b"></i>Command Injection · 34</span>
+            <span class="coverage-chip"><i style="color:#00e5ff"></i>XSS · 29</span>
+            <span class="coverage-chip"><i style="color:#888899"></i>Path Traversal · 28</span>
+            <span class="coverage-chip"><i style="color:#22c55e"></i>SSRF · 27</span>
           </div>
         </div>
         <div class="rules-table-wrap">
-
-        <table class="rules-table">
-
+        <table class="rules-table" id="rulesTable">
           <thead>
-
             <tr>
-
               <th class="col-id">RULE ID</th>
-
               <th>PATTERN</th>
-
               <th>CATEGORY</th>
-
               <th>SEVERITY</th>
-
-              <th>STATUS</th>
-
-              <th>ACTIONS</th>
-
             </tr>
-
           </thead>
-
           <tbody>
-
-            <!-- Row 1 -->
-
-            <tr>
-
-              <td class="col-id">1</td>
-
-              <td class="col-pattern">union select</td>
-
-              <td class="col-category">SQL Injection</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 2 -->
-
-            <tr>
-
-              <td class="col-id">2</td>
-
-              <td class="col-pattern">'or 1=1</td>
-
-              <td class="col-category">SQL Injection</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 3 -->
-
-            <tr>
-
-              <td class="col-id">3</td>
-
-              <td class="col-pattern">&lt;script&gt;</td>
-
-              <td class="col-category">XSS</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 4 -->
-
-            <tr>
-
-              <td class="col-id">4</td>
-
-              <td class="col-pattern">../</td>
-
-              <td class="col-category">Path Traversal</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 5 -->
-
-            <tr>
-
-              <td class="col-id">5</td>
-
-              <td class="col-pattern">..\..\\</td>
-
-              <td class="col-category">Path Traversal</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 6 -->
-
-            <tr>
-
-              <td class="col-id">6</td>
-
-              <td class="col-pattern">cmd.exe</td>
-
-              <td class="col-category">Command Injection</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 7 -->
-
-            <tr>
-
-              <td class="col-id">7</td>
-
-              <td class="col-pattern">/etc/passwd</td>
-
-              <td class="col-category">Path Traversal</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 8 -->
-
-            <tr>
-
-              <td class="col-id">8</td>
-
-              <td class="col-pattern">xp_cmdshell</td>
-
-              <td class="col-category">Command Injection</td>
-
-              <td class="sev-high">High</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text disabled">Disabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox">
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 9 -->
-
-            <tr>
-
-              <td class="col-id">9</td>
-
-              <td class="col-pattern">sleep(</td>
-
-              <td class="col-category">SQL Injection</td>
-
-              <td class="sev-medium">Medium</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-            <!-- Row 10 -->
-
-            <tr>
-
-              <td class="col-id">10</td>
-
-              <td class="col-pattern">load_file(</td>
-
-              <td class="col-category">SQL Injection</td>
-
-              <td class="sev-medium">Medium</td>
-
-              <td>
-
-                <div class="status-wrapper">
-
-                  <span class="status-text enabled">Enabled</span>
-
-                  <label class="toggle-switch">
-
-                    <input type="checkbox" checked>
-
-                    <span class="slider"></span>
-
-                  </label>
-
-                </div>
-
-              </td>
-
-              <td>
-
-                <div class="actions-cell">
-
-                  <button class="btn-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-
-                  <button class="btn-action delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
+            <tr><td class="col-id">0</td><td class="col-pattern">&#39; OR 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">1</td><td class="col-pattern">&#39; OR &#39;1&#39;=&#39;1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">2</td><td class="col-pattern">&quot; OR 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">3</td><td class="col-pattern">&quot; OR &quot;1&quot;=&quot;1&quot;</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">4</td><td class="col-pattern">&#39; OR 1=1--</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">5</td><td class="col-pattern">&#39; OR 1=1#</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">6</td><td class="col-pattern">&#39; OR 1=1/*</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">7</td><td class="col-pattern">&#39; AND 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">8</td><td class="col-pattern">&#39; AND &#39;1&#39;=&#39;1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">9</td><td class="col-pattern">&#39; AND 1=2</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">10</td><td class="col-pattern">&quot; AND 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">11</td><td class="col-pattern">&quot; AND 1=2</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">12</td><td class="col-pattern">UNION SELECT</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">13</td><td class="col-pattern">UNION ALL SELECT</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">14</td><td class="col-pattern">UNION DISTINCT SELECT</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">15</td><td class="col-pattern">UNION SELECT NULL</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">16</td><td class="col-pattern">UNION ALL SELECT NULL</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">17</td><td class="col-pattern">SELECT * FROM</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">18</td><td class="col-pattern">SELECT username</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">19</td><td class="col-pattern">SELECT password</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">20</td><td class="col-pattern">FROM users</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">21</td><td class="col-pattern">FROM information_schema</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">22</td><td class="col-pattern">DROP TABLE</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">23</td><td class="col-pattern">DROP DATABASE</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">24</td><td class="col-pattern">INSERT INTO</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">25</td><td class="col-pattern">DELETE FROM</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">26</td><td class="col-pattern">UPDATE users</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">27</td><td class="col-pattern">ALTER TABLE</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">28</td><td class="col-pattern">OR 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">29</td><td class="col-pattern">AND 1=1</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">30</td><td class="col-pattern">OR TRUE</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">31</td><td class="col-pattern">AND TRUE</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">32</td><td class="col-pattern">OR &#39;x&#39;=&#39;x</td><td class="col-category">SQL Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">33</td><td class="col-pattern">--</td><td class="col-category">SQL Injection</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">34</td><td class="col-pattern">#</td><td class="col-category">SQL Injection</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">35</td><td class="col-pattern">/*</td><td class="col-category">SQL Injection</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">36</td><td class="col-pattern">*/</td><td class="col-category">SQL Injection</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">37</td><td class="col-pattern">&lt;script</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">38</td><td class="col-pattern">&lt;/script&gt;</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">39</td><td class="col-pattern">&lt;script&gt;</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">40</td><td class="col-pattern">&lt;script src=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">41</td><td class="col-pattern">javascript:</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">42</td><td class="col-pattern">javascript://</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">43</td><td class="col-pattern">vbscript:</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">44</td><td class="col-pattern">data:text/html</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">45</td><td class="col-pattern">onerror=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">46</td><td class="col-pattern">onload=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">47</td><td class="col-pattern">onclick=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">48</td><td class="col-pattern">onmouseover=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">49</td><td class="col-pattern">onfocus=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">50</td><td class="col-pattern">onblur=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">51</td><td class="col-pattern">onchange=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">52</td><td class="col-pattern">onsubmit=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">53</td><td class="col-pattern">onkeydown=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">54</td><td class="col-pattern">onkeyup=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">55</td><td class="col-pattern">&lt;iframe</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">56</td><td class="col-pattern">&lt;iframe src=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">57</td><td class="col-pattern">&lt;object</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">58</td><td class="col-pattern">&lt;embed</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">59</td><td class="col-pattern">&lt;svg</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">60</td><td class="col-pattern">&lt;svg onload=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">61</td><td class="col-pattern">&lt;img src=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">62</td><td class="col-pattern">&lt;img onerror=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">63</td><td class="col-pattern">&lt;body onload=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">64</td><td class="col-pattern">&lt;input onfocus=</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">65</td><td class="col-pattern">&lt;details open</td><td class="col-category">XSS</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">66</td><td class="col-pattern">../</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">67</td><td class="col-pattern">../../</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">68</td><td class="col-pattern">../../../</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">69</td><td class="col-pattern">../../../../</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">70</td><td class="col-pattern">../etc/</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">71</td><td class="col-pattern">../../etc/</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">72</td><td class="col-pattern">../../etc/passwd</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">73</td><td class="col-pattern">/etc/passwd</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">74</td><td class="col-pattern">/etc/shadow</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">75</td><td class="col-pattern">/etc/hosts</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">76</td><td class="col-pattern">/etc/issue</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">77</td><td class="col-pattern">/proc/self/</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">78</td><td class="col-pattern">proc/self/environ</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">79</td><td class="col-pattern">..\</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">80</td><td class="col-pattern">..\..\</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">81</td><td class="col-pattern">..\..\..\</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">82</td><td class="col-pattern">..\windows\</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">83</td><td class="col-pattern">..\windows\system32</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">84</td><td class="col-pattern">windows/system32</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">85</td><td class="col-pattern">windows/win.ini</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">86</td><td class="col-pattern">win.ini</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">87</td><td class="col-pattern">boot.ini</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">88</td><td class="col-pattern">%2e%2e%2f</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">89</td><td class="col-pattern">%2e%2e/</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">90</td><td class="col-pattern">..%2f</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">91</td><td class="col-pattern">%2e%2e%5c</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">92</td><td class="col-pattern">..%5c</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">93</td><td class="col-pattern">%252e%252e%252f</td><td class="col-category">Path Traversal</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">94</td><td class="col-pattern">; whoami</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">95</td><td class="col-pattern">; id</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">96</td><td class="col-pattern">; ls</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">97</td><td class="col-pattern">; cat</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">98</td><td class="col-pattern">; pwd</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">99</td><td class="col-pattern">| whoami</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">100</td><td class="col-pattern">| id</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">101</td><td class="col-pattern">| ls</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">102</td><td class="col-pattern">&amp;&amp; whoami</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">103</td><td class="col-pattern">&amp;&amp; id</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">104</td><td class="col-pattern">&amp;&amp; ls</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">105</td><td class="col-pattern">|| whoami</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">106</td><td class="col-pattern">|| id</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">107</td><td class="col-pattern">$(whoami)</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">108</td><td class="col-pattern">$(id)</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">109</td><td class="col-pattern">$(cat /etc/passwd)</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">110</td><td class="col-pattern">`whoami`</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">111</td><td class="col-pattern">`id`</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">112</td><td class="col-pattern">`cat /etc/passwd`</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">113</td><td class="col-pattern">/bin/sh</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">114</td><td class="col-pattern">/bin/bash</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">115</td><td class="col-pattern">/bin/zsh</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">116</td><td class="col-pattern">/bin/dash</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">117</td><td class="col-pattern">cmd.exe</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">118</td><td class="col-pattern">powershell</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">119</td><td class="col-pattern">powershell.exe</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">120</td><td class="col-pattern">pwsh</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">121</td><td class="col-pattern">whoami</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">122</td><td class="col-pattern">/etc/passwd</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">123</td><td class="col-pattern">id</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">124</td><td class="col-pattern">uname -a</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">125</td><td class="col-pattern">ifconfig</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">126</td><td class="col-pattern">ipconfig</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">127</td><td class="col-pattern">netstat</td><td class="col-category">Command Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">128</td><td class="col-pattern">/.env</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">129</td><td class="col-pattern">/.env.local</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">130</td><td class="col-pattern">/.env.production</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">131</td><td class="col-pattern">/config</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">132</td><td class="col-pattern">/config.php</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">133</td><td class="col-pattern">/config.yml</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">134</td><td class="col-pattern">/config.yaml</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">135</td><td class="col-pattern">/config.json</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">136</td><td class="col-pattern">/.git/</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">137</td><td class="col-pattern">/.git/config</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">138</td><td class="col-pattern">/.git/HEAD</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">139</td><td class="col-pattern">/.git/index</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">140</td><td class="col-pattern">id_rsa</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">141</td><td class="col-pattern">id_ed25519</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">142</td><td class="col-pattern">authorized_keys</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">143</td><td class="col-pattern">.ssh/</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">144</td><td class="col-pattern">wp-config.php</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">145</td><td class="col-pattern">web.config</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">146</td><td class="col-pattern">.htaccess</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">147</td><td class="col-pattern">.htpasswd</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">148</td><td class="col-pattern">/etc/passwd</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">149</td><td class="col-pattern">/etc/shadow</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">150</td><td class="col-pattern">/etc/hosts</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">151</td><td class="col-pattern">/etc/hostname</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">152</td><td class="col-pattern">/proc/self/environ</td><td class="col-category">Sensitive Files</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">153</td><td class="col-pattern">localhost</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">154</td><td class="col-pattern">127.0.0.1</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">155</td><td class="col-pattern">127.0.0.0</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">156</td><td class="col-pattern">0.0.0.0</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">157</td><td class="col-pattern">::1</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">158</td><td class="col-pattern">10.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">159</td><td class="col-pattern">192.168.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">160</td><td class="col-pattern">172.16.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">161</td><td class="col-pattern">172.17.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">162</td><td class="col-pattern">172.18.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">163</td><td class="col-pattern">172.19.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">164</td><td class="col-pattern">172.20.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">165</td><td class="col-pattern">172.21.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">166</td><td class="col-pattern">172.22.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">167</td><td class="col-pattern">172.23.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">168</td><td class="col-pattern">172.24.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">169</td><td class="col-pattern">172.25.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">170</td><td class="col-pattern">172.26.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">171</td><td class="col-pattern">172.27.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">172</td><td class="col-pattern">172.28.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">173</td><td class="col-pattern">172.29.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">174</td><td class="col-pattern">172.30.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">175</td><td class="col-pattern">172.31.</td><td class="col-category">SSRF</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">176</td><td class="col-pattern">169.254.169.254</td><td class="col-category">SSRF</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">177</td><td class="col-pattern">/latest/meta-data</td><td class="col-category">SSRF</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">178</td><td class="col-pattern">/latest/user-data</td><td class="col-category">SSRF</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">179</td><td class="col-pattern">metadata.google.internal</td><td class="col-category">SSRF</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">180</td><td class="col-pattern">*)(uid=*</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">181</td><td class="col-pattern">*)(cn=*</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">182</td><td class="col-pattern">*)(objectClass=*</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">183</td><td class="col-pattern">(|(uid=</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">184</td><td class="col-pattern">(|(cn=</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">185</td><td class="col-pattern">(&amp;(uid=</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">186</td><td class="col-pattern">(&amp;(cn=</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">187</td><td class="col-pattern">*))</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">188</td><td class="col-pattern">*)) (</td><td class="col-category">LDAP Injection</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">189</td><td class="col-pattern">&lt;!DOCTYPE</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">190</td><td class="col-pattern">&lt;!ENTITY</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">191</td><td class="col-pattern">SYSTEM &quot;</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">192</td><td class="col-pattern">SYSTEM &#39;</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">193</td><td class="col-pattern">PUBLIC &quot;</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">194</td><td class="col-pattern">PUBLIC &#39;</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">195</td><td class="col-pattern">file://</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">196</td><td class="col-pattern">php://</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">197</td><td class="col-pattern">expect://</td><td class="col-category">XXE</td><td class="sev-high">High</td></tr>
+            <tr><td class="col-id">198</td><td class="col-pattern">INVALID_METHOD /login</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">200</td><td class="col-pattern">GET / HTTP/9.9</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">201</td><td class="col-pattern">Content-Length: 100 Content-Length: 500</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">202</td><td class="col-pattern">Content-Length: -1</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">203</td><td class="col-pattern">OVERSIZED_REQUEST</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">204</td><td class="col-pattern">OVERSIZED_HEADER</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">205</td><td class="col-pattern">INVALID_HEADER</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">206</td><td class="col-pattern">Transfer-Encoding: invalid</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">207</td><td class="col-pattern">INVALID_CHUNKED_ENCODING</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">208</td><td class="col-pattern">LOGIN_FAILED</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">209</td><td class="col-pattern">LOGIN_SUCCESS</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">210</td><td class="col-pattern">ADMIN_ACCESS</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
+            <tr><td class="col-id">211</td><td class="col-pattern">SUSPICIOUS_ENDPOINT</td><td class="col-category">HTTP Anomaly</td><td class="sev-medium">Medium</td></tr>
           </tbody>
-
         </table>
         </div>
-
-        <!-- Pagination Controls (only expands when rules exceed one page) -->
-        <div class="pagination" id="pagination">
-          <div class="pagination-meta" id="paginationMeta"></div>
-          <div class="pagination-controls" id="paginationControls"></div>
-        </div>
-
       </div>
-
     </main>
-
   </div>
-
 </div>
 
 <script>
-
-  // Rules pagination: keep a single page until the rule count requires more.
-  const rulesTable = document.querySelector('.rules-table');
-  const rulesBody = rulesTable?.querySelector('tbody');
-  const pagination = document.getElementById('pagination');
-  const paginationMeta = document.getElementById('paginationMeta');
-  const paginationControls = document.getElementById('paginationControls');
-  const RULES_PER_PAGE = 10;
-  let currentRulePage = 1;
-
-  function renderRulePagination() {
-    if (!rulesBody || !pagination || !paginationMeta || !paginationControls) return;
-
-    const rows = Array.from(rulesBody.querySelectorAll('tr'));
-    const totalRules = rows.length;
-    const totalPages = Math.max(1, Math.ceil(totalRules / RULES_PER_PAGE));
-    currentRulePage = Math.min(currentRulePage, totalPages);
-
-    rows.forEach((row, index) => {
-      const start = (currentRulePage - 1) * RULES_PER_PAGE;
-      row.style.display = index >= start && index < start + RULES_PER_PAGE ? '' : 'none';
-    });
-
-    const startRule = totalRules ? (currentRulePage - 1) * RULES_PER_PAGE + 1 : 0;
-    const endRule = Math.min(currentRulePage * RULES_PER_PAGE, totalRules);
-    paginationMeta.textContent = totalRules
-      ? `Showing ${startRule}–${endRule} of ${totalRules} rule${totalRules === 1 ? '' : 's'}`
-      : 'No rules';
-
-    paginationControls.innerHTML = '';
-
-    // Exactly one page: show only the page indicator, not arrows/dots.
-    if (totalPages === 1) {
-      const page = document.createElement('button');
-      page.className = 'page-btn active';
-      page.type = 'button';
-      page.textContent = '1';
-      page.setAttribute('aria-current', 'page');
-      paginationControls.appendChild(page);
-      return;
-    }
-
-    const makeButton = (label, action, disabled = false, active = false) => {
-      const button = document.createElement('button');
-      button.className = `page-btn${active ? ' active' : ''}`;
-      button.type = 'button';
-      button.innerHTML = label;
-      button.disabled = disabled;
-      if (active) button.setAttribute('aria-current', 'page');
-      button.addEventListener('click', action);
-      return button;
-    };
-
-    const arrowLeft = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-    const arrowRight = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-
-    paginationControls.appendChild(makeButton(arrowLeft, () => { currentRulePage--; renderRulePagination(); }, currentRulePage === 1));
-
-    const pages = totalPages <= 7
-      ? Array.from({ length: totalPages }, (_, i) => i + 1)
-      : [1, 2, 3, 'dots', totalPages - 1, totalPages];
-
-    pages.forEach((pageNumber) => {
-      if (pageNumber === 'dots') {
-        const dots = document.createElement('span');
-        dots.className = 'page-dots';
-        dots.textContent = '…';
-        paginationControls.appendChild(dots);
-        return;
-      }
-      paginationControls.appendChild(makeButton(String(pageNumber), () => { currentRulePage = pageNumber; renderRulePagination(); }, false, pageNumber === currentRulePage));
-    });
-
-    paginationControls.appendChild(makeButton(arrowRight, () => { currentRulePage++; renderRulePagination(); }, currentRulePage === totalPages));
-  }
-
-  renderRulePagination();
-
-  // Full Screen Interactive Canvas Grid Engine (Kept smooth & wavy as requested)
-
   const canvas = document.getElementById('dotCanvas');
-
   const ctx = canvas.getContext('2d');
-
   let width, height;
-
   let dots = [];
-
   const spacing = 22;
-
   const baseRadius = 0.7;
-
   const hoverRadius = 140;
-
   const MAX_DOT_RADIUS = 4.5;
-
   let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
 
   function initGrid() {
-
     width = canvas.width = window.innerWidth;
-
     height = canvas.height = window.innerHeight;
-
     dots = [];
-
     const cols = Math.ceil(width / spacing) + 1;
-
     const rows = Math.ceil(height / spacing) + 1;
-
     for (let i = 0; i < cols; i++) {
-
       for (let j = 0; j < rows; j++) {
-
         const baseX = i * spacing;
-
         const baseY = j * spacing;
-
         const isThreat = Math.random() < 0.012;
-
         const isSuspicious = !isThreat && Math.random() < 0.018;
-
         const initialR = isThreat ? 2.5 : (isSuspicious ? 2.0 : baseRadius);
-
         dots.push({
-
-          baseX,
-
-          baseY,
-
-          x: baseX,
-
-          y: baseY,
-
-          baseR: initialR,
-
-          r: initialR,
-
+          baseX, baseY, x: baseX, y: baseY,
+          baseR: initialR, r: initialR,
           colorType: isThreat ? 'threat' : (isSuspicious ? 'suspicious' : 'normal'),
-
           opacity: isThreat ? 0.85 : (isSuspicious ? 0.75 : 0.28)
-
         });
-
       }
-
     }
-
   }
 
   window.addEventListener('resize', initGrid);
-
   window.addEventListener('mousemove', (e) => {
-
     mouse.targetX = e.clientX;
-
     mouse.targetY = e.clientY;
-
   });
-
   window.addEventListener('mouseleave', () => {
-
     mouse.targetX = -1000;
-
     mouse.targetY = -1000;
-
   });
 
   function render(time) {
-
     ctx.clearRect(0, 0, width, height);
-
     mouse.x += (mouse.targetX - mouse.x) * 0.1;
-
     mouse.y += (mouse.targetY - mouse.y) * 0.1;
-
     const t = time * 0.0025;
 
     for (let i = 0; i < dots.length; i++) {
-
       const d = dots[i];
-
       const waveX = Math.sin(t + d.baseY * 0.015) * 1.1;
-
       const waveY = Math.cos(t + d.baseX * 0.015) * 1.1;
-
       const dx = mouse.x - d.baseX;
-
       const dy = mouse.y - d.baseY;
-
       const dist = Math.sqrt(dx * dx + dy * dy);
-
       let targetX = d.baseX + waveX;
-
       let targetY = d.baseY + waveY;
-
       let targetR = d.baseR;
-
       let targetOpacity = d.colorType !== 'normal' ? d.opacity : 0.28;
 
       if (dist < hoverRadius) {
-
         const norm = 1 - dist / hoverRadius;
-
         const factor = norm * norm * (3 - 2 * norm);
-
         const addedRadius = factor * 2.8;
-
         targetR = Math.min(d.baseR + addedRadius, MAX_DOT_RADIUS);
-
         targetOpacity = Math.min(1, targetOpacity + factor * 0.6);
-
         const angle = Math.atan2(dy, dx);
-
         const waveDisplacement = Math.sin(time * 0.008 - dist * 0.07) * 3 * factor;
-
         const pushAmount = factor * 12;
-
         targetX = d.baseX - Math.cos(angle) * (pushAmount + waveDisplacement) + waveX;
-
         targetY = d.baseY - Math.sin(angle) * (pushAmount + waveDisplacement) + waveY;
-
       }
 
       d.x += (targetX - d.x) * 0.12;
-
       d.y += (targetY - d.y) * 0.12;
-
       d.r += (targetR - d.r) * 0.12;
-
       d.opacity += (targetOpacity - d.opacity) * 0.12;
 
       let color;
-
-      if (d.colorType === 'threat') {
-
-        color = `rgba(255, 42, 42, ${d.opacity})`;
-
-      } else if (d.colorType === 'suspicious') {
-
-        color = `rgba(255, 179, 0, ${d.opacity})`;
-
-      } else {
-
-        color = `rgba(0, 229, 255, ${d.opacity})`;
-
-      }
+      if (d.colorType === 'threat') color = `rgba(255, 42, 42, ${d.opacity})`;
+      else if (d.colorType === 'suspicious') color = `rgba(255, 179, 0, ${d.opacity})`;
+      else color = `rgba(0, 229, 255, ${d.opacity})`;
 
       const finalRadius = Math.min(Math.max(0.1, d.r), MAX_DOT_RADIUS);
-
       ctx.beginPath();
-
       ctx.arc(d.x, d.y, finalRadius, 0, Math.PI * 2);
-
       ctx.fillStyle = color;
-
       ctx.fill();
 
       if (d.colorType === 'threat' || finalRadius > 3.2) {
-
         ctx.shadowBlur = finalRadius * 2;
-
         ctx.shadowColor = color;
-
       } else {
-
         ctx.shadowBlur = 0;
-
       }
-
     }
-
     requestAnimationFrame(render);
-
   }
 
   initGrid();
-
   requestAnimationFrame(render);
 
+  // Search filter functionality implementation
+  const searchInput = document.getElementById('ruleSearchInput');
+  const rulesTable = document.getElementById('rulesTable');
+  const ruleCountLabel = document.getElementById('ruleCountLabel');
+
+  if (searchInput && rulesTable) {
+    searchInput.addEventListener('input', function() {
+      const filter = searchInput.value.toLowerCase().trim();
+      const rows = rulesTable.querySelectorAll('tbody tr');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(filter)) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      if (ruleCountLabel) {
+        ruleCountLabel.textContent = `${visibleCount} configured rules`;
+      }
+    });
+  }
 </script>
-
 </body>
-
 </html>
