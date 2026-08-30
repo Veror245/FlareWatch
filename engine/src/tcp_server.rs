@@ -1,10 +1,10 @@
 use std::{
     io::{self, Read, Write},
     net::{TcpListener, TcpStream},
-    sync::Arc,
+    sync::{Arc, Mutex},
 };
 
-use crate::aho::AhoCorasick;
+use crate::{aho::AhoCorasick, index::ThreatIndex};
 use std::collections::HashSet;
 
 use std::time;
@@ -62,19 +62,27 @@ fn build_id_to_threat_table() -> [ThreatType; 212] {
     table
 }
 
-pub fn server_main(ac: Arc<AhoCorasick>) -> io::Result<()> {
+pub fn server_main(ac: Arc<AhoCorasick>, index: Arc<Mutex<ThreatIndex>>) -> io::Result<()> {
     let listener = TcpListener::bind("127.0.0.1:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
 
     let threat_table = build_id_to_threat_table();
+    //let mut index = ThreatIndex::default();
 
     for stream in listener.incoming() {
         if let Ok(mut stream) = stream {
             let addr = stream.peer_addr()?;
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
-            handle_client(&mut stream, ac, threat_table)?;
+            let index = Arc::clone(&index);
+            // let pindex = Arc::clone(&index);
+            handle_client(&mut stream, ac, threat_table, index)?;
             println!("disconnected from {addr}");
+            // let idx = pindex.lock().unwrap();
+            // println!("Threat Index");
+            // for (i, log) in idx.logs.iter().enumerate() {
+            //     println!("[{}] {}", i, log);
+            // }
         } else {
             println!("Error");
         }
@@ -87,6 +95,7 @@ fn handle_client(
     stream: &mut TcpStream,
     ac: Arc<AhoCorasick>,
     threat_table: [ThreatType; 212],
+    index: Arc<Mutex<ThreatIndex>>,
 ) -> io::Result<()> {
     let mut lenbuf = [0u8; 4];
     let mut reqlen;
@@ -158,6 +167,23 @@ fn handle_client(
                             ThreatType::HTTPEvent => 9,
                             _ => 255,
                         };
+                        let timestamp = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_secs()
+                            .to_string();
+                        let logstr = format!(
+                            "[{:?}] [{:?}] {} {}",
+                            timestamp,
+                            th,
+                            String::from_utf8_lossy(ip),
+                            String::from_utf8_lossy(msg)
+                        );
+                        if let Ok(mut idx) = index.lock() {
+                            idx.add_threat(logstr);
+                        } else {
+                            eprintln!("Failed to lock threat index");
+                        }
                         if threat_code != 9 {
                             payload.push(threat_code);
                         } else {

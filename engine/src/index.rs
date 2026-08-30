@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct ThreatIndex {
-    logs: Vec<String>,
+    pub logs: Vec<String>,
     index: HashMap<String, Vec<usize>>,
 }
 
@@ -33,7 +33,8 @@ impl ThreatIndex {
 
         // Tokenize and index
         for token in ThreatIndex::tokenize(&log) {
-            self.index.entry(token).or_insert_with(Vec::new).push(idx);
+            self.index.entry(token).or_default().push(idx); //or default is mnmore ididmatic,
+            //so use that
         }
     }
 
