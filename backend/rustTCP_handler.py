@@ -96,7 +96,7 @@ rust_request_socket = None
 rust_request_lock = threading.Lock()
 rust_request_connected = threading.Event()
 
-rust_response_socket = None
+rust_response_socket = set()
 rust_response_socket_lock = threading.Lock()
 rust_response_connected = threading.Event()
 
@@ -815,16 +815,8 @@ def start_rust_response_server():
         # If Rust reconnects, replace the previous connection.
         with rust_response_socket_lock:
 
-            old_socket = rust_response_socket
-            rust_response_socket = client_socket
+            rust_response_socket.add(client_socket)
 
-        if old_socket is not None:
-            try:
-                old_socket.close()
-            except OSError:
-                pass
-
-        rust_response_connected.set()
 
         thread = threading.Thread(
             target=handle_rust_response_connection,
@@ -984,10 +976,7 @@ def handle_rust_response_connection(
 
         with rust_response_socket_lock:
 
-            if rust_response_socket is client_socket:
-
-                rust_response_socket = None
-                rust_response_connected.clear()
+            rust_response_socket.discard(client_socket)
 
 
         try:
