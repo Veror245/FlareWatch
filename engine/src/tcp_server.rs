@@ -216,7 +216,9 @@ fn handle_client(
                         if threat_code != 9 {
                             payload.push(threat_code);
                         } else {
-                            let eventtype = matches[0] - 208;
+                            let event_id =
+                                matches.iter().copied().find(|&id| id >= 208 && id <= 211);
+                            let eventtype = event_id.map(|id| id - 208).unwrap_or(255);
                             payload.push(eventtype as u8);
                         }
                     }
