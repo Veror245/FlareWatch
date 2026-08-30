@@ -475,7 +475,7 @@
     text-transform: uppercase;
     padding: 14px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(10, 10, 13, 0.7); /* Slightly darkened for better sticky contrast */
+   background: rgb(20, 20, 20); /* Slightly darkened for better sticky contrast */
     position: sticky; /* Made header sticky */
     top: 0;
     z-index: 10;
@@ -635,10 +635,6 @@
   <!-- Main Section -->
   <div class="main-wrapper">
 
-    <!-- Header / Topbar -->
-   
-
-
     <!-- Main Content Area -->
     <main class="content-area">
 
@@ -658,10 +654,6 @@
           <input type="text" class="search-input" value="error" placeholder="Search system logs...">
         </div>
         <button class="btn-search">Search</button>
-        <button class="btn-export">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export
-        </button>
       </div>
 
       <!-- Results Meta -->
@@ -765,7 +757,6 @@
   (function() {
     const uptimeDisplay = document.getElementById('uptime-display');
     
-    // Retrieve start time from sessionStorage or set it if it doesn't exist for this session
     let startTime = sessionStorage.getItem('flarewatch_session_start');
     if (!startTime) {
       startTime = Date.now();
@@ -808,6 +799,263 @@
       window.setTimeout(() => { window.location.href = destination.href; }, 280);
     });
   });
+
+  // Search request handling via WebSocket on port 4003.
+  //
+  // EXACT browser -> port 4003 application frame:
+  // [4-byte u32 total frame length]
+  // [1-byte u8 type = 5]
+  // [2-byte u16 request length]
+  // [request UTF-8 bytes]
+  //
+  // Example:
+  // [12 as u32][5 as u8][5 as u16]["error".asBytes]
+  //
+  // One persistent WebSocket connection is used for all searches.
+  const searchBtn = document.querySelector('.btn-search');
+  const searchInput = document.querySelector('.search-input');
+  const resultsMeta = document.querySelector('.results-meta');
+  const resultsMetaSpans = resultsMeta ? resultsMeta.querySelectorAll('span') : [];
+  const resultsTableBody = document.querySelector('.logs-table tbody');
+
+  let searchSocket = null;
+  let searchSocketPromise = null;
+
+  console.log('[FlareWatch] Search script loaded.', {
+    searchButtonFound: !!searchBtn,
+    searchInputFound: !!searchInput
+  });
+
+  function getSearchSocket() {
+    if (searchSocket && searchSocket.readyState === WebSocket.OPEN) {
+      return Promise.resolve(searchSocket);
+    }
+
+    if (searchSocketPromise) {
+      return searchSocketPromise;
+    }
+
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.hostname}:4003`;
+
+    console.log('[FlareWatch] Opening WebSocket:', wsUrl);
+
+    searchSocketPromise = new Promise((resolve, reject) => {
+      const ws = new WebSocket(wsUrl);
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        searchSocket = ws;
+        searchSocketPromise = null;
+        console.log('[FlareWatch] WebSocket connected to port 4003.');
+        resolve(ws);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = typeof event.data === 'string'
+            ? JSON.parse(event.data)
+            : event.data;
+
+          if (typeof data !== 'object' || data === null) {
+            return;
+          }
+
+          if (data.type === 'connection') {
+            console.log('[FlareWatch] Port 4003 connection confirmed.');
+            return;
+          }
+
+          if (data.type === 'search_response') {
+            if (data.error) {
+              console.error('[FlareWatch] Search error:', data.error);
+              return;
+            }
+
+            updateSearchResults(data.query || '', data.results || []);
+            console.log('[FlareWatch] Search response received:', {
+              query: data.query || '',
+              count: data.count || 0
+            });
+          }
+        } catch (error) {
+          console.error('[FlareWatch] Invalid response from port 4003:', error);
+        }
+      };
+
+      ws.onclose = (event) => {
+        if (searchSocket === ws) {
+          searchSocket = null;
+        }
+
+        searchSocketPromise = null;
+
+        console.log('[FlareWatch] WebSocket closed.', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean
+        });
+      };
+
+      ws.onerror = (error) => {
+        searchSocketPromise = null;
+        console.error('[FlareWatch] WebSocket error on port 4003:', error);
+        reject(error);
+      };
+    });
+
+    return searchSocketPromise;
+  }
+
+  function updateSearchResults(query, results) {
+    if (resultsMetaSpans.length >= 2) {
+      resultsMetaSpans[0].textContent = String(results.length);
+      resultsMetaSpans[1].textContent = query;
+    }
+
+    if (!resultsTableBody) {
+      return;
+    }
+
+    resultsTableBody.innerHTML = '';
+
+    if (results.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 3;
+      cell.textContent = `No results found for "${query}"`;
+      cell.style.textAlign = 'center';
+      cell.style.color = '#888899';
+      row.appendChild(cell);
+      resultsTableBody.appendChild(row);
+      return;
+    }
+
+    results.forEach((result, index) => {
+      const row = document.createElement('tr');
+
+      const idCell = document.createElement('td');
+      idCell.className = 'col-id';
+      idCell.textContent = String(index + 1);
+
+      const timeCell = document.createElement('td');
+      timeCell.className = 'col-time';
+
+      const timestamp = result.timestamp;
+      if (typeof timestamp === 'number') {
+        const date = new Date(timestamp * 1000);
+        timeCell.textContent = Number.isNaN(date.getTime())
+          ? String(timestamp)
+          : date.toISOString().replace('T', ' ').replace('.000Z', '');
+      } else {
+        timeCell.textContent = String(timestamp ?? '');
+      }
+
+      const entryCell = document.createElement('td');
+
+      if (result.threat) {
+        const badge = document.createElement('span');
+        badge.className = 'badge-error';
+        badge.textContent = String(result.threat);
+        entryCell.appendChild(badge);
+        entryCell.appendChild(document.createTextNode(' '));
+      }
+
+      entryCell.appendChild(
+        document.createTextNode(String(result.request ?? ''))
+      );
+
+      row.appendChild(idCell);
+      row.appendChild(timeCell);
+      row.appendChild(entryCell);
+      resultsTableBody.appendChild(row);
+    });
+  }
+
+  function sendSearchRequest(query) {
+    console.log('[FlareWatch] Search button triggered.', { query });
+
+    if (!query) {
+      console.log('[FlareWatch] Empty search query; request not sent.');
+      return;
+    }
+
+    const queryBytes = new TextEncoder().encode(query);
+
+    // u16 = 2 bytes.
+    if (queryBytes.length > 0xFFFF) {
+      console.error(
+        '[FlareWatch] Search request is too large. Maximum UTF-8 request length is 65535 bytes.'
+      );
+      return;
+    }
+
+    const type = 5;
+    const requestLength = queryBytes.length;
+
+    // Exact requested frame size:
+    // 4-byte u32 + 1-byte u8 + 2-byte u16 + request bytes.
+    // "error" => 4 + 1 + 2 + 5 = 12.
+    const totalFrameBytes = 4 + 1 + 2 + requestLength;
+
+    const buffer = new ArrayBuffer(totalFrameBytes);
+    const view = new DataView(buffer);
+
+    // [4-byte u32] = COMPLETE frame length, big-endian.
+    view.setUint32(0, totalFrameBytes, false);
+
+    // [1-byte u8] = type 5.
+    view.setUint8(4, type);
+
+    // [2-byte u16] = request length, big-endian.
+    view.setUint16(5, requestLength, false);
+
+    // [request bytes] = UTF-8.
+    new Uint8Array(buffer, 7, requestLength).set(queryBytes);
+
+    const frameInfo = {
+      totalFrameBytes,
+      type,
+      requestLength,
+      request: query
+    };
+
+    console.log('[FlareWatch] Search frame:', frameInfo);
+
+    getSearchSocket()
+      .then((ws) => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          console.error('[FlareWatch] WebSocket to port 4003 is not open.');
+          return;
+        }
+
+        ws.send(buffer);
+        console.log('[FlareWatch] Search request sent.', frameInfo);
+      })
+      .catch((error) => {
+        console.error('[FlareWatch] Could not connect to port 4003:', error);
+      });
+  }
+
+  if (searchBtn && searchInput && !searchBtn.dataset.searchHandlerAttached) {
+    searchBtn.dataset.searchHandlerAttached = 'true';
+
+    searchBtn.addEventListener('click', () => {
+      sendSearchRequest(searchInput.value);
+    });
+
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        sendSearchRequest(searchInput.value);
+      }
+    });
+  } else if (!searchBtn || !searchInput) {
+    console.error('[FlareWatch] Search button or input was not found.');
+  }
+
+  // Establish the single browser -> Python WebSocket connection once.
+  getSearchSocket().catch(() => {});
 
   // Full Screen Interactive Canvas Grid Engine
   const canvas = document.getElementById('dotCanvas');
