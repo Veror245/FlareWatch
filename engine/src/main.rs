@@ -1,8 +1,9 @@
 use engine::{
     aho::{self, AhoCorasick},
+    index::ThreatIndex,
     tcp_server,
 };
-use std::{io, sync::Arc};
+use std::{io, sync::Arc, sync::Mutex};
 const PATTERNS: &str = include_str!("../../aho_patterns.txt");
 
 fn main() -> io::Result<()> {
@@ -13,8 +14,9 @@ fn main() -> io::Result<()> {
     ac.create_failure_links();
 
     let ac = Arc::new(ac);
+    let index = Arc::new(Mutex::new(ThreatIndex::default()));
 
-    tcp_server::server_main(ac)?;
+    tcp_server::server_main(ac, Arc::clone(&index))?;
 
     Ok(())
 }

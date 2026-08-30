@@ -259,6 +259,11 @@ def handle_dev2_client(
             # Safety check
             # ------------------------------------------------
 
+            if message_length < 1:
+                raise ValueError(
+                    "Invalid message length"
+                )
+
             if message_length > 1024 * 1024:
 
                 raise ValueError(
@@ -279,17 +284,20 @@ def handle_dev2_client(
 
             message_type = type_bytes[0]
 
-            # ------------------------------------------------
             # 3. Read payload
-            # ------------------------------------------------
+            # message_length includes the message type,
+            # We already consumed that 1 byte.
+            # Therefore only message_length - 1 bytes remain.
+
+            payload_length = message_length - 1
 
             payload = recv_exact(
                 conn,
-                message_length
+                payload_length
             )
 
             if payload is None:
-                break
+               break
 
             # ------------------------------------------------
             # 4. Make sure this is a THREAT message
