@@ -775,7 +775,7 @@
         </div>
         <div class="info-item">
           <span class="info-label">Uptime</span>
-          <span class="info-value">02:14:32</span>
+          <span class="info-value" id="uptime-value">00:00:00</span>
         </div>
         <div class="info-item">
           <span class="info-label">Last Updated</span>
@@ -896,6 +896,31 @@
       }
     }
   });
+
+  // Dynamic dashboard uptime (persists across reloads, resets when the page/browser session ends)
+  const uptimeValue = document.getElementById("uptime-value");
+  const uptimeStorageKey = "flarewatch_uptime_start";
+  let uptimeStart = Number(sessionStorage.getItem(uptimeStorageKey));
+
+  if (!Number.isFinite(uptimeStart) || uptimeStart <= 0) {
+      uptimeStart = Date.now();
+      sessionStorage.setItem(uptimeStorageKey, String(uptimeStart));
+  }
+
+  function updateUptime() {
+      if (!uptimeValue) return;
+
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - uptimeStart) / 1000));
+      const hours = Math.floor(elapsedSeconds / 3600);
+      const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+      const seconds = elapsedSeconds % 60;
+
+      uptimeValue.textContent =
+          `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  updateUptime();
+  setInterval(updateUptime, 1000);
 
   const pageContainer = document.querySelector('.app-container');
 
@@ -1216,12 +1241,33 @@
 
   const threatGrid = document.getElementById('threat-grid');
   const occupiedCells = new Set();
-  
-  let localTotalLogs = 0;
-  let localThreats = 0;
-  let localBytes = 0;
+
+  // Persist dashboard metrics across reloads; reset when the browser session ends.
+  const metricStorageKeys = {
+      logsSec: 'flarewatch_metric_logs_sec',
+      threats: 'flarewatch_metric_threats',
+      totalLogs: 'flarewatch_metric_total_logs',
+      bytes: 'flarewatch_metric_bytes'
+  };
+
+  const storedMetric = (key, fallback = 0) => {
+      const value = Number(sessionStorage.getItem(key));
+      return Number.isFinite(value) && value >= 0 ? value : fallback;
+  };
+
+  let localTotalLogs = storedMetric(metricStorageKeys.totalLogs);
+  let localThreats = storedMetric(metricStorageKeys.threats);
+  let localBytes = storedMetric(metricStorageKeys.bytes);
+  let localLogsPerSecond = storedMetric(metricStorageKeys.logsSec);
   let localEventTimes = [];
   let receivedStats = false;
+
+  // Restore the persisted values immediately on page load.
+  document.getElementById("metric-logs-sec").innerText = localLogsPerSecond.toLocaleString();
+  document.getElementById("metric-threats").innerText = localThreats.toLocaleString();
+  document.getElementById("metric-total-logs").innerText = localTotalLogs.toLocaleString();
+  document.getElementById("metric-bytes").innerText =
+      `${(localBytes / (1024 * 1024)).toFixed(2)} MB`;
 
   function handleBackendEvent(data, rawMessage = '') {
       if (!data || typeof data !== 'object') return;
@@ -1233,6 +1279,7 @@
       // React to payload byte changes
       if (rawMessage) {
           localBytes += new TextEncoder().encode(rawMessage).length;
+          sessionStorage.setItem(metricStorageKeys.bytes, String(localBytes));
           targetBytesAmp = Math.min(10, targetBytesAmp + 1.0); 
       }
 
@@ -1242,21 +1289,26 @@
           receivedStats = true;
 
           if (data.logs_per_second !== undefined) {
+              localLogsPerSecond = Number(data.logs_per_second) || 0;
+              sessionStorage.setItem(metricStorageKeys.logsSec, String(localLogsPerSecond));
               document.getElementById("metric-logs-sec").innerText =
-                  Number(data.logs_per_second).toLocaleString();
+                  localLogsPerSecond.toLocaleString();
           }
           if (data.threats_detected !== undefined) {
               localThreats = Number(data.threats_detected) || 0;
+              sessionStorage.setItem(metricStorageKeys.threats, String(localThreats));
               document.getElementById("metric-threats").innerText =
                   localThreats.toLocaleString();
           }
           if (data.logs_processed !== undefined) {
               localTotalLogs = Number(data.logs_processed) || 0;
+              sessionStorage.setItem(metricStorageKeys.totalLogs, String(localTotalLogs));
               document.getElementById("metric-total-logs").innerText =
                   localTotalLogs.toLocaleString();
           }
           if (data.bytes_processed !== undefined) {
               localBytes = Number(data.bytes_processed) || 0;
+              sessionStorage.setItem(metricStorageKeys.bytes, String(localBytes));
               document.getElementById("metric-bytes").innerText =
                   `${(localBytes / (1024 * 1024)).toFixed(2)} MB`;
           }
@@ -1265,12 +1317,14 @@
 
       if (data.type === "log" || data.type === "threat" || data.type === "nothreat") {
           localTotalLogs += 1;
+          sessionStorage.setItem(metricStorageKeys.totalLogs, String(localTotalLogs));
           
           targetLogAmp = Math.min(10, targetLogAmp + 0.5);
           targetTotalAmp = Math.min(10, targetTotalAmp + 0.5);
 
           if (data.type === "threat") {
               localThreats += 1;
+              sessionStorage.setItem(metricStorageKeys.threats, String(localThreats));
               targetThreatAmp = Math.min(12, targetThreatAmp + 4.0); 
           }
 
@@ -1279,8 +1333,11 @@
                   localTotalLogs.toLocaleString();
               document.getElementById("metric-threats").innerText =
                   localThreats.toLocaleString();
+              localLogsPerSecond = Math.round(localEventTimes.length / 5);
+              sessionStorage.setItem(metricStorageKeys.logsSec, String(localLogsPerSecond));
               document.getElementById("metric-logs-sec").innerText =
-                  Math.round(localEventTimes.length / 5).toLocaleString();
+                  localLogsPerSecond.toLocaleString();
+              sessionStorage.setItem(metricStorageKeys.bytes, String(localBytes));
               document.getElementById("metric-bytes").innerText =
                   `${(localBytes / (1024 * 1024)).toFixed(2)} MB`;
           }
@@ -1406,8 +1463,10 @@
       if (receivedStats) return;
       const now = Date.now();
       localEventTimes = localEventTimes.filter(t => now - t <= 5000);
+      localLogsPerSecond = Math.round(localEventTimes.length / 5);
+      sessionStorage.setItem(metricStorageKeys.logsSec, String(localLogsPerSecond));
       document.getElementById("metric-logs-sec").innerText =
-          Math.round(localEventTimes.length / 5).toLocaleString();
+          localLogsPerSecond.toLocaleString();
   }, 1000);
 
   const backendWs = new WebSocket('ws://localhost:4003');

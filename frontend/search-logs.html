@@ -638,24 +638,7 @@
   <div class="main-wrapper">
 
     <!-- Header / Topbar -->
-    <header class="topbar">
-      <div class="header-container">
-        <div class="topbar-info">
-        <div class="info-item">
-          <span class="info-label">System Status</span>
-          <span class="info-value online"><span class="status-dot"></span> ONLINE</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Uptime</span>
-          <span class="info-value">02:14:32</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Last Updated</span>
-          <span class="info-value">10:24:15 AM</span>
-        </div>
-      </div>
-      </div>
-    </header>
+   
 
 
     <!-- Main Content Area -->
@@ -780,6 +763,35 @@
 </div>
 
 <script>
+  // Dynamic Uptime Script using sessionStorage
+  (function() {
+    const uptimeDisplay = document.getElementById('uptime-display');
+    
+    // Retrieve start time from sessionStorage or set it if it doesn't exist for this session
+    let startTime = sessionStorage.getItem('flarewatch_session_start');
+    if (!startTime) {
+      startTime = Date.now();
+      sessionStorage.setItem('flarewatch_session_start', startTime);
+    } else {
+      startTime = parseInt(startTime, 10);
+    }
+
+    function updateUptime() {
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      
+      const hours = String(Math.floor(elapsedSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((elapsedSeconds % 3600) / 60)).padStart(2, '0');
+      const seconds = String(elapsedSeconds % 60).padStart(2, '0');
+      
+      if (uptimeDisplay) {
+        uptimeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+      }
+    }
+
+    updateUptime();
+    setInterval(updateUptime, 1000);
+  })();
+
   const pageContainer = document.querySelector('.app-container');
 
   document.querySelectorAll('a[href]').forEach((link) => {
