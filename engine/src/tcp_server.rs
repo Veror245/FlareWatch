@@ -75,16 +75,13 @@ pub fn server_main(ac: Arc<AhoCorasick>, index: Arc<Mutex<ThreatIndex>>) -> io::
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
             let index = Arc::clone(&index);
-            //           let pindex = Arc::clone(&index);
-            handle_client(&mut stream, ac, threat_table, index)?;
-            println!("disconnected from {addr}");
-            // let idx = pindex.lock().unwrap();
-            // let res = idx.search_by_token("Sqli");
-            // println!("{:?}", res.join("\n"));
-            // println!("Threat Index");
-            // for (i, log) in idx.logs.iter().enumerate() {
-            //     println!("[{}] {}", i, log);
-            // }
+            std::thread::spawn(move || {
+                // Move the stream into the thread
+                if let Err(e) = handle_client(&mut stream, ac, threat_table, index) {
+                    eprintln!("Error handling client {addr}: {e}");
+                }
+                println!("disconnected from {addr}");
+            });
         } else {
             println!("Error");
         }
@@ -136,6 +133,7 @@ fn handle_client(
                 processed += 1;
                 let msg_type = reqbuf[0];
                 if msg_type == 5 {
+                    println!("Received Search Query");
                     let msglen = &reqbuf[1..=2];
                     let msglen = u16::from_be_bytes(msglen.try_into().unwrap());
                     let msg = &reqbuf[3..(3 + msglen) as usize];
@@ -146,11 +144,12 @@ fn handle_client(
                     } else {
                         eprintln!("failed to lock index");
                     }
-                    let payloadlen = results.len() + 1;
-                    let mut frame = Vec::with_capacity(payloadlen);
-                    frame.extend_from_slice(&(payloadlen as u32).to_be_bytes());
+                    let result_bytes = results.join("\n").into_bytes();
+                    let total_len = 1 + result_bytes.len(); // type byte + payload
+                    let mut frame = Vec::with_capacity(4 + total_len);
+                    frame.extend_from_slice(&(total_len as u32).to_be_bytes());
                     frame.push(5);
-                    frame.extend_from_slice(&(results.join("\n").into_bytes()));
+                    frame.extend_from_slice(&result_bytes);
 
                     if let Some(stream) = downstream_backend.as_mut() {
                         if let Err(e) = stream.write_all(&frame) {
@@ -160,6 +159,7 @@ fn handle_client(
                     } else {
                         eprintln!("Not connected to bakckend");
                     }
+                    println!("Sent Result");
                     continue;
                 }
                 let iplen = reqbuf[1];
@@ -216,7 +216,9 @@ fn handle_client(
                         if threat_code != 9 {
                             payload.push(threat_code);
                         } else {
-                            let eventtype = matches[0] - 208;
+                            let event_id =
+                                matches.iter().copied().find(|&id| id >= 208 && id <= 211);
+                            let eventtype = event_id.map(|id| id - 208).unwrap_or(255);
                             payload.push(eventtype as u8);
                         }
                     }
