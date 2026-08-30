@@ -119,12 +119,13 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px 0;
+    padding: 50px 0;
     flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
+    border-radius: 0px 30px 30px 0px;
   }
 
   /* Hover to Expand Sidebar */
@@ -709,7 +710,9 @@
 
   <!-- Hover-Expandable Animated Sidebar -->
   <aside class="sidebar">
-    <div>
+    <div style="display: flex;
+  flex-direction: column;
+  gap: 30px;">
       <div class="brand-header">
         <div class="brand-logo">
           <svg viewBox="0 0 88 104" fill="none">
@@ -718,7 +721,7 @@
           </svg>
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
         </div>
-        <button class="collapse-btn">&laquo;</button>
+       
       </div>
 
       <ul class="nav-list">

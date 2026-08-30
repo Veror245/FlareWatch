@@ -42,19 +42,19 @@
   /* Animated Collapsible Sidebar */
   .sidebar {
     width: 68px; /* Collapsed width */
-    background: rgba(10, 10, 13, 0.85);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(10, 10, 13, 0.9);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 24px 0;
+    padding: 50px 0;
     flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10;
+    border-radius: 0px 30px 30px 0px;
   }
   .sidebar:hover {
     width: 240px; /* Expanded width */
@@ -508,7 +508,7 @@
 <div class="app-container">
   <!-- Hover-Expandable Animated Sidebar -->
   <aside class="sidebar">
-    <div>
+    <div style="display: flex; flex-direction: column; gap: 30px;">
       <div class="brand-header">
         <div class="brand-logo">
           <svg viewBox="0 0 88 104" fill="none">
@@ -517,7 +517,7 @@
           </svg>
           <span class="brand-text"><span class="red">FLARE</span><span class="white">WATCH</span></span>
         </div>
-        <button class="collapse-btn">&laquo;</button>
+       
       </div>
       <ul class="nav-list">
         <li class="nav-item">
