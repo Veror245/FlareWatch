@@ -575,7 +575,6 @@
           <option value="Path Traversal">Path Traversal</option>
           <option value="Command Injection">Command Injection</option>
           <option value="Login Failed">Login Failed</option>
-          <option value="Normal Traffic">Normal Traffic</option>
           <option value="XSS Attempt">XSS Attempt</option>
           <option value="Suspicious Scanner">Suspicious Scanner</option>
         </select>
@@ -840,11 +839,11 @@
   requestAnimationFrame(render);
 
   // ==========================================================
-  // LIVE CONNECTION TO rustTCP_handler.py
-  // Browser -> WebSocket :4003
+  // LIVE CONNECTION TO bigevent_handler.py
+  // Browser -> WebSocket :4005
   // ==========================================================
 
-  const backendWs = new WebSocket('ws://localhost:4003');
+  const backendWs = new WebSocket('ws://localhost:4005');
 
   function mapLiveEvent(data) {
     if (!data || typeof data !== 'object') return null;
@@ -862,34 +861,19 @@
     }
 
     const typeStr = String(normalized.type || normalized.event_type || '').toLowerCase();
-    const threatName = normalized.threat_name || normalized.threat || '';
-
     let mapped = null;
-    if (typeStr === 'threat' || threatName) {
+
+    // LIVE EVENTS PAGE: show ONLY incidents emitted by bigevent_handler.py.
+    // bigevent_handler.py sends type="big_event" with threat_id,
+    // threat_name, ip and details. Normal logs, nothreat messages,
+    // connection messages, and unrelated event types are ignored.
+    if (typeStr === 'big_event') {
       mapped = {
         time,
         severity: String(normalized.severity || 'HIGH').toUpperCase(),
-        type: mapThreatType(threatName || typeStr),
-        details: normalized.request || normalized.details || threatName || 'Threat detected',
+        type: mapBigEventType(normalized.threat_name, normalized.threat_id),
+        details: normalized.details || normalized.request || normalized.threat_name || 'Threat detected',
         ip: normalized.ip || normalized.source_ip || 'Unknown IP',
-        isNew: true
-      };
-    } else if (typeStr === 'nothreat' || typeStr === 'log' || typeStr === 'normal') {
-      mapped = {
-        time,
-        severity: 'LOW',
-        type: 'Normal Traffic',
-        details: normalized.request || normalized.details || 'Log received',
-        ip: normalized.ip || normalized.source_ip || 'Unknown IP',
-        isNew: true
-      };
-    } else if (normalized.ip) {
-      mapped = {
-        time,
-        severity: 'LOW',
-        type: 'Unknown Event',
-        details: normalized.request || 'Data received',
-        ip: normalized.ip,
         isNew: true
       };
     }
@@ -904,22 +888,36 @@
     return mapped;
   }
 
-  function mapThreatType(name) {
+  function mapBigEventType(name, id) {
     const value = String(name || '').toUpperCase();
-    if (value === 'SQLI') return 'SQL Injection';
-    if (value === 'XSS') return 'XSS Attempt';
-    if (value === 'PATH_TRAVERSAL') return 'Path Traversal';
-    if (value === 'COMMAND_INJECTION') return 'Command Injection';
-    if (value === 'SENSITIVE_ACCESS') return 'Sensitive Access';
-    if (value === 'SSRF') return 'SSRF';
-    if (value === 'LDAP_INJECTION') return 'LDAP Injection';
-    if (value === 'XXE') return 'XXE';
-    if (value === 'HTTP_ANOMALY') return 'HTTP Anomaly';
-    return name || 'Unknown Threat';
+    const idMap = {
+      9: 'Brute Force',
+      10: 'Credential Attack',
+      11: 'Recon',
+      12: 'Endpoint Scan',
+      13: 'Request Flood',
+      14: 'Account Compromise',
+      15: 'Multi-Stage Attack',
+      16: 'Anomaly'
+    };
+
+    const nameMap = {
+      BRUTE_FORCE: 'Brute Force',
+      CREDENTIAL_ATTACK: 'Credential Attack',
+      RECON: 'Recon',
+      ENDPOINT_SCAN: 'Endpoint Scan',
+      REQUEST_FLOOD: 'Request Flood',
+      ACCOUNT_COMPROMISE: 'Account Compromise',
+      MULTI_STAGE_ATTACK: 'Multi-Stage Attack',
+      ANOMALY: 'Anomaly'
+    };
+
+    return nameMap[value] || idMap[id] || name || 'Outbound Threat';
   }
 
+
   backendWs.onopen = () => {
-    console.log('[Live Events] Connected to rustTCP_handler.py WebSocket :4003');
+    console.log('[Live Events] Connected to bigevent_handler.py WebSocket :4005');
   };
 
   backendWs.onmessage = (event) => {
@@ -969,7 +967,7 @@
   };
 
   backendWs.onclose = () => {
-    console.warn('[Live Events] WebSocket disconnected from :4003');
+    console.warn('[Live Events] WebSocket disconnected from :4005');
   };
 </script>
 
