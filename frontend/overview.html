@@ -805,23 +805,48 @@
   const sparkPath3 = document.getElementById('spark-3');
   const sparkPath4 = document.getElementById('spark-4');
 
+  // ==========================================================
+  // UPDATED SMOOTH REACTIVE SPARKLINE LOGIC (NO FLICKER)
+  // ==========================================================
+  
+  let targetLogAmp = 1.5, currentLogAmp = 1.5;
+  let targetThreatAmp = 1.5, currentThreatAmp = 1.5;
+  let targetTotalAmp = 1.5, currentTotalAmp = 1.5;
+  let targetBytesAmp = 1.5, currentBytesAmp = 1.5;
+
   function updateSparklines(time) {
+    // Keep absolute time continuous. No variable speed multipliers.
     const t = time * 0.003;
+    
+    // Decay slowly and gently back to an idle baseline (1.5)
+    targetLogAmp += (1.5 - targetLogAmp) * 0.01;
+    targetThreatAmp += (1.5 - targetThreatAmp) * 0.01;
+    targetTotalAmp += (1.5 - targetTotalAmp) * 0.01;
+    targetBytesAmp += (1.5 - targetBytesAmp) * 0.01;
+
+    // Smoothly ease the visible amplitude to match the target over time
+    currentLogAmp += (targetLogAmp - currentLogAmp) * 0.04;
+    currentThreatAmp += (targetThreatAmp - currentThreatAmp) * 0.04;
+    currentTotalAmp += (targetTotalAmp - currentTotalAmp) * 0.04;
+    currentBytesAmp += (targetBytesAmp - currentBytesAmp) * 0.04;
+
     function getWavePath(freq, amp, phase) {
       let d = "";
       const steps = 20;
       for (let i = 0; i <= steps; i++) {
         const x = (i / steps) * 100;
+        // Strict continuous sine wave, only dynamically interpolating the amplitude
         const y = 12.5 + Math.sin((i * freq) + t + phase) * amp + Math.cos((i * freq * 0.5) - t * 0.7) * (amp * 0.4);
         if (i === 0) d += `M${x},${y}`;
         else d += ` L${x},${y}`;
       }
       return d;
     }
-    if (sparkPath1) sparkPath1.setAttribute('d', getWavePath(0.45, 6, 0));
-    if (sparkPath2) sparkPath2.setAttribute('d', getWavePath(0.35, 7, 1.5));
-    if (sparkPath3) sparkPath3.setAttribute('d', getWavePath(0.5, 5, 3.0));
-    if (sparkPath4) sparkPath4.setAttribute('d', getWavePath(0.4, 6, 4.5));
+
+    if (sparkPath1) sparkPath1.setAttribute('d', getWavePath(0.45, currentLogAmp, 0));
+    if (sparkPath2) sparkPath2.setAttribute('d', getWavePath(0.35, currentThreatAmp, 1.5));
+    if (sparkPath3) sparkPath3.setAttribute('d', getWavePath(0.5, currentTotalAmp, 3.0));
+    if (sparkPath4) sparkPath4.setAttribute('d', getWavePath(0.4, currentBytesAmp, 4.5));
   }
 
   function render(time) {
@@ -1015,7 +1040,6 @@
     animateTraffic();
   }, 100);
 
-  // Clear out grid on Resize to avoid mismatched cell placement bugs
   window.addEventListener('resize', () => {
       initGrid();
       resizeTrafficCanvas();
@@ -1046,8 +1070,10 @@
       localEventTimes.push(now);
       localEventTimes = localEventTimes.filter(t => now - t <= 5000);
 
+      // React to payload byte changes
       if (rawMessage) {
           localBytes += new TextEncoder().encode(rawMessage).length;
+          targetBytesAmp = Math.min(10, targetBytesAmp + 1.0); // Gently bump target
       }
 
       if (data.type === "connection") return;
@@ -1079,7 +1105,16 @@
 
       if (data.type === "log" || data.type === "threat" || data.type === "nothreat") {
           localTotalLogs += 1;
-          if (data.type === "threat") localThreats += 1;
+          
+          // Bump targets smoothly
+          targetLogAmp = Math.min(10, targetLogAmp + 0.5);
+          targetTotalAmp = Math.min(10, targetTotalAmp + 0.5);
+
+          if (data.type === "threat") {
+              localThreats += 1;
+              // React with a solid, smooth target increase to incoming threats
+              targetThreatAmp = Math.min(12, targetThreatAmp + 4.0); 
+          }
 
           if (!receivedStats) {
               document.getElementById("metric-total-logs").innerText =
@@ -1116,7 +1151,6 @@
       el.classList.add('leaving');
       el.classList.remove('random-box'); 
       
-      // Instantly free the logical cell so a new card can utilize this space
       if (el.dataset.cell) {
           occupiedCells.delete(el.dataset.cell);
       }
@@ -1149,8 +1183,6 @@
         <div class="card-req">${escapeHtml(req)}</div>
       `;
 
-      // Matrix Grid Positioning Engine 
-      // Prevents overlap and cleanly leaves a hole in the direct center for the Server Node
       const isMobile = window.innerWidth <= 1024;
       let r, c, cellKey;
       let attempts = 0;
@@ -1159,12 +1191,10 @@
       while (attempts < 50) {
           attempts++;
           if (isMobile) {
-              // 4 columns, 6 rows (Center exclusion zone is Cols:2,3 | Rows:3,4)
               c = Math.floor(Math.random() * 4) + 1;
               r = Math.floor(Math.random() * 6) + 1;
               if ((c === 2 || c === 3) && (r === 3 || r === 4)) continue;
           } else {
-              // 6 columns, 5 rows (Center exclusion zone is Cols:3,4 | Row:3)
               c = Math.floor(Math.random() * 6) + 1;
               r = Math.floor(Math.random() * 5) + 1;
               if ((c === 3 || c === 4) && r === 3) continue;
@@ -1177,7 +1207,6 @@
           }
       }
 
-      // If the grid is completely flooded, force out an old card and abort drawing this one to rate-limit
       if (!found) {
            const activeCards = threatGrid.querySelectorAll('.floating-card:not(.leaving)');
            if(activeCards.length > 0) {
@@ -1199,7 +1228,6 @@
           }
       }, 400); 
 
-      // Max capacity management ensures we never cause hidden layout shifts
       const maxCards = isMobile ? 18 : 26; 
       const activeCards = threatGrid.querySelectorAll('.floating-card:not(.leaving)');
       if (activeCards.length >= maxCards) {
@@ -1209,7 +1237,6 @@
           }
       }
 
-      // Disappear naturally
       setTimeout(() => {
           if (el.parentNode) {
              removeCard(el);
