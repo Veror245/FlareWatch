@@ -211,7 +211,6 @@
     width: 30%;
   }
 
-
   .topbar-info {
     display: flex;
     align-items: center;
@@ -296,6 +295,14 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    
+    /* Hide scrollbars */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .content-area::-webkit-scrollbar {
+    display: none;
   }
 
   /* Header Title & Breadcrumb */
@@ -435,13 +442,21 @@
   .logs-card {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto; /* Added smooth scrolling within card */
     flex: 1;
-    justify-content: space-between;
+    justify-content: flex-start; /* Removed space-between to accommodate removed pagination */
     border: 1px solid rgba(255, 255, 255, 0.097);
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
+    
+    /* Hide scrollbars */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .logs-card::-webkit-scrollbar {
+    display: none;
   }
 
   /* Table styling */
@@ -459,7 +474,11 @@
     text-transform: uppercase;
     padding: 14px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(10, 10, 13, 0.4);
+    background: rgba(10, 10, 13, 0.7); /* Slightly darkened for better sticky contrast */
+    position: sticky; /* Made header sticky */
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
   }
 
   .logs-table td {
@@ -475,6 +494,36 @@
     background: rgba(255, 255, 255, 0.02);
   }
 
+  /* Log Row Animations */
+  @keyframes tile-enter {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .logs-table tbody tr {
+    opacity: 0;
+    animation: tile-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* Stagger the animations for a smooth waterfall effect */
+  .logs-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+  .logs-table tbody tr:nth-child(2) { animation-delay: 0.10s; }
+  .logs-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+  .logs-table tbody tr:nth-child(4) { animation-delay: 0.20s; }
+  .logs-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+  .logs-table tbody tr:nth-child(6) { animation-delay: 0.30s; }
+  .logs-table tbody tr:nth-child(7) { animation-delay: 0.35s; }
+  .logs-table tbody tr:nth-child(8) { animation-delay: 0.40s; }
+  .logs-table tbody tr:nth-child(9) { animation-delay: 0.45s; }
+  .logs-table tbody tr:nth-child(10) { animation-delay: 0.50s; }
+  .logs-table tbody tr:nth-child(n+11) { animation-delay: 0.55s; }
+
   .col-id {
     width: 90px;
   }
@@ -488,53 +537,6 @@
     font-weight: 800;
     letter-spacing: 0.5px;
     margin-right: 12px;
-  }
-
-  /* Pagination Bar */
-  .pagination-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(10, 10, 13, 0.4);
-  }
-
-  .page-btn {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    color: #aaa;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-  }
-
-  .page-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .page-btn.active {
-    background: #ff2a2a;
-    border-color: #ff2a2a;
-    color: #fff;
-    box-shadow: 0 0 8px rgba(255, 42, 42, 0.4);
-  }
-
-  .page-ellipsis {
-    color: #555566;
-    padding: 0 4px;
-    font-size: 12px;
   }
 
   @media (max-width: 768px) {
@@ -565,7 +567,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .app-container,
-    .app-container.page-leaving { animation: none; }
+    .app-container.page-leaving,
+    .logs-table tbody tr { animation: none; opacity: 1; transform: none; }
   }
 </style>
 </head>
@@ -637,7 +640,6 @@
     <!-- Header / Topbar -->
     <header class="topbar">
       <div class="header-container">
-
         <div class="topbar-info">
         <div class="info-item">
           <span class="info-label">System Status</span>
@@ -653,8 +655,7 @@
         </div>
       </div>
       </div>
-
-      </header>
+    </header>
 
 
     <!-- Main Content Area -->
@@ -748,21 +749,28 @@
               <td class="col-time">2026-08-20 02:41:51</td>
               <td><span class="badge-error">ERROR</span> connection reset by peer</td>
             </tr>
+            <tr>
+              <td class="col-id">248</td>
+              <td class="col-time">2026-08-20 02:42:01</td>
+              <td><span class="badge-error">ERROR</span> upstream request timeout</td>
+            </tr>
+            <tr>
+              <td class="col-id">259</td>
+              <td class="col-time">2026-08-20 02:42:05</td>
+              <td><span class="badge-error">ERROR</span> database connection failed</td>
+            </tr>
+            <tr>
+              <td class="col-id">284</td>
+              <td class="col-time">2026-08-20 02:42:15</td>
+              <td><span class="badge-error">ERROR</span> unexpected token in request</td>
+            </tr>
+            <tr>
+              <td class="col-id">310</td>
+              <td class="col-time">2026-08-20 02:42:25</td>
+              <td><span class="badge-error">ERROR</span> missing configuration object</td>
+            </tr>
           </tbody>
         </table>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-bar">
-          <a href="#" class="page-btn">&lt;</a>
-          <a href="#" class="page-btn active">1</a>
-          <a href="#" class="page-btn">2</a>
-          <a href="#" class="page-btn">3</a>
-          <a href="#" class="page-btn">4</a>
-          <a href="#" class="page-btn">5</a>
-          <span class="page-ellipsis">...</span>
-          <a href="#" class="page-btn">42</a>
-          <a href="#" class="page-btn">&gt;</a>
-        </div>
       </div>
 
     </main>

@@ -203,6 +203,19 @@
     height: 18px;
     stroke: currentColor;
   }
+
+  /* NEW: Smooth minimal tile loading animation */
+  @keyframes smooth-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Metrics Grid */
   .metrics-grid {
     display: grid;
@@ -221,7 +234,18 @@
     backdrop-filter: blur(2px);
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
+    
+    /* Added minimal entrance animation */
+    opacity: 0;
+    animation: smooth-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+  
+  /* Staggered animation delays for metric tiles */
+  .metric-card:nth-child(1) { animation-delay: 0.10s; }
+  .metric-card:nth-child(2) { animation-delay: 0.15s; }
+  .metric-card:nth-child(3) { animation-delay: 0.20s; }
+  .metric-card:nth-child(4) { animation-delay: 0.25s; }
+
   .metric-title {
     font-size: 11.5px;
     color: #888899;
@@ -237,6 +261,7 @@
   }
   .metric-value.danger { color: #ff4d4d; }
   .metric-value.safe { color: #00e676; }
+  
   /* Events Main Panel Card */
   .panel-card {
     -webkit-backdrop-filter: blur(12px);
@@ -250,7 +275,13 @@
     background-color: rgba(255, 255, 255, 0.071);
     border-radius: 30px;
     overflow: hidden;
+
+    /* Added staggered minimal entrance animation */
+    opacity: 0;
+    animation: smooth-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.35s;
   }
+  
   /* Controls Filter Bar */
   .filter-bar {
     display: flex;
@@ -448,7 +479,9 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .app-container,
-    .app-container.page-leaving { animation: none; }
+    .app-container.page-leaving,
+    .metric-card,
+    .panel-card { animation: none; opacity: 1; transform: none; }
   }
 </style>
 
@@ -513,7 +546,7 @@
         </li>
         <li class="nav-item">
           <a href="/frontend/rules.html">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span class="nav-text">Rules</span>
           </a>
         </li>
