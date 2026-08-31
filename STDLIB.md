@@ -258,6 +258,40 @@ The current backend should therefore **not** be documented as a Flask/FastAPI or
 
 ---
 
+## 2.9 `pydantic`-style event models → `dataclasses.dataclass`
+
+**Normally:** a validation/model package such as `pydantic` for lightweight structured event objects.
+
+**FlareWatch:** Python's standard-library `dataclasses`.
+
+The threat-analysis engine represents incoming events with a small `Event` dataclass containing fields such as IP address, event type, severity, endpoint, timestamp, and metadata. The source uses `@dataclass` and `field(default_factory=...)` directly from the standard library.
+
+This is intentionally a simple in-process model; FlareWatch does not claim Pydantic-level schema validation.
+
+## 2.10 Sliding-window / ordered collection helper → `collections.deque`
+
+**Normally:** a helper library for efficient bounded queues or time-windowed collections.
+
+**FlareWatch:** `collections.deque`.
+
+The threat engine keeps recent events for failed-login, reconnaissance, endpoint-scan, and request-flood detection in deques. Old timestamps are removed from the left as their windows expire. This gives the correlation engine an efficient FIFO structure without a third-party dependency.
+
+## 2.11 Grouping/default-map helper → `collections.defaultdict`
+
+**Normally:** external convenience structures for automatically initialized per-key state.
+
+**FlareWatch:** `collections.defaultdict`.
+
+Per-IP trackers and threat-score state are keyed by IP address and initialized automatically using standard-library `defaultdict` instances. This keeps the correlation engine's state management small and dependency-free.
+
+## 2.12 Retry/backoff package → `time.sleep` + explicit backoff loop
+
+**Normally:** a retry/backoff package such as `tenacity`.
+
+**FlareWatch:** a small explicit retry loop using `time.sleep()` and arithmetic backoff.
+
+The threat engine reconnects to the backend by starting with a one-second delay and increasing the delay up to a configured maximum. No retry framework is needed for this focused connection task.
+
 # 3. Browser frontend
 
 The frontend is a self-contained HTML document with inline CSS and JavaScript.
