@@ -375,7 +375,7 @@ These are not hidden vendored dependencies. They are application code written fo
 
 ---
 
-# 6. Zero-dependency summary
+# 5. Zero-dependency summary
 
 | Would normally use | FlareWatch implementation |
 | --- | --- |
