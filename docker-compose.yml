@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  rust-engine:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    environment:
+      - ANALYSIS_HOST=analysis
+      - BACKEND_HOST=backend
+    ports:
+      - "4000:4000"            # expose to host for log generator
+    networks:
+      - app-network
+    depends_on:
+      - analysis
+      - backend
+
+  analysis:
+    build:
+      context: ./analysis
+      dockerfile: Dockerfile
+    environment:
+      - BACKEND_HOST=backend
+    ports:
+      - "4001:4001"            # optional, for debugging from host
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4002"
+      - "4003:4003"
+      - "4004:4004"
+      - "4005:4005"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5500:80"              
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
