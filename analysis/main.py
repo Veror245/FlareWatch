@@ -1,5 +1,6 @@
 import socket
 import time
+import json
 import threading
 import queue
 import struct
@@ -55,7 +56,7 @@ RECONNECT_INITIAL_DELAY = 1.0
 RECONNECT_MAX_DELAY = 30.0
 SCORE_DECAY_PER_SECOND = 1.0 / 30.0  
 
-#state trackers for complex threat detection
+# state trackers for complex threat detection
 failed_logins = defaultdict(deque)  
 recon_tracker = defaultdict(deque)
 scan_tracker = defaultdict(deque)
@@ -224,12 +225,9 @@ def worker_loop(dev1_client, dev1_ok_event, dev1_disconnected_event):
             if dev1_ok_event.is_set():
                 try:
                     send_incident(dev1_client, incident)
-                    # Printed explicitly so you can verify 9-16 are being caught correctly
-                    print(f"[OUTBOUND 9-16 ALERT] Sent: {incident['incident_type']} | IP: {incident['IP']}")
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     if dev1_ok_event.is_set():
                         dev1_ok_event.clear()
-                        print("\n[NETWORK] Dev 1 connection lost. Reconnecting in background...")
                         dev1_disconnected_event.set()  
         event_queue.task_done()
 
@@ -268,7 +266,6 @@ def connect_to_dev1(dev1_ok_event):
         dev1_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             dev1_client.connect(('127.0.0.1', DEV1_PORT))
-            print(f"\n[NETWORK] Connected OUTBOUND to Dev 1 Dashboard on port {DEV1_PORT}")
             dev1_ok_event.set()
             return dev1_client
         except (ConnectionRefusedError, OSError):
@@ -311,11 +308,10 @@ def listen_to_rust():
     server.bind(('127.0.0.1', RUST_PORT))
     server.listen(5)
 
-    print(f"[NETWORK] Threat Engine permanently listening for Rust stream on port {RUST_PORT}...")
+    print(f"Threat Engine permanently listening for Rust stream on port {RUST_PORT}...")
 
     while True:
-        conn, addr = server.accept()
-        print(f"\n[NETWORK] Rust Engine INBOUND connection established from {addr}")
+        conn, _addr = server.accept()
         threading.Thread(target=handle_rust_connection, args=(conn,), daemon=True).start()
 
 def handle_rust_connection(conn):
