@@ -529,6 +529,10 @@
     width: 90px;
   }
 
+  .col-ip {
+    width: 170px;
+  }
+
   .col-time {
     width: 220px;
   }
@@ -667,6 +671,7 @@
           <thead>
             <tr>
               <th class="col-id">LOG ID</th>
+              <th class="col-ip">IP ADDRESS</th>
               <th class="col-time">TIME</th>
               <th>LOG ENTRY</th>
             </tr>
@@ -850,7 +855,7 @@
     if (results.length === 0) {
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      cell.colSpan = 3;
+      cell.colSpan = 4;
       cell.textContent = `No results found for "${query}"`;
       cell.style.textAlign = 'center';
       cell.style.color = '#888899';
@@ -865,6 +870,19 @@
       const idCell = document.createElement('td');
       idCell.className = 'col-id';
       idCell.textContent = String(index + 1);
+
+      const ipCell = document.createElement('td');
+      ipCell.className = 'col-ip';
+      ipCell.textContent = String(
+        result.ip ??
+        result.ipAddress ??
+        result.ip_address ??
+        result.source_ip ??
+        result.src_ip ??
+        result.sourceIp ??
+        result.address ??
+        ''
+      );
 
       const timeCell = document.createElement('td');
       timeCell.className = 'col-time';
@@ -906,6 +924,7 @@
       );
 
       row.appendChild(idCell);
+      row.appendChild(ipCell);
       row.appendChild(timeCell);
       row.appendChild(entryCell);
       resultsTableBody.appendChild(row);
