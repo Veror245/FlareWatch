@@ -443,7 +443,7 @@
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
-  .badge-sev.high {
+  .badge-sev.critical, .badge-sev.high {
     background: rgba(255, 42, 42, 0.1);
     border: 1px solid rgba(255, 42, 42, 0.3);
     color: #ff4d4d;
@@ -454,7 +454,7 @@
     border: 1px solid rgba(255, 179, 0, 0.3);
     color: #ffb300;
   }
-  .badge-sev.low {
+  .badge-sev.low, .badge-sev.info {
     background: rgba(0, 230, 118, 0.08);
     border: 1px solid rgba(0, 230, 118, 0.25);
     color: #00e676;
@@ -601,15 +601,33 @@
           <option value="SQL Injection">SQL Injection</option>
           <option value="Path Traversal">Path Traversal</option>
           <option value="Command Injection">Command Injection</option>
-          <option value="Login Failed">Login Failed</option>
           <option value="XSS Attempt">XSS Attempt</option>
+          <option value="Sensitive Access">Sensitive Access</option>
+          <option value="SSRF">SSRF</option>
+          <option value="LDAP Injection">LDAP Injection</option>
+          <option value="XXE">XXE</option>
+          <option value="HTTP Anomaly">HTTP Anomaly</option>
+          <option value="Login Failed">Login Failed</option>
+          <option value="Login Success">Login Success</option>
+          <option value="Admin Access">Admin Access</option>
+          <option value="Brute Force">Brute Force</option>
+          <option value="Credential Attack">Credential Attack</option>
+          <option value="Account Compromise">Account Compromise</option>
+          <option value="Multi-Stage Attack">Multi-Stage Attack</option>
+          <option value="Recon">Recon</option>
+          <option value="Endpoint Scan">Endpoint Scan</option>
+          <option value="Request Flood">Request Flood</option>
+          <option value="Anomaly">Anomaly</option>
+          <option value="Outbound Threat">Outbound Threat</option>
           <option value="Suspicious Scanner">Suspicious Scanner</option>
         </select>
         <select class="custom-select" id="severityFilter">
           <option value="ALL">All Severities</option>
+          <option value="CRITICAL">Critical</option>
           <option value="HIGH">High</option>
           <option value="MEDIUM">Medium</option>
           <option value="LOW">Low</option>
+          <option value="INFO">Info</option>
         </select>
         <div class="search-wrapper">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -719,7 +737,10 @@
     }
     
     metricTotal.textContent = filtered.length.toLocaleString();
-    metricHigh.textContent = filtered.filter(e => normalizeText(e.severity).toUpperCase() === 'HIGH').length.toLocaleString();
+    metricHigh.textContent = filtered.filter(e => {
+      const sev = normalizeText(e.severity).toUpperCase();
+      return sev === 'HIGH' || sev === 'CRITICAL';
+    }).length.toLocaleString();
     metricIps.textContent = new Set(filtered.map(e => normalizeText(e.ip)).filter(Boolean)).size.toLocaleString();
 
     tableBody.innerHTML = filtered.map(e => {
