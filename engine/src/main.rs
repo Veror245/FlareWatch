@@ -266,7 +266,7 @@ fn handle_client(
 
     let analysis_addr = format!("{}:4001", analysis_host);
     let backend_addr = format!("{}:4002", backend_host);
-    let mut downstream_backend = match TcpStream::connect(&analysis_addr) {
+    let mut downstream_backend = match TcpStream::connect(&backend_addr) {
         Ok(stream) => {
             println!("Server is writing to backend {:?}", stream.local_addr()?);
             Some(stream)
@@ -277,7 +277,7 @@ fn handle_client(
         }
     };
 
-    let mut downstream_analysis = match TcpStream::connect(&backend_addr) {
+    let mut downstream_analysis = match TcpStream::connect(&analysis_addr) {
         Ok(stream) => {
             println!("Server is writing to analysus {:?}", stream.local_addr()?);
             Some(stream)
