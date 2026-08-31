@@ -238,7 +238,7 @@ This builds the project images and starts the FlareWatch services in detached mo
 
 Once the containers are running, open:
 
-**http://localhost:5500/index.html**
+**<http://localhost:5500/index.html>**
 
 The dashboard connects to the backend's WebSocket service and begins displaying live system information as events arrive.
 
@@ -484,13 +484,13 @@ The returned results are then parsed by Python and presented by the dashboard.
 
 One of the central design choices in FlareWatch is separating **detection** from **analysis**.
 
-### Rust answers:
+### Rust answers
 
 > "What suspicious thing is present in this individual log?"
 
 Aho-Corasick matches the raw message against the threat signatures and classifies the resulting event.
 
-### Python answers:
+### Python answers
 
 > "What do these events mean together?"
 
@@ -581,10 +581,6 @@ python log_gen.py --rate 100
 ```
 
 is recommended.
-
-When testing higher throughput, increase the generator rate gradually and treat browser rendering performance separately from backend ingestion performance.
-
-Do not use unverified throughput numbers as benchmark claims. Any performance figure presented as a benchmark should come from an actual measured run.
 
 ---
 
