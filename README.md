@@ -543,14 +543,36 @@ See [`STDLIB.md`](STDLIB.md) for the complete package-replacement log.
 The exact repository layout may evolve, but the main components are:
 
 ```text
-FlareWatch/
-├── index.html
+├── analysis
+│   ├── Dockerfile
+│   └── main.py
+├── backend
+│   ├── Dockerfile
+│   └── main_server.py
+├── deps-proof.txt
+├── docker-compose.yml
+├── engine
+│   ├── aho_patterns.txt
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   ├── src
+│   │   └── main.rs
+│   └── target
+│       ├── CACHEDIR.TAG
+│       ├── debug
+│       ├── flycheck0
+│       ├── release
+│       └── x86_64-pc-windows-gnu
+├── frontend
+│   ├── Dockerfile
+│   ├── icon
+│   │   └── icon.png
+│   └── index.html
+├── LICENSE
 ├── log_gen.py
-├── main_server.py
-├── main.py
-├── main.rs
-├── STDLIB.md
 ├── README.md
+└── STDLIB.md
 └── ...
 ```
 
