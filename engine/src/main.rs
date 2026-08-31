@@ -240,16 +240,13 @@ pub fn server_main(ac: Arc<AhoCorasick>, index: Arc<Mutex<ThreatIndex>>) -> io::
             println!("Client {addr} connected");
             let ac = Arc::clone(&ac);
             let index = Arc::clone(&index);
-            //           let pindex = Arc::clone(&index);
-            handle_client(&mut stream, ac, threat_table, index)?;
-            println!("disconnected from {addr}");
-            // let idx = pindex.lock().unwrap();
-            // let res = idx.search_by_token("Sqli");
-            // println!("{:?}", res.join("\n"));
-            // println!("Threat Index");
-            // for (i, log) in idx.logs.iter().enumerate() {
-            //     println!("[{}] {}", i, log);
-            // }
+
+            std::thread::spawn(move || {
+                if let Err(e) = handle_client(&mut stream, ac, threat_table, index) {
+                    eprintln!("Error handling client {addr}: {e}");
+                }
+                println!("disconnected from {addr}");
+            });
         } else {
             println!("Error");
         }
@@ -381,7 +378,9 @@ fn handle_client(
                         if threat_code != 9 {
                             payload.push(threat_code);
                         } else {
-                            let eventtype = matches[0] - 208;
+                            let event_id =
+                                matches.iter().copied().find(|&id| id >= 208 && id <= 211);
+                            let eventtype = event_id.map(|id| id - 208).unwrap_or(255);
                             payload.push(eventtype as u8);
                         }
                     }
