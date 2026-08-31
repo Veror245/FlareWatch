@@ -31,13 +31,13 @@ import re
 # CONFIGURATION
 # ============================================================
 
-RUST_HOST = "127.0.0.1"
+RUST_HOST = "0.0.0.0"
 RUST_REQUEST_PORT = 4000
 
 RUST_RESPONSE_HOST = "0.0.0.0"
 RUST_RESPONSE_PORT = 4002
 
-DEV2_HOST = "127.0.0.1"
+DEV2_HOST = "0.0.0.0"
 DEV2_PORT = 4004
 
 WEBSOCKET_HOST = "0.0.0.0"
@@ -129,6 +129,7 @@ websocket_send_locks = {}
 # TCP HELPER
 # ============================================================
 
+
 def recv_exact(sock, size):
     """Receive exactly `size` bytes from a TCP stream."""
 
@@ -142,8 +143,7 @@ def recv_exact(sock, size):
                 return None
 
             raise ConnectionError(
-                "Connection closed before receiving "
-                "the complete message"
+                "Connection closed before receiving the complete message"
             )
 
         data.extend(chunk)
@@ -154,6 +154,7 @@ def recv_exact(sock, size):
 # ============================================================
 # PROTOCOL READ HELPERS
 # ============================================================
+
 
 def read_u8(data, offset):
     if offset + 1 > len(data):
@@ -191,16 +192,12 @@ def read_string_u8(data, offset):
     end = offset + length
 
     if end > len(data):
-        raise ProtocolError(
-            "String extends beyond message boundary"
-        )
+        raise ProtocolError("String extends beyond message boundary")
 
     try:
         value = data[offset:end].decode("utf-8")
     except UnicodeDecodeError as error:
-        raise ProtocolError(
-            "Invalid UTF-8 string"
-        ) from error
+        raise ProtocolError("Invalid UTF-8 string") from error
 
     return value, end
 
@@ -210,16 +207,12 @@ def read_string_u16(data, offset):
     end = offset + length
 
     if end > len(data):
-        raise ProtocolError(
-            "String extends beyond message boundary"
-        )
+        raise ProtocolError("String extends beyond message boundary")
 
     try:
         value = data[offset:end].decode("utf-8")
     except UnicodeDecodeError as error:
-        raise ProtocolError(
-            "Invalid UTF-8 string"
-        ) from error
+        raise ProtocolError("Invalid UTF-8 string") from error
 
     return value, end
 
@@ -228,6 +221,7 @@ def read_string_u16(data, offset):
 # RUST PROTOCOL PARSERS
 # ============================================================
 
+
 def parse_log(payload):
     offset = 0
 
@@ -235,9 +229,7 @@ def parse_log(payload):
     request, offset = read_string_u16(payload, offset)
 
     if offset != len(payload):
-        raise ProtocolError(
-            "Extra bytes in LOG message"
-        )
+        raise ProtocolError("Extra bytes in LOG message")
 
     return {
         "type": "log",
@@ -270,9 +262,7 @@ def parse_threat(payload):
     )
 
     if offset != len(payload):
-        raise ProtocolError(
-            "Extra bytes in THREAT message"
-        )
+        raise ProtocolError("Extra bytes in THREAT message")
 
     return {
         "type": "threat",
@@ -297,9 +287,7 @@ def parse_nothreat(payload):
     )
 
     if offset != len(payload):
-        raise ProtocolError(
-            "Extra bytes in NOTHREAT message"
-        )
+        raise ProtocolError("Extra bytes in NOTHREAT message")
 
     return {
         "type": "nothreat",
@@ -313,8 +301,7 @@ def parse_stats(payload):
 
     if len(payload) != EXPECTED_SIZE:
         raise ProtocolError(
-            f"Invalid STATS size. Expected "
-            f"{EXPECTED_SIZE}, got {len(payload)}"
+            f"Invalid STATS size. Expected {EXPECTED_SIZE}, got {len(payload)}"
         )
 
     offset = 0
@@ -368,9 +355,7 @@ def parse_event(payload):
     )
 
     if offset != len(payload):
-        raise ProtocolError(
-            "Extra bytes in EVENT message"
-        )
+        raise ProtocolError("Extra bytes in EVENT message")
 
     return {
         "type": "event",
@@ -421,25 +406,24 @@ def parse_search_response(payload):
 
         if not match:
             raise ProtocolError(
-                f"Invalid SEARCH record at line "
-                f"{line_number}: {line!r}"
+                f"Invalid SEARCH record at line {line_number}: {line!r}"
             )
 
-        timestamp_text, threat, ip, request = (
-            match.groups()
-        )
+        timestamp_text, threat, ip, request = match.groups()
 
         try:
             timestamp = int(timestamp_text)
         except ValueError:
             timestamp = timestamp_text
 
-        results.append({
-            "timestamp": timestamp,
-            "threat": threat,
-            "ip": ip,
-            "request": request or "",
-        })
+        results.append(
+            {
+                "timestamp": timestamp,
+                "threat": threat,
+                "ip": ip,
+                "request": request or "",
+            }
+        )
 
     return results
 
@@ -452,9 +436,7 @@ def parse_rust_message(message):
     """
 
     if len(message) < 1:
-        raise ProtocolError(
-            "Message does not contain a type byte"
-        )
+        raise ProtocolError("Message does not contain a type byte")
 
     message_type = message[0]
     payload = message[1:]
@@ -484,14 +466,13 @@ def parse_rust_message(message):
             "results": results,
         }
 
-    raise ProtocolError(
-        f"Unknown message type: {message_type}"
-    )
+    raise ProtocolError(f"Unknown message type: {message_type}")
 
 
 # ============================================================
 # PYTHON -> RUST :4000
 # ============================================================
+
 
 def connect_to_rust():
     """
@@ -508,10 +489,7 @@ def connect_to_rust():
 
     sock.settimeout(5)
 
-    print(
-        f"[RUST:4000] Connecting to "
-        f"{RUST_HOST}:{RUST_REQUEST_PORT}..."
-    )
+    print(f"[RUST:4000] Connecting to {RUST_HOST}:{RUST_REQUEST_PORT}...")
 
     sock.connect(
         (
@@ -549,9 +527,7 @@ def send_to_rust(data):
         sock = rust_request_socket
 
         if sock is None:
-            raise ConnectionError(
-                "Rust request socket is unavailable"
-            )
+            raise ConnectionError("Rust request socket is unavailable")
 
         try:
             sock.sendall(data)
@@ -561,7 +537,6 @@ def send_to_rust(data):
             ConnectionResetError,
             OSError,
         ) as error:
-
             rust_request_connected.clear()
 
             try:
@@ -571,14 +546,13 @@ def send_to_rust(data):
 
             rust_request_socket = None
 
-            raise ConnectionError(
-                "Rust request connection was lost"
-            ) from error
+            raise ConnectionError("Rust request connection was lost") from error
 
 
 # ============================================================
 # RUST -> PYTHON :4002
 # ============================================================
+
 
 def start_rust_response_server():
     """
@@ -615,9 +589,7 @@ def start_rust_response_server():
     while True:
         conn, addr = server.accept()
 
-        print(
-            f"[RUST:4002] Rust connected from {addr}"
-        )
+        print(f"[RUST:4002] Rust connected from {addr}")
 
         with rust_response_socket_lock:
             rust_response_sockets.add(conn)
@@ -659,14 +631,8 @@ def handle_rust_response_connection(
                 length_bytes,
             )[0]
 
-            if (
-                message_length < 1
-                or message_length > MAX_MESSAGE_SIZE
-            ):
-                raise ProtocolError(
-                    f"Invalid Rust message length: "
-                    f"{message_length}"
-                )
+            if message_length < 1 or message_length > MAX_MESSAGE_SIZE:
+                raise ProtocolError(f"Invalid Rust message length: {message_length}")
 
             message = recv_exact(
                 conn,
@@ -680,26 +646,22 @@ def handle_rust_response_connection(
             payload = message[1:]
 
             if message_type == TYPE_SEARCH:
-                results = parse_search_response(
-                    payload
-                )
+                results = parse_search_response(payload)
 
-                search_response_queue.put({
-                    "type": "search_response",
-                    "message_type": TYPE_SEARCH,
-                    "count": len(results),
-                    "results": results,
-                })
+                search_response_queue.put(
+                    {
+                        "type": "search_response",
+                        "message_type": TYPE_SEARCH,
+                        "count": len(results),
+                        "results": results,
+                    }
+                )
 
                 continue
 
-            event = parse_rust_message(
-                message
-            )
+            event = parse_rust_message(message)
 
-            print(
-                "[RUST:4002] Parsed:"
-            )
+            print("[RUST:4002] Parsed:")
             print(
                 json.dumps(
                     event,
@@ -715,11 +677,7 @@ def handle_rust_response_connection(
         OSError,
         ProtocolError,
     ) as error:
-
-        print(
-            f"[RUST:4002] Connection ended from "
-            f"{addr}: {error}"
-        )
+        print(f"[RUST:4002] Connection ended from {addr}: {error}")
 
     finally:
         with rust_response_socket_lock:
@@ -735,6 +693,7 @@ def handle_rust_response_connection(
 # SEARCH REQUEST / RESPONSE
 # ============================================================
 
+
 def build_search_message(request):
     """
     Build Rust SEARCH:
@@ -745,14 +704,10 @@ def build_search_message(request):
         [UTF-8 request]
     """
 
-    request_bytes = request.encode(
-        "utf-8"
-    )
+    request_bytes = request.encode("utf-8")
 
     if len(request_bytes) > 65535:
-        raise ProtocolError(
-            "Search request is too long"
-        )
+        raise ProtocolError("Search request is too long")
 
     payload = (
         struct.pack(
@@ -784,7 +739,6 @@ def search_rust(request):
     """
 
     with search_lock:
-
         # Clear stale responses.
         while True:
             try:
@@ -792,24 +746,17 @@ def search_rust(request):
             except queue.Empty:
                 break
 
-        frame = build_search_message(
-            request
-        )
+        frame = build_search_message(request)
 
         send_to_rust(frame)
 
-        print(
-            f"[SEARCH] Sent to Rust: {request!r}"
-        )
+        print(f"[SEARCH] Sent to Rust: {request!r}")
 
         try:
-            result = search_response_queue.get(
-                timeout=30
-            )
+            result = search_response_queue.get(timeout=30)
         except queue.Empty as error:
             raise TimeoutError(
-                "Timed out waiting for Rust SEARCH "
-                "response on port 4002"
+                "Timed out waiting for Rust SEARCH response on port 4002"
             ) from error
 
         result["query"] = request
@@ -820,6 +767,7 @@ def search_rust(request):
 # ============================================================
 # DEV 2 -> PYTHON :4004
 # ============================================================
+
 
 def parse_incident(payload):
     """
@@ -856,8 +804,7 @@ def parse_incident(payload):
 
     if offset != len(payload):
         raise ProtocolError(
-            f"Unexpected {len(payload) - offset} "
-            f"extra bytes in incident"
+            f"Unexpected {len(payload) - offset} extra bytes in incident"
         )
 
     return {
@@ -871,9 +818,7 @@ def parse_incident(payload):
 
 
 def handle_dev2_client(conn, addr):
-    print(
-        f"[DEV2:4004] Connected from {addr}"
-    )
+    print(f"[DEV2:4004] Connected from {addr}")
 
     try:
         while True:
@@ -890,13 +835,8 @@ def handle_dev2_client(conn, addr):
                 length_bytes,
             )[0]
 
-            if (
-                message_length < 1
-                or message_length > MAX_MESSAGE_SIZE
-            ):
-                raise ProtocolError(
-                    "Invalid Dev2 message length"
-                )
+            if message_length < 1 or message_length > MAX_MESSAGE_SIZE:
+                raise ProtocolError("Invalid Dev2 message length")
 
             type_bytes = recv_exact(
                 conn,
@@ -917,20 +857,12 @@ def handle_dev2_client(conn, addr):
                 break
 
             if message_type != MESSAGE_TYPE_THREAT:
-                print(
-                    f"[DEV2:4004] Ignoring message "
-                    f"type: {message_type}"
-                )
+                print(f"[DEV2:4004] Ignoring message type: {message_type}")
                 continue
 
-            event = parse_incident(
-                payload
-            )
+            event = parse_incident(payload)
 
-            print(
-                "\n[DEV2 -> MERGED SERVER] "
-                "Incident received:"
-            )
+            print("\n[DEV2 -> MERGED SERVER] Incident received:")
 
             print(
                 json.dumps(
@@ -947,10 +879,7 @@ def handle_dev2_client(conn, addr):
         OSError,
         ProtocolError,
     ) as error:
-
-        print(
-            f"[DEV2:4004] Error: {error}"
-        )
+        print(f"[DEV2:4004] Error: {error}")
 
     finally:
         try:
@@ -958,9 +887,7 @@ def handle_dev2_client(conn, addr):
         except OSError:
             pass
 
-        print(
-            f"[DEV2:4004] Disconnected: {addr}"
-        )
+        print(f"[DEV2:4004] Disconnected: {addr}")
 
 
 def start_dev2_server():
@@ -984,10 +911,7 @@ def start_dev2_server():
 
     server.listen(5)
 
-    print(
-        f"[DEV2:4004] Waiting for Dev 2 on "
-        f"{DEV2_HOST}:{DEV2_PORT}"
-    )
+    print(f"[DEV2:4004] Waiting for Dev 2 on {DEV2_HOST}:{DEV2_PORT}")
 
     while True:
         conn, addr = server.accept()
@@ -1005,6 +929,7 @@ def start_dev2_server():
 # WEBSOCKET HANDSHAKE
 # ============================================================
 
+
 def perform_websocket_handshake(
     client_socket,
 ):
@@ -1014,27 +939,18 @@ def perform_websocket_handshake(
         chunk = client_socket.recv(4096)
 
         if not chunk:
-            raise ConnectionError(
-                "Browser disconnected during handshake"
-            )
+            raise ConnectionError("Browser disconnected during handshake")
 
         request += chunk
 
         if len(request) > 16384:
-            raise ProtocolError(
-                "WebSocket handshake too large"
-            )
+            raise ProtocolError("WebSocket handshake too large")
 
-    request_text = request.decode(
-        "utf-8"
-    )
+    request_text = request.decode("utf-8")
 
     headers = {}
 
-    for line in request_text.split(
-        "\r\n"
-    )[1:]:
-
+    for line in request_text.split("\r\n")[1:]:
         if ":" not in line:
             continue
 
@@ -1043,42 +959,29 @@ def perform_websocket_handshake(
             1,
         )
 
-        headers[
-            name.strip().lower()
-        ] = value.strip()
+        headers[name.strip().lower()] = value.strip()
 
-    if headers.get(
-        "upgrade",
-        "",
-    ).lower() != "websocket":
+    if (
+        headers.get(
+            "upgrade",
+            "",
+        ).lower()
+        != "websocket"
+    ):
+        raise ProtocolError("Missing WebSocket Upgrade header")
 
-        raise ProtocolError(
-            "Missing WebSocket Upgrade header"
-        )
-
-    websocket_key = headers.get(
-        "sec-websocket-key"
-    )
+    websocket_key = headers.get("sec-websocket-key")
 
     if websocket_key is None:
-        raise ProtocolError(
-            "Missing Sec-WebSocket-Key"
-        )
+        raise ProtocolError("Missing Sec-WebSocket-Key")
 
-    websocket_guid = (
-        "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-    )
+    websocket_guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
     accept_hash = hashlib.sha1(
-        (
-            websocket_key
-            + websocket_guid
-        ).encode("utf-8")
+        (websocket_key + websocket_guid).encode("utf-8")
     ).digest()
 
-    accept_key = base64.b64encode(
-        accept_hash
-    ).decode("utf-8")
+    accept_key = base64.b64encode(accept_hash).decode("utf-8")
 
     response = (
         "HTTP/1.1 101 Switching Protocols\r\n"
@@ -1088,14 +991,13 @@ def perform_websocket_handshake(
         "\r\n"
     )
 
-    client_socket.sendall(
-        response.encode("utf-8")
-    )
+    client_socket.sendall(response.encode("utf-8"))
 
 
 # ============================================================
 # WEBSOCKET FRAMES
 # ============================================================
+
 
 def send_websocket_frame(
     client_socket,
@@ -1103,15 +1005,12 @@ def send_websocket_frame(
     opcode=0x1,
 ):
     if isinstance(payload, str):
-        payload = payload.encode(
-            "utf-8"
-        )
+        payload = payload.encode("utf-8")
 
     first_byte = 0x80 | opcode
     payload_length = len(payload)
 
     if payload_length <= 125:
-
         header = struct.pack(
             "!BB",
             first_byte,
@@ -1119,7 +1018,6 @@ def send_websocket_frame(
         )
 
     elif payload_length <= 65535:
-
         header = struct.pack(
             "!BBH",
             first_byte,
@@ -1128,7 +1026,6 @@ def send_websocket_frame(
         )
 
     else:
-
         header = struct.pack(
             "!BBQ",
             first_byte,
@@ -1136,9 +1033,7 @@ def send_websocket_frame(
             payload_length,
         )
 
-    client_socket.sendall(
-        header + payload
-    )
+    client_socket.sendall(header + payload)
 
 
 def receive_websocket_frame(
@@ -1155,33 +1050,22 @@ def receive_websocket_frame(
     first_byte = header[0]
     second_byte = header[1]
 
-    fin = (
-        first_byte & 0x80
-    ) != 0
+    fin = (first_byte & 0x80) != 0
 
-    opcode = (
-        first_byte & 0x0F
-    )
+    opcode = first_byte & 0x0F
 
-    masked = (
-        second_byte & 0x80
-    ) != 0
+    masked = (second_byte & 0x80) != 0
 
-    payload_length = (
-        second_byte & 0x7F
-    )
+    payload_length = second_byte & 0x7F
 
     if payload_length == 126:
-
         length_bytes = recv_exact(
             client_socket,
             2,
         )
 
         if length_bytes is None:
-            raise ConnectionError(
-                "Incomplete WebSocket length"
-            )
+            raise ConnectionError("Incomplete WebSocket length")
 
         payload_length = struct.unpack(
             "!H",
@@ -1189,16 +1073,13 @@ def receive_websocket_frame(
         )[0]
 
     elif payload_length == 127:
-
         length_bytes = recv_exact(
             client_socket,
             8,
         )
 
         if length_bytes is None:
-            raise ConnectionError(
-                "Incomplete WebSocket length"
-            )
+            raise ConnectionError("Incomplete WebSocket length")
 
         payload_length = struct.unpack(
             "!Q",
@@ -1206,14 +1087,10 @@ def receive_websocket_frame(
         )[0]
 
     if payload_length > MAX_MESSAGE_SIZE:
-        raise ProtocolError(
-            "WebSocket payload too large"
-        )
+        raise ProtocolError("WebSocket payload too large")
 
     if not masked:
-        raise ProtocolError(
-            "Browser WebSocket frame was not masked"
-        )
+        raise ProtocolError("Browser WebSocket frame was not masked")
 
     masking_key = recv_exact(
         client_socket,
@@ -1221,9 +1098,7 @@ def receive_websocket_frame(
     )
 
     if masking_key is None:
-        raise ConnectionError(
-            "Incomplete WebSocket masking key"
-        )
+        raise ConnectionError("Incomplete WebSocket masking key")
 
     masked_payload = recv_exact(
         client_socket,
@@ -1231,19 +1106,12 @@ def receive_websocket_frame(
     )
 
     if masked_payload is None:
-        raise ConnectionError(
-            "Incomplete WebSocket payload"
-        )
+        raise ConnectionError("Incomplete WebSocket payload")
 
-    payload = bytearray(
-        payload_length
-    )
+    payload = bytearray(payload_length)
 
     for i in range(payload_length):
-        payload[i] = (
-            masked_payload[i]
-            ^ masking_key[i % 4]
-        )
+        payload[i] = masked_payload[i] ^ masking_key[i % 4]
 
     return {
         "fin": fin,
@@ -1256,6 +1124,7 @@ def receive_websocket_frame(
 # WEBSOCKET JSON
 # ============================================================
 
+
 def send_json_websocket(
     client_socket,
     data,
@@ -1266,9 +1135,7 @@ def send_json_websocket(
     )
 
     with websocket_clients_lock:
-        send_lock = websocket_send_locks.get(
-            client_socket
-        )
+        send_lock = websocket_send_locks.get(client_socket)
 
     if send_lock is None:
         send_websocket_frame(
@@ -1297,19 +1164,14 @@ def broadcast_json(data):
     )
 
     with websocket_clients_lock:
-        clients = list(
-            websocket_clients
-        )
+        clients = list(websocket_clients)
 
     dead_clients = []
 
     for client in clients:
-
         try:
             with websocket_clients_lock:
-                send_lock = websocket_send_locks.get(
-                    client
-                )
+                send_lock = websocket_send_locks.get(client)
 
             if send_lock is None:
                 send_websocket_frame(
@@ -1324,16 +1186,12 @@ def broadcast_json(data):
                     )
 
         except OSError:
-            dead_clients.append(
-                client
-            )
+            dead_clients.append(client)
 
     if dead_clients:
         with websocket_clients_lock:
             for client in dead_clients:
-                websocket_clients.discard(
-                    client
-                )
+                websocket_clients.discard(client)
                 websocket_send_locks.pop(
                     client,
                     None,
@@ -1343,6 +1201,7 @@ def broadcast_json(data):
 # ============================================================
 # BROWSER MESSAGE HANDLING
 # ============================================================
+
 
 def handle_browser_json(
     client_socket,
@@ -1362,44 +1221,29 @@ def handle_browser_json(
     on Python :4002 and is returned on this same WebSocket.
     """
 
-    message_type = data.get(
-        "type"
-    )
+    message_type = data.get("type")
 
     if message_type == TYPE_SEARCH:
-
-        request = data.get(
-            "request"
-        )
+        request = data.get("request")
 
         if not isinstance(
             request,
             str,
         ):
-
             send_json_websocket(
                 client_socket,
                 {
                     "type": "error",
-                    "error": (
-                        "SEARCH request must contain "
-                        "a string 'request'"
-                    ),
+                    "error": ("SEARCH request must contain a string 'request'"),
                 },
             )
 
             return
 
         try:
+            result = search_rust(request)
 
-            result = search_rust(
-                request
-            )
-
-            send_json_websocket(
-                client_socket,
-                result
-            )
+            send_json_websocket(client_socket, result)
 
         except (
             ConnectionError,
@@ -1407,7 +1251,6 @@ def handle_browser_json(
             ProtocolError,
             OSError,
         ) as error:
-
             send_json_websocket(
                 client_socket,
                 {
@@ -1426,10 +1269,7 @@ def handle_browser_json(
         client_socket,
         {
             "type": "error",
-            "error": (
-                f"Unsupported message type: "
-                f"{message_type}"
-            ),
+            "error": (f"Unsupported message type: {message_type}"),
         },
     )
 
@@ -1438,99 +1278,63 @@ def handle_websocket_client(
     client_socket,
     client_address,
 ):
-    print(
-        f"[WS] Browser connecting: "
-        f"{client_address}"
-    )
+    print(f"[WS] Browser connecting: {client_address}")
 
     try:
-
-        perform_websocket_handshake(
-            client_socket
-        )
+        perform_websocket_handshake(client_socket)
 
         with websocket_clients_lock:
-            websocket_clients.add(
-                client_socket
-            )
-            websocket_send_locks[
-                client_socket
-            ] = threading.Lock()
+            websocket_clients.add(client_socket)
+            websocket_send_locks[client_socket] = threading.Lock()
 
-        print(
-            f"[WS] Browser connected: "
-            f"{client_address}"
-        )
+        print(f"[WS] Browser connected: {client_address}")
 
         send_json_websocket(
             client_socket,
             {
                 "type": "connection",
                 "status": "connected",
-                "message": (
-                    "Connected to FlareWatch backend"
-                ),
+                "message": ("Connected to FlareWatch backend"),
             },
         )
 
         while True:
-
-            frame = receive_websocket_frame(
-                client_socket
-            )
+            frame = receive_websocket_frame(client_socket)
 
             if frame is None:
                 break
 
-            opcode = frame[
-                "opcode"
-            ]
+            opcode = frame["opcode"]
 
             if opcode == 0x1:
-
                 try:
+                    text = frame["payload"].decode("utf-8")
 
-                    text = frame[
-                        "payload"
-                    ].decode("utf-8")
-
-                    data = json.loads(
-                        text
-                    )
+                    data = json.loads(text)
 
                 except UnicodeDecodeError:
-
                     send_json_websocket(
                         client_socket,
                         {
                             "type": "error",
-                            "error": (
-                                "Invalid UTF-8 "
-                                "WebSocket payload"
-                            ),
+                            "error": ("Invalid UTF-8 WebSocket payload"),
                         },
                     )
 
                     continue
 
                 except json.JSONDecodeError as error:
-
                     send_json_websocket(
                         client_socket,
                         {
                             "type": "error",
-                            "error": (
-                                f"Invalid JSON: {error}"
-                            ),
+                            "error": (f"Invalid JSON: {error}"),
                         },
                     )
 
                     continue
 
-                print(
-                    f"[WS] Browser message: "
-                    f"{text}"
-                )
+                print(f"[WS] Browser message: {text}")
 
                 handle_browser_json(
                     client_socket,
@@ -1538,7 +1342,6 @@ def handle_websocket_client(
                 )
 
             elif opcode == 0x8:
-
                 send_websocket_frame(
                     client_socket,
                     b"",
@@ -1548,7 +1351,6 @@ def handle_websocket_client(
                 break
 
             elif opcode == 0x9:
-
                 send_websocket_frame(
                     client_socket,
                     frame["payload"],
@@ -1559,11 +1361,7 @@ def handle_websocket_client(
                 pass
 
             else:
-
-                print(
-                    f"[WS] Unsupported opcode: "
-                    f"{opcode}"
-                )
+                print(f"[WS] Unsupported opcode: {opcode}")
 
     except (
         ProtocolError,
@@ -1571,19 +1369,11 @@ def handle_websocket_client(
         OSError,
         ValueError,
     ) as error:
-
-        print(
-            f"[WS] Error from "
-            f"{client_address}: {error}"
-        )
+        print(f"[WS] Error from {client_address}: {error}")
 
     finally:
-
         with websocket_clients_lock:
-
-            websocket_clients.discard(
-                client_socket
-            )
+            websocket_clients.discard(client_socket)
 
             websocket_send_locks.pop(
                 client_socket,
@@ -1595,15 +1385,13 @@ def handle_websocket_client(
         except OSError:
             pass
 
-        print(
-            f"[WS] Browser disconnected: "
-            f"{client_address}"
-        )
+        print(f"[WS] Browser disconnected: {client_address}")
 
 
 # ============================================================
 # WEBSOCKET SERVER :4005
 # ============================================================
+
 
 def start_websocket_server():
 
@@ -1627,16 +1415,10 @@ def start_websocket_server():
 
     server.listen(5)
 
-    print(
-        f"[WS] WebSocket server listening "
-        f"on ws://localhost:{WEBSOCKET_PORT}"
-    )
+    print(f"[WS] WebSocket server listening on ws://localhost:{WEBSOCKET_PORT}")
 
     while True:
-
-        client_socket, client_address = (
-            server.accept()
-        )
+        client_socket, client_address = server.accept()
 
         thread = threading.Thread(
             target=handle_websocket_client,
@@ -1654,6 +1436,7 @@ def start_websocket_server():
 # MAIN
 # ============================================================
 
+
 def main():
 
     # 1. Python must listen on :4002 before Rust connects.
@@ -1664,7 +1447,6 @@ def main():
 
     rust_response_thread.start()
 
-
     # 2. Python listens on :4004 for Dev2.
     dev2_thread = threading.Thread(
         target=start_dev2_server,
@@ -1673,35 +1455,22 @@ def main():
 
     dev2_thread.start()
 
-
     # 3. Python connects to Rust's :4000.
     try:
-
         connect_to_rust()
 
     except OSError as error:
+        print(f"[RUST:4000] Initial connection failed: {error}")
 
-        print(
-            f"[RUST:4000] Initial connection failed: "
-            f"{error}"
-        )
-
-        print(
-            "[RUST:4000] :4002, :4004 and WebSocket "
-            "listeners will continue running."
-        )
-
+        print("[RUST:4000] :4002, :4004 and WebSocket listeners will continue running.")
 
     # 4. Browser connects to :4005.
     start_websocket_server()
 
 
 if __name__ == "__main__":
-
     try:
         main()
 
     except KeyboardInterrupt:
-        print(
-            "\n[SERVER] Shutting down..."
-        )
+        print("\n[SERVER] Shutting down...")
