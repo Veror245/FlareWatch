@@ -9,7 +9,7 @@ use std::{
     sync::Mutex,
 };
 
-const PATTERNS: &str = include_str!("../../aho_patterns.txt");
+const PATTERNS: &str = include_str!("../aho_patterns.txt");
 
 fn main() -> io::Result<()> {
     let mut ac = AhoCorasick::default();
@@ -223,7 +223,7 @@ fn build_id_to_threat_table() -> [ThreatType; 212] {
 }
 
 pub fn server_main(ac: Arc<AhoCorasick>, index: Arc<Mutex<ThreatIndex>>) -> io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:4000")?;
+    let listener = TcpListener::bind("0.0.0.0:4000")?;
     println!("Server is listening on {:?}", listener.local_addr()?);
 
     let threat_table = build_id_to_threat_table();
@@ -261,8 +261,12 @@ fn handle_client(
     let mut threats_count: u64 = 0;
     let mut t1 = time::Instant::now();
     let tottime = time::Instant::now();
+    let analysis_host = std::env::var("ANALYSIS_HOST").unwrap_or("127.0.0.1".into());
+    let backend_host = std::env::var("BACKEND_HOST").unwrap_or("127.0.0.1".into());
 
-    let mut downstream_backend = match TcpStream::connect("127.0.0.1:4002") {
+    let analysis_addr = format!("{}:4001", analysis_host);
+    let backend_addr = format!("{}:4002", backend_host);
+    let mut downstream_backend = match TcpStream::connect(&backend_addr) {
         Ok(stream) => {
             println!("Server is writing to backend {:?}", stream.local_addr()?);
             Some(stream)
@@ -273,7 +277,7 @@ fn handle_client(
         }
     };
 
-    let mut downstream_analysis = match TcpStream::connect("127.0.0.1:4001") {
+    let mut downstream_analysis = match TcpStream::connect(&analysis_addr) {
         Ok(stream) => {
             println!("Server is writing to analysus {:?}", stream.local_addr()?);
             Some(stream)
@@ -302,11 +306,12 @@ fn handle_client(
                     } else {
                         eprintln!("failed to lock index");
                     }
-                    let payloadlen = results.len() + 1;
-                    let mut frame = Vec::with_capacity(payloadlen);
+                    let result_bytes = results.join("\n").into_bytes();
+                    let payloadlen = result_bytes.len() + 1;
+                    let mut frame = Vec::with_capacity(payloadlen + 4);
                     frame.extend_from_slice(&(payloadlen as u32).to_be_bytes());
                     frame.push(5);
-                    frame.extend_from_slice(&(results.join("\n").into_bytes()));
+                    frame.extend_from_slice(&result_bytes);
 
                     if let Some(stream) = downstream_backend.as_mut() {
                         if let Err(e) = stream.write_all(&frame) {
