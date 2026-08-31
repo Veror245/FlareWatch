@@ -1,0 +1,24 @@
+
+=== RUST ===
+$ cargo tree --manifest-path engine/Cargo.toml
+engine v0.1.0 (/mnt/shared/projects/hackathons/FlareWatch/engine)
+
+=== PYTHON ===
+No requirements.txt, pyproject.toml, or third-party runtime packages.
+Python components use only the standard library.
+
+Python runtime files:
+- analysis/main.py
+- backend/main_server.py
+- log_gen.py
+
+=== FRONTEND ===
+No package.json, node_modules, or npm dependencies.
+Frontend is a standalone index.html using browser-native APIs.
+
+Frontend:
+- frontend/index.html
+- Native HTML/CSS/JavaScript
+- Native WebSocket API
+- Native Canvas API
+- Native DOM APIs

@@ -11,7 +11,7 @@ HOST = "127.0.0.1"
 PORT = 4000
 
 TARGET_RATE = 55_000
-BATCH_SIZE = 100
+BATCH_SIZE = 50
 
 random.seed()
 
