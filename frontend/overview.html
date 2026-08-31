@@ -1467,10 +1467,10 @@
           localLogsPerSecond.toLocaleString();
   }, 1000);
 
-  const backendWs = new WebSocket('ws://localhost:4003');
+  const backendWs = new WebSocket('ws://localhost:4005');
 
   backendWs.onopen = () => {
-      console.log('[Frontend] Connected to rustTCP_handler.py WebSocket (4003)');
+      console.log('[Frontend] Connected to rustTCP_handler.py WebSocket (4005)');
       const indicator = document.getElementById('status-indicator');
       if (indicator) {
           indicator.innerHTML = '<span class="status-dot"></span> ONLINE';

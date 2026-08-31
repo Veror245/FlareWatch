@@ -759,7 +759,7 @@
     }
 
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.hostname}:4003`;
+    const wsUrl = `${wsProtocol}//${window.location.hostname}:4005`;
 
     console.log('[FlareWatch] Opening WebSocket:', wsUrl);
 
@@ -770,7 +770,7 @@
       ws.onopen = () => {
         searchSocket = ws;
         searchSocketPromise = null;
-        console.log('[FlareWatch] WebSocket connected to port 4003.');
+        console.log('[FlareWatch] WebSocket connected to port 4005.');
         resolve(ws);
       };
 
@@ -785,7 +785,7 @@
           }
 
           if (data.type === 'connection') {
-            console.log('[FlareWatch] Port 4003 connection confirmed.');
+            console.log('[FlareWatch] Port 4005 connection confirmed.');
             return;
           }
 
@@ -810,7 +810,7 @@
             });
           }
         } catch (error) {
-          console.error('[FlareWatch] Invalid response from port 4003:', error);
+          console.error('[FlareWatch] Invalid response from port 4005:', error);
         }
       };
 
@@ -830,7 +830,7 @@
 
       ws.onerror = (error) => {
         searchSocketPromise = null;
-        console.error('[FlareWatch] WebSocket error on port 4003:', error);
+        console.error('[FlareWatch] WebSocket error on port 4005:', error);
         reject(error);
       };
     });
@@ -962,7 +962,7 @@
     getSearchSocket()
       .then((ws) => {
         if (ws.readyState !== WebSocket.OPEN) {
-          console.error('[FlareWatch] WebSocket to port 4003 is not open.');
+          console.error('[FlareWatch] WebSocket to port 4005 is not open.');
           return;
         }
 
@@ -971,7 +971,7 @@
         console.log('[FlareWatch] Search request sent.');
       })
       .catch((error) => {
-        console.error('[FlareWatch] Could not connect to port 4003:', error);
+        console.error('[FlareWatch] Could not connect to port 4005:', error);
         if (searchBtn) {
           searchBtn.disabled = false;
           searchBtn.textContent = 'Search';
