@@ -5,10 +5,7 @@ import threading
 import hashlib
 import base64
 
-
-# ============================================================
 # CONFIGURATION
-# ============================================================
 
 # Dev 2 -> Dev 1
 DEV2_HOST = "127.0.0.1"
@@ -18,10 +15,7 @@ DEV2_PORT = 4004
 WEBSOCKET_HOST = "0.0.0.0"
 WEBSOCKET_PORT = 4005
 
-
-# ============================================================
 # OUTBOUND THREAT MAPPING
-# ============================================================
 
 OUTBOUND_THREATS = {
     9: "BRUTE_FORCE",
@@ -35,41 +29,21 @@ OUTBOUND_THREATS = {
 }
 
 
-# ============================================================
 # MESSAGE TYPES
-# ============================================================
-
-# Dev 2 currently sends:
-#
-#     msg_type = 1
-#
-# in send_incident().
-#
-# Therefore we expect 1 here.
 
 MESSAGE_TYPE_THREAT = 1
 
 
-# ============================================================
 # CONNECTED BROWSERS
-# ============================================================
 
 websocket_clients = set()
 
 websocket_clients_lock = threading.Lock()
 
 
-# ============================================================
 # TCP HELPER
-# ============================================================
 
 def recv_exact(sock, num_bytes):
-    """
-    Receive exactly num_bytes from a TCP socket.
-
-    TCP is a byte stream, so one sendall() from Dev 2
-    does NOT necessarily correspond to one recv() here.
-    """
 
     data = bytearray()
 
@@ -87,31 +61,13 @@ def recv_exact(sock, num_bytes):
     return bytes(data)
 
 
-# ============================================================
 # PARSE INCIDENT FROM DEV 2
-# ============================================================
 
 def parse_incident(payload):
-    """
-    Parse the payload sent by Dev 2.
-
-    Dev 2 sends:
-
-        [1 byte] threat_id
-        [1 byte] IP length
-        [N bytes] IP
-        [2 bytes] details length
-        [N bytes] details
-
-    The 4-byte total message length and the
-    1-byte message type are handled outside this function.
-    """
 
     offset = 0
 
-    # --------------------------------------------------------
     # THREAT ID
-    # --------------------------------------------------------
 
     if len(payload) < 1:
         raise ValueError("Missing threat ID")
@@ -120,18 +76,14 @@ def parse_incident(payload):
 
     offset += 1
 
-    # --------------------------------------------------------
     # THREAT NAME
-    # --------------------------------------------------------
 
     threat_name = OUTBOUND_THREATS.get(
         threat_id,
         f"UNKNOWN_THREAT_{threat_id}"
     )
 
-    # --------------------------------------------------------
     # IP LENGTH
-    # --------------------------------------------------------
 
     if offset + 1 > len(payload):
         raise ValueError("Missing IP length")
@@ -140,9 +92,7 @@ def parse_incident(payload):
 
     offset += 1
 
-    # --------------------------------------------------------
     # IP
-    # --------------------------------------------------------
 
     if offset + ip_length > len(payload):
         raise ValueError("Incomplete IP address")
@@ -158,9 +108,7 @@ def parse_incident(payload):
         errors="replace"
     )
 
-    # --------------------------------------------------------
     # DETAILS LENGTH
-    # --------------------------------------------------------
 
     if offset + 2 > len(payload):
         raise ValueError("Missing details length")
@@ -172,9 +120,7 @@ def parse_incident(payload):
 
     offset += 2
 
-    # --------------------------------------------------------
     # DETAILS
-    # --------------------------------------------------------
 
     if offset + details_length > len(payload):
         raise ValueError("Incomplete details")
@@ -190,9 +136,7 @@ def parse_incident(payload):
         errors="replace"
     )
 
-    # --------------------------------------------------------
     # MAKE SURE NOTHING IS LEFT OVER
-    # --------------------------------------------------------
 
     if offset != len(payload):
 
@@ -201,9 +145,7 @@ def parse_incident(payload):
             f"extra bytes in incident"
         )
 
-    # --------------------------------------------------------
     # BROWSER-FACING EVENT
-    # --------------------------------------------------------
 
     return {
         "type": "big_event",
@@ -215,20 +157,12 @@ def parse_incident(payload):
     }
 
 
-# ============================================================
 # HANDLE DEV 2 TCP CONNECTION
-# ============================================================
 
 def handle_dev2_client(
     conn,
     addr
 ):
-    """
-    Handle the connection from Dev 2.
-
-    Dev 2 can send multiple incidents over
-    the same TCP connection.
-    """
 
     print(
         f"[DEV2] Connected from {addr}"
@@ -238,9 +172,7 @@ def handle_dev2_client(
 
         while True:
 
-            # ------------------------------------------------
             # 1. Read 4-byte message length
-            # ------------------------------------------------
 
             length_bytes = recv_exact(
                 conn,
@@ -255,9 +187,7 @@ def handle_dev2_client(
                 length_bytes
             )[0]
 
-            # ------------------------------------------------
             # Safety check
-            # ------------------------------------------------
 
             if message_length < 1:
                 raise ValueError(
@@ -270,9 +200,7 @@ def handle_dev2_client(
                     "Message too large"
                 )
 
-            # ------------------------------------------------
             # 2. Read 1-byte message type
-            # ------------------------------------------------
 
             type_bytes = recv_exact(
                 conn,
@@ -285,9 +213,6 @@ def handle_dev2_client(
             message_type = type_bytes[0]
 
             # 3. Read payload
-            # message_length includes the message type,
-            # We already consumed that 1 byte.
-            # Therefore only message_length - 1 bytes remain.
 
             payload_length = message_length - 1
 
@@ -299,9 +224,7 @@ def handle_dev2_client(
             if payload is None:
                break
 
-            # ------------------------------------------------
             # 4. Make sure this is a THREAT message
-            # ------------------------------------------------
 
             if message_type != MESSAGE_TYPE_THREAT:
 
@@ -312,17 +235,13 @@ def handle_dev2_client(
 
                 continue
 
-            # ------------------------------------------------
             # 5. Parse incident
-            # ------------------------------------------------
 
             event = parse_incident(
                 payload
             )
 
-            # ------------------------------------------------
             # 6. DEBUG OUTPUT
-            # ------------------------------------------------
 
             print(
                 "\n[DEV2 -> DEV1] Incident received:"
@@ -335,9 +254,7 @@ def handle_dev2_client(
                 )
             )
 
-            # ------------------------------------------------
             # 7. Send to browsers
-            # ------------------------------------------------
 
             broadcast_json(
                 event
@@ -362,9 +279,7 @@ def handle_dev2_client(
         )
 
 
-# ============================================================
 # START DEV 2 TCP SERVER
-# ============================================================
 
 def start_dev2_server():
 
@@ -406,17 +321,11 @@ def start_dev2_server():
         thread.start()
 
 
-# ============================================================
 # WEBSOCKET HANDSHAKE
-# ============================================================
 
 def perform_websocket_handshake(
     client_socket
 ):
-    """
-    Convert the browser's HTTP connection
-    into a WebSocket connection.
-    """
 
     request = b""
 
@@ -500,20 +409,13 @@ def perform_websocket_handshake(
     )
 
 
-# ============================================================
 # SEND WEBSOCKET FRAME
-# ============================================================
 
 def send_websocket_frame(
     client_socket,
     payload,
     opcode=0x1
 ):
-    """
-    Send one WebSocket frame.
-
-    opcode 0x1 = text.
-    """
 
     if isinstance(
         payload,
@@ -563,18 +465,12 @@ def send_websocket_frame(
     )
 
 
-# ============================================================
 # SEND JSON
-# ============================================================
 
 def send_json_websocket(
     client_socket,
     data
 ):
-    """
-    Convert Python dictionary to JSON
-    and send it as a WebSocket text frame.
-    """
 
     message = json.dumps(
         data
@@ -586,21 +482,14 @@ def send_json_websocket(
     )
 
 
-# ============================================================
 # BROADCAST JSON
-# ============================================================
 
 def broadcast_json(data):
-    """
-    Send the event to every connected browser.
-    """
 
     message = json.dumps(
         data
     )
 
-    # Take a snapshot so the set can safely
-    # change while we're sending.
     with websocket_clients_lock:
 
         clients = list(
@@ -636,19 +525,11 @@ def broadcast_json(data):
                 )
 
 
-# ============================================================
 # RECEIVE WEBSOCKET FRAME
-# ============================================================
 
 def receive_websocket_frame(
     client_socket
 ):
-    """
-    Receive one WebSocket frame from the browser.
-
-    We mainly need this so that the server can
-    handle browser close/ping frames.
-    """
 
     header = recv_exact(
         client_socket,
@@ -730,17 +611,12 @@ def receive_websocket_frame(
     }
 
 
-# ============================================================
 # HANDLE BROWSER
-# ============================================================
 
 def handle_websocket_client(
     client_socket,
     client_address
 ):
-    """
-    Manage one browser WebSocket connection.
-    """
 
     try:
 
@@ -834,9 +710,7 @@ def handle_websocket_client(
         )
 
 
-# ============================================================
 # START WEBSOCKET SERVER
-# ============================================================
 
 def start_websocket_server():
 
@@ -883,15 +757,11 @@ def start_websocket_server():
         thread.start()
 
 
-# ============================================================
 # MAIN
-# ============================================================
 
 def main():
 
-    # --------------------------------------------------------
     # Start Dev 2 receiver in background.
-    # --------------------------------------------------------
 
     tcp_thread = threading.Thread(
         target=start_dev2_server,
@@ -900,16 +770,12 @@ def main():
 
     tcp_thread.start()
 
-    # --------------------------------------------------------
     # Start WebSocket server.
-    # --------------------------------------------------------
 
     start_websocket_server()
 
 
-# ============================================================
 # ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
 
