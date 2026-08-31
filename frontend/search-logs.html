@@ -834,6 +834,8 @@
   }
 
   function updateSearchResults(query, results) {
+    sessionStorage.setItem('flarewatch_search_state', JSON.stringify({ query, results }));
+
     if (resultsMetaSpans.length >= 2) {
       resultsMetaSpans[0].textContent = String(results.length);
       resultsMetaSpans[1].textContent = query;
@@ -1096,6 +1098,19 @@
 
   initGrid();
   requestAnimationFrame(render);
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedState = sessionStorage.getItem('flarewatch_search_state');
+    if (savedState) {
+      try {
+        const { query, results } = JSON.parse(savedState);
+        if (searchInput) searchInput.value = query;
+        updateSearchResults(query, results);
+      } catch (e) {
+        console.error('[FlareWatch] Failed to restore search state:', e);
+      }
+    }
+  });
 </script>
 
 </body>
