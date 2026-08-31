@@ -2722,7 +2722,8 @@ template { display: none !important; }
     <div class="panel-card">
       <!-- Controls Filter Bar -->
       <div class="filter-bar">
-        <select class="custom-select" id="typeFilter">
+       <select class="custom-select" id="typeFilter">
+          <option value="ALL">All</option>
           <option value="Brute Force">Brute Force</option>
           <option value="Credential Attack">Credential Attack</option>
           <option value="Account Compromise">Account Compromise</option>
@@ -3313,14 +3314,22 @@ template { display: none !important; }
   }
 
   typeFilter.addEventListener('change', renderTable);
-  severityFilter.addEventListener('change', renderTable);
-  searchInput.addEventListener('input', renderTable);
-  clearBtn.addEventListener('click', () => {
-    typeFilter.value = 'ALL';
-    severityFilter.value = 'ALL';
-    searchInput.value = '';
-    renderTable();
-  });
+
+if (severityFilter) severityFilter.addEventListener('change', renderTable);
+
+if (searchInput) searchInput.addEventListener('input', renderTable);
+
+clearBtn.addEventListener('click', () => {
+
+  typeFilter.value = 'ALL';
+
+  if (severityFilter) severityFilter.value = 'ALL';
+
+  if (searchInput) searchInput.value = '';
+
+  renderTable();
+
+});
 
   renderTable();
 
