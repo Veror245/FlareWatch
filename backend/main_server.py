@@ -1,21 +1,3 @@
-"""
-FlareWatch merged backend.
-
-Architecture
-------------
-Browser <-> WebSocket :4005 <-> Python
-
-Python -> Rust :4000
-    Rust listens on 4000. Python connects and sends SEARCH requests.
-
-Rust -> Python :4002
-    Python listens on 4002. Rust connects and sends protocol messages.
-
-Dev 2 -> Python :4004
-    Python listens on 4004. Dev 2 sends generated big-event incidents.
-
-Only Python standard-library modules are used.
-"""
 
 import socket
 import struct
@@ -26,10 +8,7 @@ import base64
 import queue
 import re
 
-
-# ============================================================
 # CONFIGURATION
-# ============================================================
 
 RUST_HOST = "rust-engine"
 RUST_REQUEST_PORT = 4000
@@ -46,9 +25,7 @@ WEBSOCKET_PORT = 4005
 MAX_MESSAGE_SIZE = 1024 * 1024
 
 
-# ============================================================
 # FLAREWATCH MESSAGE TYPES
-# ============================================================
 
 TYPE_LOG = 0
 TYPE_THREAT = 1
@@ -60,9 +37,7 @@ TYPE_SEARCH = 5
 MESSAGE_TYPE_THREAT = TYPE_THREAT
 
 
-# ============================================================
 # THREAT TYPES
-# ============================================================
 
 THREAT_TYPES = {
     0: "SQLI",
@@ -100,9 +75,7 @@ class ProtocolError(Exception):
     pass
 
 
-# ============================================================
 # GLOBAL STATE
-# ============================================================
 
 # Python -> Rust :4000
 rust_request_socket = None
@@ -114,8 +87,6 @@ rust_response_sockets = set()
 rust_response_socket_lock = threading.Lock()
 
 # SEARCH response coordination.
-# The current SEARCH protocol has no request/correlation ID, so
-# only one SEARCH transaction is allowed at a time.
 search_lock = threading.Lock()
 search_response_queue = queue.Queue()
 
@@ -125,9 +96,7 @@ websocket_clients_lock = threading.Lock()
 websocket_send_locks = {}
 
 
-# ============================================================
 # TCP HELPER
-# ============================================================
 
 
 def recv_exact(sock, size):
@@ -151,9 +120,7 @@ def recv_exact(sock, size):
     return bytes(data)
 
 
-# ============================================================
 # PROTOCOL READ HELPERS
-# ============================================================
 
 
 def read_u8(data, offset):
@@ -217,9 +184,7 @@ def read_string_u16(data, offset):
     return value, end
 
 
-# ============================================================
 # RUST PROTOCOL PARSERS
-# ============================================================
 
 
 def parse_log(payload):
@@ -330,12 +295,6 @@ def parse_stats(payload):
 
 
 def parse_event(payload):
-    """
-    EVENT:
-
-        [Event type u8][IP len u8][IP]
-        [Request len u16][Request]
-    """
 
     offset = 0
 
@@ -366,18 +325,6 @@ def parse_event(payload):
 
 
 def parse_search_response(payload):
-    """
-    SEARCH RESPONSE:
-
-        [TIMESTAMP][THREAT][IP][REQ]
-
-    One record per line.
-
-    Example:
-
-        [1725000000][SQLI][127.0.0.1][SELECT ...]
-        [1725000001][XSS][10.0.0.5][<script>...]
-    """
 
     text = payload.decode(
         "utf-8",
@@ -429,11 +376,6 @@ def parse_search_response(payload):
 
 
 def parse_rust_message(message):
-    """
-    Parse a complete Rust message after the 4-byte length:
-
-        [1-byte type][payload]
-    """
 
     if len(message) < 1:
         raise ProtocolError("Message does not contain a type byte")
@@ -469,16 +411,10 @@ def parse_rust_message(message):
     raise ProtocolError(f"Unknown message type: {message_type}")
 
 
-# ============================================================
 # PYTHON -> RUST :4000
-# ============================================================
 
 
 def connect_to_rust():
-    """
-    Rust is the TCP server on :4000.
-    Python connects to it.
-    """
 
     global rust_request_socket
 
@@ -516,7 +452,6 @@ def connect_to_rust():
 
 
 def send_to_rust(data):
-    """Send one complete framed request to Rust :4000."""
 
     global rust_request_socket
 
@@ -549,16 +484,10 @@ def send_to_rust(data):
             raise ConnectionError("Rust request connection was lost") from error
 
 
-# ============================================================
 # RUST -> PYTHON :4002
-# ============================================================
 
 
 def start_rust_response_server():
-    """
-    Python listens on :4002.
-    Rust connects here and sends responses/events.
-    """
 
     server = socket.socket(
         socket.AF_INET,
@@ -607,15 +536,6 @@ def handle_rust_response_connection(
     conn,
     addr,
 ):
-    """
-    Read framed Rust messages:
-
-        [4-byte length][1-byte type][payload]
-
-    SEARCH responses are routed to search_response_queue.
-    All other messages are parsed and broadcast to browsers.
-    """
-
     try:
         while True:
             length_bytes = recv_exact(
@@ -689,20 +609,10 @@ def handle_rust_response_connection(
             pass
 
 
-# ============================================================
 # SEARCH REQUEST / RESPONSE
-# ============================================================
 
 
 def build_search_message(request):
-    """
-    Build Rust SEARCH:
-
-        [4-byte length]
-        [1-byte type = 5]
-        [2-byte request length]
-        [UTF-8 request]
-    """
 
     request_bytes = request.encode("utf-8")
 
@@ -730,13 +640,6 @@ def build_search_message(request):
 
 
 def search_rust(request):
-    """
-    Send SEARCH to Rust :4000 and wait for its SEARCH
-    response on Rust -> Python :4002.
-
-    No correlation ID exists in the protocol, so SEARCH
-    requests are serialized.
-    """
 
     with search_lock:
         # Clear stale responses.
@@ -764,21 +667,10 @@ def search_rust(request):
         return result
 
 
-# ============================================================
 # DEV 2 -> PYTHON :4004
-# ============================================================
 
 
 def parse_incident(payload):
-    """
-    Dev2 incident payload:
-
-        [Threat ID u8]
-        [IP Length u8]
-        [IP]
-        [Details Length u16]
-        [Details]
-    """
 
     offset = 0
 
@@ -925,9 +817,7 @@ def start_dev2_server():
         thread.start()
 
 
-# ============================================================
 # WEBSOCKET HANDSHAKE
-# ============================================================
 
 
 def perform_websocket_handshake(
@@ -994,9 +884,7 @@ def perform_websocket_handshake(
     client_socket.sendall(response.encode("utf-8"))
 
 
-# ============================================================
 # WEBSOCKET FRAMES
-# ============================================================
 
 
 def send_websocket_frame(
@@ -1120,9 +1008,7 @@ def receive_websocket_frame(
     }
 
 
-# ============================================================
 # WEBSOCKET JSON
-# ============================================================
 
 
 def send_json_websocket(
@@ -1152,11 +1038,6 @@ def send_json_websocket(
 
 
 def broadcast_json(data):
-    """
-    Send one structured JSON message to every connected browser.
-
-    Both Rust messages and Dev2 incidents use this function.
-    """
 
     message = json.dumps(
         data,
@@ -1198,28 +1079,13 @@ def broadcast_json(data):
                 )
 
 
-# ============================================================
 # BROWSER MESSAGE HANDLING
-# ============================================================
 
 
 def handle_browser_json(
     client_socket,
     data,
 ):
-    """
-    Browser application protocol.
-
-    SEARCH:
-
-        {
-            "type": 5,
-            "request": "error"
-        }
-
-    The SEARCH is sent to Rust :4000. Rust's response arrives
-    on Python :4002 and is returned on this same WebSocket.
-    """
 
     message_type = data.get("type")
 
@@ -1388,9 +1254,7 @@ def handle_websocket_client(
         print(f"[WS] Browser disconnected: {client_address}")
 
 
-# ============================================================
 # WEBSOCKET SERVER :4005
-# ============================================================
 
 
 def start_websocket_server():
@@ -1432,9 +1296,7 @@ def start_websocket_server():
         thread.start()
 
 
-# ============================================================
 # MAIN
-# ============================================================
 
 
 def main():
