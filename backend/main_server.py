@@ -31,7 +31,7 @@ import re
 # CONFIGURATION
 # ============================================================
 
-RUST_HOST = "0.0.0.0"
+RUST_HOST = "rust-engine"
 RUST_REQUEST_PORT = 4000
 
 RUST_RESPONSE_HOST = "0.0.0.0"
