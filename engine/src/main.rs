@@ -12,8 +12,6 @@ use std::{
 const PATTERNS: &str = include_str!("../../aho_patterns.txt");
 
 fn main() -> io::Result<()> {
-    println!("Hello, world!");
-
     let mut ac = AhoCorasick::default();
     load_patterns(&mut ac);
     ac.create_failure_links();
@@ -27,7 +25,6 @@ fn main() -> io::Result<()> {
 }
 
 fn load_patterns(ac: &mut AhoCorasick) {
-    let mut count = 0;
     for line in PATTERNS.lines() {
         let line = line.trim();
         if line.is_empty() {
@@ -40,13 +37,11 @@ fn load_patterns(ac: &mut AhoCorasick) {
             let id: usize = id_str.trim().parse().expect("valid pattern ID");
             if !pattern.is_empty() {
                 ac.add(pattern.as_bytes(), id);
-                count += 1;
             }
         } else {
             eprintln!("Skipping malformed pattern line: {line}");
         }
     }
-    println!("Loaded {} patterns", count);
 }
 
 #[derive(Debug)]
@@ -232,7 +227,6 @@ pub fn server_main(ac: Arc<AhoCorasick>, index: Arc<Mutex<ThreatIndex>>) -> io::
     println!("Server is listening on {:?}", listener.local_addr()?);
 
     let threat_table = build_id_to_threat_table();
-    //let mut index = ThreatIndex::default();
 
     for stream in listener.incoming() {
         if let Ok(mut stream) = stream {
@@ -456,8 +450,6 @@ fn handle_client(
                 if elapsed >= 2.00 {
                     t1 = time::Instant::now();
                     let logsec = (processed as f64 / totelapsed) as u32;
-                    println!("logs/sec: {:?}", logsec);
-                    println!("Total Threats: {}", threats_count);
                     let mut payload = Vec::new();
 
                     payload.extend_from_slice(&(processed.to_be_bytes()));
