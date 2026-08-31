@@ -1,36 +1,4 @@
-"""
-FlareWatch Backend
-==================
-
-ARCHITECTURE FOR SEARCH + LIVE TELEMETRY
-
-Browser
-   |
-   | WebSocket :4005
-   v
-Python Backend
-   |
-   | TCP :4000
-   v
-Rust TCP Server
-
-SEARCH:
-Browser -> Python -> Rust -> Python -> same Browser WebSocket
-
-LIVE RUST EVENTS:
-Rust -> Python -> all connected Browser WebSockets
-
-The browser remains a WebSocket client. Python is the only
-component that talks to the browser over WebSocket.
-
-Only Python standard-library modules are used.
-"""
-
-
-
-# ============================================================
 # IMPORTS
-# ============================================================
 
 import socket
 import struct
@@ -38,47 +6,23 @@ import threading
 import json
 import hashlib
 import base64
-import time
 import queue
 
-
-# ============================================================
 # CONFIGURATION
-# ============================================================
-
-# ------------------------------------------------------------
-# Rust TCP SERVER
-#
-# Python connects TO Rust on port 4000.
-# Rust is the TCP server.
-# ------------------------------------------------------------
 
 RUST_HOST = "127.0.0.1"
 RUST_REQUEST_PORT = 4000
 RUST_RESPONSE_HOST = "0.0.0.0"
 RUST_RESPONSE_PORT = 4002
 
-
-# ------------------------------------------------------------
-# Browser WebSocket server
-#
-# Keep the existing project WebSocket port: 4003.
-# ------------------------------------------------------------
-
 WS_HOST = "0.0.0.0"
 WS_PORT = 4003
 
-
-# ------------------------------------------------------------
 # Maximum Rust IPC message size
-# ------------------------------------------------------------
 
 MAX_MESSAGE_SIZE = 1024 * 1024  # 1 MB
 
-
-# ============================================================
 # FLAREWATCH MESSAGE TYPES
-# ============================================================
 
 TYPE_LOG = 0
 TYPE_THREAT = 1
@@ -87,10 +31,7 @@ TYPE_STATS = 3
 TYPE_EVENT = 4
 TYPE_SEARCH = 5
 
-
-# ------------------------------------------------------------
 # Rust connection state
-# ------------------------------------------------------------
 
 rust_request_socket = None
 rust_request_lock = threading.Lock()
@@ -100,21 +41,13 @@ rust_response_socket = set()
 rust_response_socket_lock = threading.Lock()
 rust_response_connected = threading.Event()
 
-
-# ------------------------------------------------------------
 # SEARCH response coordination
-#
-# The current protocol has no request-id field, so only one
-# SEARCH request may be in flight at a time.
-# ------------------------------------------------------------
 
 search_lock = threading.Lock()
 search_response_queue = queue.Queue()
 
 
-# ============================================================
 # THREAT TYPES
-# ============================================================
 
 THREAT_TYPES = {
     0: "SQLI",
@@ -128,79 +61,22 @@ THREAT_TYPES = {
     8: "HTTP_ANOMALY",
 }
 
-# ============================================================
 # PROTOCOL EXCEPTION
-# ============================================================
 
 class ProtocolError(Exception):
-    """
-    Raised when data received from Rust does not follow
-    the FlareWatch binary protocol.
-    """
 
     pass
 
-
-# ============================================================
 # GLOBAL WEBSOCKET CLIENT STORAGE
-# ============================================================
-
-"""
-Every connected browser WebSocket is stored here.
-
-Example:
-
-    websocket_clients = {
-        browser_socket_1,
-        browser_socket_2,
-        browser_socket_3
-    }
-
-We protect this set using websocket_clients_lock because
-multiple threads may access it.
-"""
 
 websocket_clients = set()
 
 websocket_clients_lock = threading.Lock()
 
 
-# ============================================================
 # TCP: RECEIVE EXACTLY N BYTES
-# ============================================================
 
 def recv_exact(sock, size):
-    """
-    Receive exactly `size` bytes from a TCP socket.
-
-    TCP is a STREAM, not a message-based protocol.
-
-    Therefore:
-
-        sock.recv(100)
-
-    does NOT guarantee that exactly 100 bytes will arrive.
-
-    We keep receiving until we have exactly the requested
-    number of bytes.
-
-    Parameters
-    ----------
-    sock:
-        Connected socket.
-
-    size:
-        Number of bytes required.
-
-    Returns
-    -------
-    bytes
-        Exactly `size` bytes.
-
-    None
-        If the peer closed the connection before sending
-        any bytes.
-    """
 
     data = bytearray()
 
@@ -226,16 +102,9 @@ def recv_exact(sock, size):
     return bytes(data)
 
 
-# ============================================================
 # PROTOCOL: READ u8
-# ============================================================
 
 def read_u8(data, offset):
-    """
-    Read an unsigned 8-bit integer.
-
-    u8 = 1 byte.
-    """
 
     if offset + 1 > len(data):
 
@@ -248,18 +117,9 @@ def read_u8(data, offset):
     return value, offset + 1
 
 
-# ============================================================
 # PROTOCOL: READ u16
-# ============================================================
 
 def read_u16(data, offset):
-    """
-    Read an unsigned 16-bit integer.
-
-    u16 = 2 bytes.
-
-    BIG-ENDIAN.
-    """
 
     if offset + 2 > len(data):
 
@@ -276,18 +136,9 @@ def read_u16(data, offset):
     return value, offset + 2
 
 
-# ============================================================
 # PROTOCOL: READ u32
-# ============================================================
 
 def read_u32(data, offset):
-    """
-    Read an unsigned 32-bit integer.
-
-    u32 = 4 bytes.
-
-    BIG-ENDIAN.
-    """
 
     if offset + 4 > len(data):
 
@@ -304,18 +155,9 @@ def read_u32(data, offset):
     return value, offset + 4
 
 
-# ============================================================
 # PROTOCOL: READ u64
-# ============================================================
 
 def read_u64(data, offset):
-    """
-    Read an unsigned 64-bit integer.
-
-    u64 = 8 bytes.
-
-    BIG-ENDIAN.
-    """
 
     if offset + 8 > len(data):
 
@@ -332,18 +174,9 @@ def read_u64(data, offset):
     return value, offset + 8
 
 
-# ============================================================
 # PROTOCOL: READ u8-LENGTH STRING
-# ============================================================
 
 def read_string_u8(data, offset):
-    """
-    Read:
-
-        [length u8][UTF-8 string]
-
-    Used for IP addresses.
-    """
 
     # Read string length.
     length, offset = read_u8(
@@ -377,18 +210,9 @@ def read_string_u8(data, offset):
     return value, end
 
 
-# ============================================================
 # PROTOCOL: READ u16-LENGTH STRING
-# ============================================================
 
 def read_string_u16(data, offset):
-    """
-    Read:
-
-        [length u16][UTF-8 string]
-
-    Used for request strings.
-    """
 
     # Read string length.
     length, offset = read_u16(
@@ -422,19 +246,9 @@ def read_string_u16(data, offset):
     return value, end
 
 
-# ============================================================
 # PARSE LOG
-# ============================================================
 
 def parse_log(payload):
-    """
-    LOG payload:
-
-        [IP len u8]
-        [IP]
-        [REQ len u16]
-        [REQ]
-    """
 
     offset = 0
 
@@ -461,20 +275,9 @@ def parse_log(payload):
     }
 
 
-# ============================================================
 # PARSE THREAT
-# ============================================================
 
 def parse_threat(payload):
-    """
-    THREAT payload:
-
-        [Threat type u8]
-        [IP len u8]
-        [IP]
-        [REQ len u16]
-        [REQ]
-    """
 
     offset = 0
 
@@ -517,19 +320,9 @@ def parse_threat(payload):
     }
 
 
-# ============================================================
 # PARSE NOTHREAT
-# ============================================================
 
 def parse_nothreat(payload):
-    """
-    NOTHREAT payload:
-
-        [IP len u8]
-        [IP]
-        [REQ len u16]
-        [REQ]
-    """
 
     offset = 0
 
@@ -556,22 +349,9 @@ def parse_nothreat(payload):
     }
 
 
-# ============================================================
 # PARSE STATS
-# ============================================================
 
 def parse_stats(payload):
-    """
-    STATS payload:
-
-        [Logs processed u64]
-        [Threats detected u64]
-        [Logs/sec u32]
-
-    Total:
-
-        8 + 8 + 4 = 20 bytes.
-    """
 
     EXPECTED_SIZE = 20
 
@@ -609,18 +389,9 @@ def parse_stats(payload):
     
 
 
-# ============================================================
 # PARSE COMPLETE RUST MESSAGE
-# ============================================================
 
 def parse_message(message):
-    """
-    Parse:
-
-        [1-byte type][payload]
-
-    The TCP layer has already consumed the 4-byte length.
-    """
 
     if len(message) < 1:
 
@@ -657,20 +428,9 @@ def parse_message(message):
         )
 
 
-# ============================================================
 # RUST REQUEST CONNECTION :4000
-# ============================================================
 
 def connect_to_rust():
-    """
-    Connect Python to the Rust TCP server on port 4000.
-
-    Direction:
-
-        Python --TCP--> Rust :4000
-
-    This socket is used ONLY for sending requests to Rust.
-    """
 
     global rust_request_socket
 
@@ -714,9 +474,6 @@ def connect_to_rust():
 
 
 def send_to_rust(data):
-    """
-    Send a complete protocol message to Rust over port 4000.
-    """
 
     global rust_request_socket
 
@@ -758,20 +515,9 @@ def send_to_rust(data):
             )
 
 
-# ============================================================
 # RUST RESPONSE SERVER :4002
-# ============================================================
 
 def start_rust_response_server():
-    """
-    Python listens on port 4002.
-
-    Rust connects to this port and sends responses/events.
-
-    Direction:
-
-        Rust --TCP--> Python :4002
-    """
 
     global rust_response_socket
 
@@ -834,21 +580,6 @@ def handle_rust_response_connection(
     client_socket,
     client_address
 ):
-    """
-    Read all Rust -> Python messages from the connection
-    accepted on port 4002.
-
-    Protocol:
-
-        [4-byte length]
-        [1-byte type]
-        [payload]
-
-    SEARCH responses are placed in the SEARCH queue.
-
-    Other Rust messages are parsed and broadcast to all
-    connected browsers.
-    """
 
     global rust_response_socket
 
@@ -856,9 +587,7 @@ def handle_rust_response_connection(
 
         while True:
 
-            # ------------------------------------------------
             # Read message length
-            # ------------------------------------------------
 
             length_bytes = recv_exact(
                 client_socket,
@@ -884,20 +613,12 @@ def handle_rust_response_connection(
                     "Rust message length must be at least 1"
                 )
 
-
             if message_length > MAX_MESSAGE_SIZE:
 
                 raise ProtocolError(
                     f"Rust message too large: "
                     f"{message_length}"
                 )
-
-
-            # ------------------------------------------------
-            # The length includes:
-            #
-            #     1-byte type + payload
-            # ------------------------------------------------
 
             message = recv_exact(
                 client_socket,
@@ -915,10 +636,7 @@ def handle_rust_response_connection(
             message_type = message[0]
             payload = message[1:]
 
-
-            # =================================================
             # SEARCH RESPONSE
-            # =================================================
 
             if message_type == TYPE_SEARCH:
 
@@ -932,10 +650,7 @@ def handle_rust_response_connection(
 
                 continue
 
-
-            # =================================================
             # NORMAL RUST TELEMETRY
-            # =================================================
 
             event = parse_rust_message(
                 message
@@ -951,7 +666,6 @@ def handle_rust_response_connection(
                     indent=4
                 )
             )
-
 
             # Send live telemetry to all browser clients.
             broadcast_json(
@@ -985,9 +699,7 @@ def handle_rust_response_connection(
             pass
 
 
-# ============================================================
 # SEARCH REQUEST BUILDER
-# ============================================================
 
 def build_search_message(request):
     """
@@ -1044,24 +756,9 @@ def build_search_message(request):
     )
 
 
-# ============================================================
 # SEARCH RESPONSE PARSER
-# ============================================================
 
 def parse_search_response(payload):
-    """
-    Parse the SEARCH response payload emitted by Rust.
-
-    Rust stores each searchable record in this format:
-
-        [TIMESTAMP] [THREAT] IP REQUEST
-
-    Example:
-
-        [1788158171] [NOTHREAT] 192.168.1.10 GET /login?user=admin HTTP/1.1
-
-    Each record is separated by a newline.
-    """
 
     import re
 
@@ -1110,9 +807,7 @@ def parse_search_response(payload):
     return results
 
 
-# ============================================================
 # RUST MESSAGE PARSER
-# ============================================================
 
 def parse_rust_message(message):
     """
@@ -1182,41 +877,13 @@ def parse_rust_message(message):
     )
 
 
-# ============================================================
 # SEARCH OPERATION
-# ============================================================
 
 def search_rust(request):
-    """
-    Execute one complete SEARCH transaction.
-
-        Browser
-           |
-           | WebSocket
-           v
-        Python
-           |
-           | TCP :4000
-           v
-        Rust
-           |
-           | TCP :4002
-           v
-        Python
-           |
-           | WebSocket
-           v
-        Browser
-
-    The protocol currently has no request-id, so SEARCH
-    requests are serialized using search_lock.
-    """
 
     with search_lock:
 
-        # ----------------------------------------------------
         # Remove stale responses
-        # ----------------------------------------------------
 
         while True:
 
@@ -1229,18 +896,13 @@ def search_rust(request):
                 break
 
 
-        # ----------------------------------------------------
         # Build Rust SEARCH message
-        # ----------------------------------------------------
 
         frame = build_search_message(
             request
         )
 
-
-        # ----------------------------------------------------
         # Send through Python -> Rust :4000
-        # ----------------------------------------------------
 
         send_to_rust(
             frame
@@ -1252,10 +914,7 @@ def search_rust(request):
             f"{request!r}"
         )
 
-
-        # ----------------------------------------------------
         # Wait for Rust -> Python :4002
-        # ----------------------------------------------------
 
         try:
 
@@ -1270,10 +929,7 @@ def search_rust(request):
                 "SEARCH response on port 4002"
             )
 
-
-        # ----------------------------------------------------
         # Parse response
-        # ----------------------------------------------------
 
         results = parse_search_response(
             payload
@@ -1289,37 +945,11 @@ def search_rust(request):
         }
 
 
-# ============================================================
 # WEBSOCKET HANDSHAKE
-# ============================================================
 
 def perform_websocket_handshake(client_socket):
-    """
-    Perform the WebSocket HTTP Upgrade handshake.
 
-    Browser initially sends something similar to:
-
-        GET / HTTP/1.1
-        Host: localhost:8000
-        Upgrade: websocket
-        Connection: Upgrade
-        Sec-WebSocket-Key: <key>
-        Sec-WebSocket-Version: 13
-
-    We respond with:
-
-        HTTP/1.1 101 Switching Protocols
-        Upgrade: websocket
-        Connection: Upgrade
-        Sec-WebSocket-Accept: <accept-key>
-
-    This upgrades the normal TCP connection into a
-    WebSocket connection.
-    """
-
-    # --------------------------------------------------------
     # Receive HTTP handshake.
-    # --------------------------------------------------------
 
     request = b""
 
@@ -1343,9 +973,7 @@ def perform_websocket_handshake(client_socket):
                 "WebSocket handshake too large"
             )
 
-    # --------------------------------------------------------
     # Convert HTTP request bytes -> text.
-    # --------------------------------------------------------
 
     try:
 
@@ -1359,9 +987,7 @@ def perform_websocket_handshake(client_socket):
             "Invalid UTF-8 WebSocket handshake"
         ) from error
 
-    # --------------------------------------------------------
     # Parse HTTP headers.
-    # --------------------------------------------------------
 
     headers = {}
 
@@ -1383,9 +1009,7 @@ def perform_websocket_handshake(client_socket):
             name.strip().lower()
         ] = value.strip()
 
-    # --------------------------------------------------------
     # Verify Upgrade header.
-    # --------------------------------------------------------
 
     if headers.get("upgrade", "").lower() != "websocket":
 
@@ -1393,9 +1017,7 @@ def perform_websocket_handshake(client_socket):
             "Missing WebSocket Upgrade header"
         )
 
-    # --------------------------------------------------------
     # Get client's WebSocket key.
-    # --------------------------------------------------------
 
     websocket_key = headers.get(
         "sec-websocket-key"
@@ -1407,10 +1029,7 @@ def perform_websocket_handshake(client_socket):
             "Missing Sec-WebSocket-Key"
         )
 
-    # --------------------------------------------------------
-    # WebSocket specification requires us to append this
     # fixed GUID to the client's key.
-    # --------------------------------------------------------
 
     websocket_guid = (
         "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -1421,25 +1040,19 @@ def perform_websocket_handshake(client_socket):
         websocket_guid
     )
 
-    # --------------------------------------------------------
     # SHA-1 hash.
-    # --------------------------------------------------------
 
     sha1_result = hashlib.sha1(
         combined.encode("utf-8")
     ).digest()
 
-    # --------------------------------------------------------
     # Base64 encode the SHA-1 result.
-    # --------------------------------------------------------
 
     accept_key = base64.b64encode(
         sha1_result
     ).decode("utf-8")
 
-    # --------------------------------------------------------
     # Build HTTP 101 response.
-    # --------------------------------------------------------
 
     response = (
         "HTTP/1.1 101 Switching Protocols\r\n"
@@ -1449,45 +1062,22 @@ def perform_websocket_handshake(client_socket):
         "\r\n"
     )
 
-    # --------------------------------------------------------
     # Send handshake response.
-    # --------------------------------------------------------
 
     client_socket.sendall(
         response.encode("utf-8")
     )
 
 
-# ============================================================
 # WEBSOCKET FRAME SENDING
-# ============================================================
 
 def send_websocket_frame(
     client_socket,
     payload,
     opcode=0x1
 ):
-    """
-    Send one WebSocket frame.
 
-    opcode:
-
-        0x1 = text
-        0x2 = binary
-        0x8 = close
-        0x9 = ping
-        0xA = pong
-
-    For browser communication we mainly use:
-
-        0x1 = text
-
-    because our application data will be JSON.
-    """
-
-    # --------------------------------------------------------
     # Convert payload to bytes.
-    # --------------------------------------------------------
 
     if isinstance(payload, str):
 
@@ -1495,34 +1085,15 @@ def send_websocket_frame(
             "utf-8"
         )
 
-    # --------------------------------------------------------
     # FIN bit.
-    #
-    # 1 = this is the final frame.
-    #
-    # We currently send complete messages in one frame.
-    # --------------------------------------------------------
 
     first_byte = 0x80 | opcode
 
-    # --------------------------------------------------------
     # Determine payload length.
-    # --------------------------------------------------------
 
     payload_length = len(payload)
 
-    # --------------------------------------------------------
     # WebSocket payload length encoding.
-    #
-    # 0 - 125:
-    #     length stored directly
-    #
-    # 126:
-    #     next 2 bytes contain length
-    #
-    # 127:
-    #     next 8 bytes contain length
-    # --------------------------------------------------------
 
     if payload_length <= 125:
 
@@ -1550,38 +1121,18 @@ def send_websocket_frame(
             payload_length
         )
 
-    # --------------------------------------------------------
     # Send header + payload.
-    # --------------------------------------------------------
 
     client_socket.sendall(
         header + payload
     )
 
 
-# ============================================================
 # WEBSOCKET FRAME RECEIVING
-# ============================================================
 
 def receive_websocket_frame(client_socket):
-    """
-    Receive and decode one WebSocket frame from a browser.
 
-    IMPORTANT:
-
-    Browser -> server WebSocket frames are MASKED.
-
-    Therefore we must:
-
-        1. Read frame header
-        2. Read masking key
-        3. Read masked payload
-        4. Unmask payload
-    """
-
-    # --------------------------------------------------------
     # Read first 2 bytes.
-    # --------------------------------------------------------
 
     header = recv_exact(
         client_socket,
@@ -1595,41 +1146,31 @@ def receive_websocket_frame(client_socket):
     first_byte = header[0]
     second_byte = header[1]
 
-    # --------------------------------------------------------
     # FIN bit.
-    # --------------------------------------------------------
 
     fin = (
         first_byte & 0x80
     ) != 0
 
-    # --------------------------------------------------------
     # Opcode.
-    # --------------------------------------------------------
 
     opcode = (
         first_byte & 0x0F
     )
 
-    # --------------------------------------------------------
     # MASK bit.
-    # --------------------------------------------------------
 
     masked = (
         second_byte & 0x80
     ) != 0
 
-    # --------------------------------------------------------
     # Initial payload length.
-    # --------------------------------------------------------
 
     payload_length = (
         second_byte & 0x7F
     )
 
-    # --------------------------------------------------------
     # Extended length.
-    # --------------------------------------------------------
 
     if payload_length == 126:
 
@@ -1655,9 +1196,7 @@ def receive_websocket_frame(client_socket):
             length_bytes
         )[0]
 
-    # --------------------------------------------------------
     # Browser -> server frames MUST be masked.
-    # --------------------------------------------------------
 
     if not masked:
 
@@ -1665,29 +1204,22 @@ def receive_websocket_frame(client_socket):
             "Client WebSocket frame is not masked"
         )
 
-    # --------------------------------------------------------
     # Read masking key.
-    # --------------------------------------------------------
 
     masking_key = recv_exact(
         client_socket,
         4
     )
 
-    # --------------------------------------------------------
     # Read masked payload.
-    # --------------------------------------------------------
 
     masked_payload = recv_exact(
         client_socket,
         payload_length
     )
 
-    # --------------------------------------------------------
     # Unmask.
-    #
     # WebSocket uses XOR.
-    # --------------------------------------------------------
 
     payload = bytearray(
         payload_length
@@ -1702,9 +1234,7 @@ def receive_websocket_frame(client_socket):
 
     payload = bytes(payload)
 
-    # --------------------------------------------------------
     # Return decoded frame.
-    # --------------------------------------------------------
 
     return {
         "fin": fin,
@@ -1713,18 +1243,12 @@ def receive_websocket_frame(client_socket):
     }
 
 
-# ============================================================
 # WEBSOCKET JSON MESSAGE
-# ============================================================
 
 def send_json_websocket(
     client_socket,
     data
 ):
-    """
-    Convert a Python object into JSON and send it as a
-    WebSocket text frame.
-    """
 
     message = json.dumps(
         data
@@ -1737,26 +1261,12 @@ def send_json_websocket(
     )
 
 
-# ============================================================
 # HANDLE ONE BROWSER
-# ============================================================
 
 def handle_websocket_client(
     client_socket,
     client_address
 ):
-    """
-    Handle one browser WebSocket connection.
-
-    Steps:
-
-        1. Perform HTTP Upgrade handshake
-        2. Register browser
-        3. Send connection message
-        4. Read WebSocket frames
-        5. Handle ping/close
-        6. Remove browser when disconnected
-    """
 
     print(
         f"[WS] Browser connecting: "
@@ -1765,19 +1275,15 @@ def handle_websocket_client(
 
     try:
 
-        # ----------------------------------------------------
         # Step 1:
         # WebSocket handshake.
-        # ----------------------------------------------------
 
         perform_websocket_handshake(
             client_socket
         )
 
-        # ----------------------------------------------------
         # Step 2:
         # Register client.
-        # ----------------------------------------------------
 
         with websocket_clients_lock:
 
@@ -1794,10 +1300,8 @@ def handle_websocket_client(
             f"Clients: {client_count}"
         )
 
-        # ----------------------------------------------------
         # Step 3:
         # Send confirmation message.
-        # ----------------------------------------------------
 
         send_json_websocket(
             client_socket,
@@ -1810,10 +1314,8 @@ def handle_websocket_client(
             }
         )
 
-        # ----------------------------------------------------
         # Step 4:
         # Continuously receive WebSocket frames.
-        # ----------------------------------------------------
 
         while True:
 
@@ -1827,11 +1329,8 @@ def handle_websocket_client(
 
             opcode = frame["opcode"]
 
-            # ------------------------------------------------
             # TEXT FRAME
-            #
             # 0x1 = text
-            # ------------------------------------------------
 
             if opcode == 0x1:
 
@@ -1872,23 +1371,6 @@ def handle_websocket_client(
 
                     continue
 
-                # ------------------------------------------------
-                # SEARCH
-                #
-                # Browser sends:
-                #
-                # {
-                #     "totalFrameBytes": 12,
-                #     "type": 5,
-                #     "requestLength": 5,
-                #     "request": "error"
-                # }
-                #
-                # totalFrameBytes is a WebSocket/application
-                # value supplied by the frontend. It is NOT used
-                # to frame the TCP message to Rust.
-                # ------------------------------------------------
-
                 if data.get("type") == TYPE_SEARCH:
 
                     request = data.get("request")
@@ -1919,7 +1401,6 @@ def handle_websocket_client(
                         )
 
                         # Send the structured Rust result
-                        # back through THIS SAME WebSocket.
                         send_json_websocket(
                             client_socket,
                             result
@@ -1957,11 +1438,8 @@ def handle_websocket_client(
                         }
                     )
 
-            # ------------------------------------------------
             # CLOSE FRAME
-            #
             # 0x8
-            # ------------------------------------------------
 
             elif opcode == 0x8:
 
@@ -1974,11 +1452,8 @@ def handle_websocket_client(
 
                 break
 
-            # ------------------------------------------------
             # PING
-            #
             # 0x9
-            # ------------------------------------------------
 
             elif opcode == 0x9:
 
@@ -1988,11 +1463,8 @@ def handle_websocket_client(
                     opcode=0xA
                 )
 
-            # ------------------------------------------------
             # PONG
-            #
             # 0xA
-            # ------------------------------------------------
 
             elif opcode == 0xA:
 
@@ -2028,9 +1500,7 @@ def handle_websocket_client(
 
     finally:
 
-        # ----------------------------------------------------
         # Remove client from global set.
-        # ----------------------------------------------------
 
         with websocket_clients_lock:
 
@@ -2042,9 +1512,7 @@ def handle_websocket_client(
                 websocket_clients
             )
 
-        # ----------------------------------------------------
         # Close socket.
-        # ----------------------------------------------------
 
         try:
 
@@ -2060,28 +1528,15 @@ def handle_websocket_client(
         )
 
 
-# ============================================================
 # BROADCAST JSON TO ALL BROWSERS
-# ============================================================
 
 def broadcast_json(data):
-    """
-    Broadcast a JSON-compatible Python object to every
-    currently connected browser.
-
-    EVENT PROCESSING IS NOT USING THIS YET.
-
-    It is implemented now so that the communication layer
-    is ready for the next stage.
-    """
 
     message = json.dumps(
         data
     )
 
-    # --------------------------------------------------------
     # Make a snapshot of connected clients.
-    # --------------------------------------------------------
 
     with websocket_clients_lock:
 
@@ -2089,9 +1544,7 @@ def broadcast_json(data):
             websocket_clients
         )
 
-    # --------------------------------------------------------
     # Send to every browser.
-    # --------------------------------------------------------
 
     disconnected_clients = []
 
@@ -2111,9 +1564,7 @@ def broadcast_json(data):
                 client
             )
 
-    # --------------------------------------------------------
     # Remove clients that failed.
-    # --------------------------------------------------------
 
     if disconnected_clients:
 
@@ -2126,33 +1577,18 @@ def broadcast_json(data):
                 )
 
 
-# ============================================================
 # WEBSOCKET SERVER
-# ============================================================
 
 def start_websocket_server():
-    """
-    Start the browser-facing WebSocket server.
 
-    Port:
-
-        4005
-    """
-
-    # --------------------------------------------------------
     # Create IPv4 TCP socket.
-    #
-    # WebSocket starts as a normal TCP connection.
-    # --------------------------------------------------------
 
     server = socket.socket(
         socket.AF_INET,
         socket.SOCK_STREAM
     )
 
-    # --------------------------------------------------------
     # Allow address reuse.
-    # --------------------------------------------------------
 
     server.setsockopt(
         socket.SOL_SOCKET,
@@ -2160,9 +1596,7 @@ def start_websocket_server():
         1
     )
 
-    # --------------------------------------------------------
     # Bind.
-    # --------------------------------------------------------
 
     server.bind(
         (
@@ -2171,9 +1605,7 @@ def start_websocket_server():
         )
     )
 
-    # --------------------------------------------------------
     # Listen.
-    # --------------------------------------------------------
 
     server.listen(5)
 
@@ -2217,37 +1649,11 @@ def start_websocket_server():
             "[WS] WebSocket server stopped"
         )
 
-
-# ============================================================
 # MAIN
-# ============================================================
 
 def main():
-    """
-    Start the complete backend.
 
-    Ports:
-
-        Rust :4000
-            Rust listens.
-            Python connects and sends requests.
-
-        Python :4002
-            Python listens.
-            Rust connects and sends responses/events.
-
-        Python WebSocket :4005
-            Browser connects here.
-    """
-
-    # --------------------------------------------------------
-    # IMPORTANT:
-    #
     # Start :4002 BEFORE connecting to Rust.
-    #
-    # Rust needs Python's :4002 listener to be available
-    # before Rust can establish its response connection.
-    # --------------------------------------------------------
 
     rust_response_thread = threading.Thread(
         target=start_rust_response_server,
@@ -2257,9 +1663,7 @@ def main():
     rust_response_thread.start()
 
 
-    # --------------------------------------------------------
     # Connect to Rust :4000
-    # --------------------------------------------------------
 
     try:
 
@@ -2279,9 +1683,7 @@ def main():
         )
 
 
-    # --------------------------------------------------------
     # Start WebSocket server :4005
-    # --------------------------------------------------------
 
     start_websocket_server()
 
