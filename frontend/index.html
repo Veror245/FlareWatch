@@ -2695,11 +2695,7 @@ template { display: none !important; }
         <h1>Live Events Tracker</h1>
         <p id="eventCounter">Monitoring Incoming Traffic</p>
       </div>
-      <div class="header-actions">
-        <button class="action-btn" title="Quick Search" onclick="document.getElementById('searchInput').focus()">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
-      </div>
+      
     </div>
 
     <!-- Metrics Grid -->
@@ -2727,19 +2723,6 @@ template { display: none !important; }
       <!-- Controls Filter Bar -->
       <div class="filter-bar">
         <select class="custom-select" id="typeFilter">
-          <option value="ALL">All Types</option>
-          <option value="SQL Injection">SQL Injection</option>
-          <option value="Path Traversal">Path Traversal</option>
-          <option value="Command Injection">Command Injection</option>
-          <option value="XSS Attempt">XSS Attempt</option>
-          <option value="Sensitive Access">Sensitive Access</option>
-          <option value="SSRF">SSRF</option>
-          <option value="LDAP Injection">LDAP Injection</option>
-          <option value="XXE">XXE</option>
-          <option value="HTTP Anomaly">HTTP Anomaly</option>
-          <option value="Login Failed">Login Failed</option>
-          <option value="Login Success">Login Success</option>
-          <option value="Admin Access">Admin Access</option>
           <option value="Brute Force">Brute Force</option>
           <option value="Credential Attack">Credential Attack</option>
           <option value="Account Compromise">Account Compromise</option>
@@ -2751,18 +2734,7 @@ template { display: none !important; }
           <option value="Outbound Threat">Outbound Threat</option>
           <option value="Suspicious Scanner">Suspicious Scanner</option>
         </select>
-        <select class="custom-select" id="severityFilter">
-          <option value="ALL">All Severities</option>
-          <option value="CRITICAL">Critical</option>
-          <option value="HIGH">High</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="LOW">Low</option>
-          <option value="INFO">Info</option>
-        </select>
-        <div class="search-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search IP, Details, or Event Type...">
-        </div>
+        
         <button class="btn-clear" id="clearBtn">Clear Filters</button>
       </div>
 
@@ -2857,8 +2829,8 @@ template { display: none !important; }
 
   function renderTable() {
     const selectedType = typeFilter.value;
-    const selectedSev = severityFilter.value;
-    const query = searchInput.value.toLowerCase().trim();
+    const selectedSev = severityFilter ? severityFilter.value : 'ALL';
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     
     const allEvents = initialEvents.concat(liveEvents);
     const filterKey = `${selectedType}|${selectedSev}|${query}`;
@@ -2929,12 +2901,12 @@ template { display: none !important; }
   }
 
   typeFilter.addEventListener('change', renderTable);
-  severityFilter.addEventListener('change', renderTable);
-  searchInput.addEventListener('input', renderTable);
+  if (severityFilter) severityFilter.addEventListener('change', renderTable);
+  if (searchInput) searchInput.addEventListener('input', renderTable);
   clearBtn.addEventListener('click', () => {
     typeFilter.value = 'ALL';
-    severityFilter.value = 'ALL';
-    searchInput.value = '';
+    if (severityFilter) severityFilter.value = 'ALL';
+    if (searchInput) searchInput.value = '';
     renderTable();
   });
 
