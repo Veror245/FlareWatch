@@ -375,10 +375,28 @@ These are not hidden vendored dependencies. They are application code written fo
 
 ---
 
-# 5. Zero-dependency summary
+# 5. Dependency claims we deliberately do not make
+
+FlareWatch does **not** claim to replace entire products such as Elasticsearch, Splunk, or a full SIEM platform.
+
+Its search implementation is a focused in-memory inverted index.
+
+It does **not** claim feature parity with `serde_json`.
+
+Its Rust/Python protocol is purpose-built rather than a general serialization framework.
+
+It does **not** claim to be a production replacement for a mature WebSocket server library.
+
+The Python WebSocket implementation supports the functionality required by this dashboard and is intentionally smaller than a general-purpose WebSocket stack.
+
+It does **not** claim to use Flask, FastAPI, `http.server`, HMAC authentication, or TOTP in the current submitted backend. Those features belong to earlier project designs and are not part of this source-controlled implementation.
+
+---
+
+# 6. Zero-dependency summary
 
 | Would normally use | FlareWatch implementation |
-| --- | --- |
+|---|---|
 | `aho-corasick` | Hand-written Aho-Corasick using Rust `Vec`, arrays, and standard collections |
 | `tokio` / `async-std` | `std::thread`, `Arc`, `Mutex` |
 | `serde` / `serde_json` | Purpose-built binary protocol and manual byte serialization |
