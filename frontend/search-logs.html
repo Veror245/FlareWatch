@@ -869,14 +869,26 @@
       const timeCell = document.createElement('td');
       timeCell.className = 'col-time';
 
-      const timestamp = result.timestamp;
-      if (typeof timestamp === 'number') {
-        const date = new Date(timestamp * 1000);
-        timeCell.textContent = Number.isNaN(date.getTime())
-          ? String(timestamp)
-          : date.toISOString().replace('T', ' ').replace('.000Z', '');
+      const rawTimestamp = result.timestamp;
+      let date = null;
+
+      if (rawTimestamp !== null && rawTimestamp !== undefined) {
+        // Strip extra literal quotes if present in string format
+        const cleanedStr = String(rawTimestamp).replace(/^"|"$/g, '').trim();
+        const numVal = Number(cleanedStr);
+
+        if (!isNaN(numVal) && cleanedStr !== '') {
+          // If 10-digit epoch timestamp (seconds), multiply by 1000 to convert to ms
+          date = new Date(numVal < 1e11 ? numVal * 1000 : numVal);
+        } else {
+          date = new Date(cleanedStr);
+        }
+      }
+
+      if (date && !isNaN(date.getTime())) {
+        timeCell.textContent = date.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '').replace('Z', '');
       } else {
-        timeCell.textContent = String(timestamp ?? '');
+        timeCell.textContent = String(rawTimestamp ?? '');
       }
 
       const entryCell = document.createElement('td');
