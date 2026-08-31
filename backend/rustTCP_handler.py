@@ -1050,16 +1050,20 @@ def build_search_message(request):
 
 def parse_search_response(payload):
     """
-    Parse the SEARCH response payload.
+    Parse the SEARCH response payload emitted by Rust.
 
-    Expected Rust response:
+    Rust stores each searchable record in this format:
 
-        [TIMESTAMP][THREAT][IP][REQ]
-        [TIMESTAMP][THREAT][IP][REQ]
-        ...
+        [TIMESTAMP] [THREAT] IP REQUEST
 
-    Each record is separated by '\\n'.
+    Example:
+
+        [1788158171] [NOTHREAT] 192.168.1.10 GET /login?user=admin HTTP/1.1
+
+    Each record is separated by a newline.
     """
+
+    import re
 
     text = payload.decode(
         "utf-8",
@@ -1068,67 +1072,40 @@ def parse_search_response(payload):
 
     results = []
 
+    record_pattern = re.compile(
+        r"^\[([^\]]*)\]\s+\[([^\]]*)\]\s+(\S+)(?:\s+(.*))?$"
+    )
 
     for line_number, line in enumerate(
         text.splitlines(),
         start=1
     ):
-
         line = line.strip()
 
         if not line:
             continue
 
+        match = record_pattern.match(line)
 
-        if not (
-            line.startswith("[")
-            and line.endswith("]")
-        ):
-
+        if not match:
             raise ProtocolError(
-                f"Invalid SEARCH record at "
-                f"line {line_number}: {line!r}"
+                f"Invalid SEARCH record at line {line_number}: "
+                f"{line!r}"
             )
 
-
-        content = line[1:-1]
-
-
-        parts = content.split(
-            "][",
-            3
-        )
-
-
-        if len(parts) != 4:
-
-            raise ProtocolError(
-                f"Invalid SEARCH record at "
-                f"line {line_number}: "
-                f"expected "
-                "[TIMESTAMP][THREAT][IP][REQ]"
-            )
-
-
-        timestamp = parts[0]
-        threat = parts[1]
-        ip = parts[2]
-        request = parts[3]
-
+        timestamp_text, threat, ip, request = match.groups()
 
         try:
-            timestamp = int(timestamp)
+            timestamp = int(timestamp_text)
         except ValueError:
-            pass
-
+            timestamp = timestamp_text
 
         results.append({
             "timestamp": timestamp,
             "threat": threat,
             "ip": ip,
-            "request": request
+            "request": request or ""
         })
-
 
     return results
 
